@@ -511,17 +511,22 @@ class ConcentrationChangeRatePredictor(nn.Module):
         return du
 
 
-def main(y_train_path: Path, output_dir: Path, train_split_idx: int):
+def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int):
     print(f"Saving files to {output_dir}")
     print(f"Loading data from {y_train_path}")
+    print(f"Train split index: {train_split_idx}")
 
-    # x = torch.linspace(0.0, cfg.X, cfg.Nx)
-    t = torch.linspace(0.0, cfg.T, cfg.Nt)
-    t_train = t[:train_split_idx].clone()
+    if train_split_idx is not None:
+        assert skip < train_split_idx, (skip, train_split_idx)
 
-    Y = torch.from_numpy(np.load(y_train_path)[:train_split_idx]).float().unsqueeze(-1)
+    t = np.linspace(0.0, cfg.T, cfg.Nt)
+    t_train = torch.from_numpy(t[skip:train_split_idx]).float()
+    print(f"{t_train.shape=}")
+
+    # Y = torch.from_numpy(np.load(y_train_path)[skip:train_split_idx]).float().unsqueeze(-1)
+    Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
     num_vars = 2
-    assert Y.shape == (len(t_train), num_vars, cfg.Nx, 1), Y.shape
+    assert Y.shape == (len(t_train), num_vars, cfg.Nx, 1), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
 
     cfg.model_path = output_dir.resolve()
     clear_dirs = True
@@ -529,7 +534,7 @@ def main(y_train_path: Path, output_dir: Path, train_split_idx: int):
         shutil.rmtree(cfg.model_path)
     cfg.model_path.mkdir(parents=True, exist_ok=True)
 
-    u0 = torch.zeros(num_vars, cfg.Nx, 1)
+    u0 = Y[0].clone()
     model = ConcentrationPredictor(
         u0=u0,
         cfg=cfg,
@@ -557,6 +562,12 @@ if __name__ == "__main__":
         type=int,
         help="Index after which to split the training data.",
         default=None,
+    )
+    parser.add_argument(
+        "--skip",
+        type=int,
+        help="How many time steps to skip in the training data.",
+        default=0,
     )
     args = vars(parser.parse_args())
     main(**args)
