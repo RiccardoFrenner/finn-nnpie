@@ -378,7 +378,7 @@ class ConcentrationPredictor(nn.Module):
         return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6, method="dopri8")
         # return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6)
 
-    def run_training(self, t: torch.Tensor, u_full_train: torch.Tensor):
+    def run_training(self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100):
         """Train to predict the concentration from the given full field training data.
 
         Args:
@@ -438,14 +438,14 @@ class ConcentrationPredictor(nn.Module):
             return loss
 
         # Iterate until maximum epoch number is reached
-        for epoch in range(1, self.cfg.epochs + 1):
+        for epoch in range(1, max_epochs + 1):
             dt = time.time()
             optimizer.step(closure)
             loss = closure()
             dt = time.time() - dt
 
             print(
-                f"Training: Epoch [{epoch + 1}/{self.cfg.epochs}], "
+                f"Training: Epoch [{epoch + 1}/{max_epochs}], "
                 f"Training Loss: {loss.item():.4f}, Runtime: {dt:.4f} secs"
             )
 
@@ -511,7 +511,7 @@ class ConcentrationChangeRatePredictor(nn.Module):
         return du
 
 
-def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int):
+def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int, max_epochs: int):
     print(f"Saving files to {output_dir}")
     print(f"Loading data from {y_train_path}")
     print(f"Train split index: {train_split_idx}")
@@ -542,7 +542,7 @@ def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int):
     )
 
     # Train the model
-    model.run_training(t=t_train, u_full_train=Y)
+    model.run_training(t=t_train, u_full_train=Y, max_epochs=max_epochs)
     return model, t_train, Y
 
 
@@ -568,6 +568,11 @@ if __name__ == "__main__":
         type=int,
         help="How many time steps to skip in the training data.",
         default=0,
+    )
+    parser.add_argument(
+        "--max_epochs",
+        type=int,
+        default=100,
     )
     args = vars(parser.parse_args())
     main(**args)

@@ -33,7 +33,6 @@ profile_mult = (
 phys_mult = (
     100  # multiplier for the physical regularization in the loss function calculation
 )
-epochs = 100  # maximum epoch for training
 lbfgs_optim = True  # Use L-BFGS as optimizer, else use ADAM
 train_breakthrough = False  # Train using only breakthrough curve data
 linear = False  # Training data generated with the linear isotherm
