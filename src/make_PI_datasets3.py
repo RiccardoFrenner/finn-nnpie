@@ -34,7 +34,7 @@ def make_dataset(mode="pos"):
 
     Y_finn = np.concatenate([Y_finn_diss, Y_finn_tot], axis=1)[..., 0]
 
-    out_dir = base_dir / "finn_PI_datasets"
+    out_dir = base_dir / "finn_stds_input_noise"
     out_dir.mkdir(exist_ok=True, parents=True)
     np.save(out_dir / f"Y_{mode}_finn.npy", Y_finn)
 
