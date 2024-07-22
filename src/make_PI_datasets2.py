@@ -50,7 +50,7 @@ def make_dataset(mode="pos"):
     Y_train_tot = Y_train[:, 1, ...][:, np.newaxis, ...]
     
     # shift PI datasets
-    quantile = 0.9
+    quantile = 0.55
     if mode == "pos":
         Y_finn_diss += np.quantile(Y_train_diss - Y_finn_diss, quantile)
         Y_finn_tot += np.quantile(Y_train_tot - Y_finn_tot, quantile)
@@ -77,7 +77,7 @@ def make_dataset(mode="pos"):
 
     out_dir = base_dir / "finn_PI_datasets"
     out_dir.mkdir(exist_ok=True, parents=True)
-    np.save(out_dir / f"Y_{mode}_finn.npy", Y_finn)
+    np.save(out_dir / f"Y_{mode}_finn_quantile={int(quantile*100)}.npy", Y_finn)
 
     # plt.show()
 

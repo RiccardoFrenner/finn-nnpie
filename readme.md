@@ -29,3 +29,26 @@ Nicht auf vollem Feld trainieren für +/- FINN
 
 Milestone Präsentationsterminvorschläge:
 20.08
+
+
+----
+
+# 18.07.24 Meeting Redepunkte
+
+## FINN mit gelernten Residuen
+- Gelernte Residuen sind OK (Ich könnte noch mehr overfitten, habe das aber für nicht sinnvoll betrachtet)
+- Aber man sieht kaum einen Unterschied in den R-Kurven, weil Residuum so klein?
+- Überschneiden tun sie sich auch und es wäre ein sehr großer Offset
+
+## R-Kurven für größer werdende Zeitintervalle
+- Keine wirkliche Konvergenz zu "richtiger" Kurve erkennbar
+- Ab einer bestimmten größe des Zeitintervalls wird auch etwas ganz anderes als freundlich-ähnliches gelernt. Liegt vielleicht an Hyperparametern oder weil das c-Feld da nicht mehr genug Informationen enthält. Da müsste man sich nochmal genau den Loss und das gelernte Feld und den Fehler anschauen.
+
+## Konstante, bewegte Zeitintervalle
+- ähnlich wie oben: ab einem gewissen Zeitintervall wird nicht mehr gut gelernt. Auch für viel mehr Epochen nicht.
+- Ansonsten:
+- Man bekommt ca. 8 Kurven die sinnvoll aussehen und als trainingsdaten genutzt werden könnten für 3PINN
+
+
+
+# 24.07. Mittwoch 14:00 Meeting

@@ -55,7 +55,7 @@ Y_finn_tot = full_residuals_tot + Y_finn_mean_tot + residual_medians[1]
 X_finn = X_finn_diss[sort_indices].copy()
 Y_finn = np.concatenate([Y_finn_diss, Y_finn_tot], axis=1)[sort_indices].copy()
 
-out_dir = base_dir / "finn_PI_datasets"
+out_dir = base_dir / "finn_PI_datasets_"
 out_dir.mkdir(exist_ok=True, parents=True)
 np.save(out_dir / f"X_{MODE}_finn.npy", X_finn)
 np.save(out_dir / f"Y_{MODE}_finn.npy", Y_finn)

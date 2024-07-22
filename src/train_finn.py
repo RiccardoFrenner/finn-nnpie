@@ -349,8 +349,7 @@ class Flux_Kernels(nn.Module):
 
 class ConcentrationPredictor(nn.Module):
     def __init__(self, u0: torch.Tensor, cfg, ret_inv_funs=None):
-        """TODO: Docstring
-
+        """
         Args:
             u0 (tensor): initial condition, dim: [num_features, Nx]
             cfg (_type_): _description_
@@ -392,7 +391,6 @@ class ConcentrationPredictor(nn.Module):
         optimizer = torch.optim.LBFGS(self.parameters(), lr=0.1)
 
         u_ret = torch.linspace(0.0, 1.0, 100).view(-1, 1)
-        # TODO: Should not be here
         ret_linear = AnalyticRetardation.linear(
             u_ret, por=self.cfg.por, rho_s=self.cfg.rho_s, Kd=self.cfg.Kd
         )
