@@ -52,3 +52,16 @@ Milestone Präsentationsterminvorschläge:
 
 
 # 24.07. Mittwoch 14:00 Meeting
+Alle Fragen die ich im Moment habe:
+## Samples für die Isothermenen
+- (Wie) kann ich argumentieren, dass die Samples von den R-Kurven sinnvoll sind? (TODO: Was genau meine ich mit sinnvoll?)
+- Was bedeutet es, dass die R-Kurven von verschiedenen Seeds qualitativ nicht von verschiedenen Zeitintervallen zu unterscheiden sind?
+    - Müsste ich die verschiedenen Zeitintervalle noch mal mit festem Seed trainieren, um zu schauen, ob sich dann überhaupt was ändert?
+- Wäre es besser uniform zwischen der niedrigsten Kurve und der größten Kurve zu sampeln? (Weil sonst kann es vor allem bei nicht so vielen Kurven zu recht großen Lücken kommen (TODO: Hier wäre ein Bild nicht schlecht))
+- Wie bekomme ich es hin, dass 3PINN nahe Null mehr nach der FINN-Isotherme aussieht? (Also steil ansteigt)
+    - Weil sonst tun auch die Quantile nicht wirklich gut, weil die Samples nahe Null dann quasi alle Outlier sind (TODO: Bild hierzu)
+- 
+
+-----
+
+

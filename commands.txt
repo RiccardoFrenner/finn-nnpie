@@ -1,20 +1,16 @@
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=55.npy data_out/finn_stds_output/Y_pos_finn_quantile=55 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=80.npy data_out/finn_stds_output/Y_pos_finn_quantile=80 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=95.npy data_out/finn_stds_output/Y_pos_finn_quantile=95 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=85.npy data_out/finn_stds_output/Y_pos_finn_quantile=85 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=90.npy data_out/finn_stds_output/Y_pos_finn_quantile=90 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=50.npy data_out/finn_stds_output/Y_pos_finn_quantile=50 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=65.npy data_out/finn_stds_output/Y_neg_finn_quantile=65 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=70.npy data_out/finn_stds_output/Y_neg_finn_quantile=70 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=60.npy data_out/finn_stds_output/Y_neg_finn_quantile=60 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=75.npy data_out/finn_stds_output/Y_neg_finn_quantile=75 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=90.npy data_out/finn_stds_output/Y_neg_finn_quantile=90 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=85.npy data_out/finn_stds_output/Y_neg_finn_quantile=85 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=50.npy data_out/finn_stds_output/Y_neg_finn_quantile=50 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=55.npy data_out/finn_stds_output/Y_neg_finn_quantile=55 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=95.npy data_out/finn_stds_output/Y_neg_finn_quantile=95 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_neg_finn_quantile=80.npy data_out/finn_stds_output/Y_neg_finn_quantile=80 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=75.npy data_out/finn_stds_output/Y_pos_finn_quantile=75 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=60.npy data_out/finn_stds_output/Y_pos_finn_quantile=60 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=70.npy data_out/finn_stds_output/Y_pos_finn_quantile=70 --train_split_idx 51
-python src/train_finn.py data_out/finn_PI_datasets/Y_pos_finn_quantile=65.npy data_out/finn_stds_output/Y_pos_finn_quantile=65 --train_split_idx 51
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/76833947 --train_split_idx 51 --seed 76833947
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/19555426 --train_split_idx 51 --seed 19555426
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/48425312 --train_split_idx 51 --seed 48425312
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/78766311 --train_split_idx 51 --seed 78766311
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/93485634 --train_split_idx 51 --seed 93485634
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/69218481 --train_split_idx 51 --seed 69218481
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/9181981 --train_split_idx 51 --seed 9181981
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/2459026 --train_split_idx 51 --seed 2459026
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/68097542 --train_split_idx 51 --seed 68097542
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/28204694 --train_split_idx 51 --seed 28204694
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/1213681 --train_split_idx 51 --seed 1213681
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/19721639 --train_split_idx 51 --seed 19721639
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/47594274 --train_split_idx 51 --seed 47594274
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/85192381 --train_split_idx 51 --seed 85192381
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/67698924 --train_split_idx 51 --seed 67698924
+python src/train_finn.py data/synthetic_data/retardation_freundlich/c_train.npy data_out/finn_different_seeds/28106721 --train_split_idx 51 --seed 28106721

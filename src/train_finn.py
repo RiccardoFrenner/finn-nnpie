@@ -1,4 +1,5 @@
 import argparse
+import random
 import shutil
 import time
 from pathlib import Path
@@ -377,7 +378,9 @@ class ConcentrationPredictor(nn.Module):
         return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6, method="dopri8")
         # return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6)
 
-    def run_training(self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100):
+    def run_training(
+        self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100
+    ):
         """Train to predict the concentration from the given full field training data.
 
         Args:
@@ -509,10 +512,25 @@ class ConcentrationChangeRatePredictor(nn.Module):
         return du
 
 
-def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int, max_epochs: int):
-    print(f"Saving files to {output_dir}")
+def main(
+    y_train_path: Path,
+    output_dir: Path,
+    train_split_idx: int,
+    skip: int,
+    max_epochs: int,
+    seed: int,
+):
     print(f"Loading data from {y_train_path}")
+    print(f"Saving files to {output_dir}")
     print(f"Train split index: {train_split_idx}")
+    print(f"Skip: {skip}")
+    print(f"Max epochs: {max_epochs}")
+    print(f"Seed: {seed}")
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
     if train_split_idx is not None:
         assert skip < train_split_idx, (skip, train_split_idx)
@@ -521,10 +539,16 @@ def main(y_train_path: Path, output_dir: Path, train_split_idx: int, skip: int, 
     t_train = torch.from_numpy(t[skip:train_split_idx]).float()
     print(f"{t_train.shape=}")
 
-    # Y = torch.from_numpy(np.load(y_train_path)[skip:train_split_idx]).float().unsqueeze(-1)
-    Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
+    # FIXME: This line is needed for normal training, the below for residual network training
+    Y = torch.from_numpy(np.load(y_train_path)[skip:train_split_idx]).float().unsqueeze(-1)
+    # Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
     num_vars = 2
-    assert Y.shape == (len(t_train), num_vars, cfg.Nx, 1), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
+    assert Y.shape == (
+        len(t_train),
+        num_vars,
+        cfg.Nx,
+        1,
+    ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
 
     cfg.model_path = output_dir.resolve()
     clear_dirs = True
@@ -571,6 +595,11 @@ if __name__ == "__main__":
         "--max_epochs",
         type=int,
         default=100,
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=int(time.time()) % 10**8,
     )
     args = vars(parser.parse_args())
     main(**args)

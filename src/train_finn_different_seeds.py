@@ -1,23 +1,21 @@
-"""Train +/- FINN models for multiple quantiles."""
+"""Train mean FINN models for different seeds."""
 
+import random
 import subprocess
 from pathlib import Path
 
-# Directory containing the y_train_path files
-input_dir = Path("data_out/finn_stds_input")
-# Directory for output
-output_base_dir = Path("data_out/finn_stds_output")
+output_base_dir = Path("data_out/finn_different_seeds")
 output_base_dir.mkdir(exist_ok=True)
+y_train_path = Path("data/synthetic_data/retardation_freundlich/c_train.npy")
 
-# Gather all y_train_path files in the input directory
-y_train_paths = list(input_dir.glob("*"))
+seeds = [random.randint(10**4, 10**8) for _ in range(16)]
 
 # Create a list of commands to be executed in parallel
 commands = []
-for y_train_path in y_train_paths:
-    output_dir = output_base_dir / y_train_path.stem
+for seed in seeds:
+    output_dir = output_base_dir / f"{seed}"
     output_dir.mkdir(exist_ok=True)
-    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51"
+    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed {seed}"
     commands.append(command)
 
 # Write the commands to a temporary file
