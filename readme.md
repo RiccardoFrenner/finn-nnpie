@@ -65,3 +65,14 @@ Alle Fragen die ich im Moment habe:
 -----
 
 
+Ideen:
+# Datenunsicherheit (Wie ändert sich Isotherme weil C Noise hat)
+- FINN auf c -> 3pinn auf c -> Dann verschiedene c-Kurven (mit verschiedenen Quantilen (TODO: Gibt es genug?)) im c-3PINN-Interval mit FINN und festem Seeds lernen -> Ergibt viele Isotherme dessen Umhüllende meine Unsicherheit ist. (Wenn wir keinen Knick wollen 3pinn auf Samples der Kurven machen)
+(Habe ich quasi schon nur jetzt mal mir festem Seed)
+# Modellunsicherheit
+A) 1. Zeitintervalle mit festem Seed = Modellunsicherheit aufgrund unvollständiger Daten
+   2. Unterschiedliche Seeds = Modellunsicherheit aufgrund von Parameterunsicherheit
+
+
+----
+Kurven samplen mit 1/wurzel(grad(f))
