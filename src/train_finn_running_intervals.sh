@@ -34,5 +34,5 @@ export python_script y_train_path step
 seq 0 12 | parallel '
   output_dir="data_out/finn_running_intervals_stepsize_30/finn_running_interval_{}"
   y_train_path="data/synthetic_data/retardation_freundlich/sub_intervals/c_{}.npy"
-  python "$python_script" "$y_train_path" "$output_dir" --train_split_idx 30 --skip 0 --max_epochs 1000
+  python "$python_script" "$y_train_path" "$output_dir" --train_split_idx 30 --skip 0 --max_epochs 1000 --seed 9243865
 '

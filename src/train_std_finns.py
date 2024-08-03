@@ -1,4 +1,4 @@
-"""Train +/- FINN models for multiple quantiles."""
+"""Train +/- FINN models for multiple quantiles with same seed."""
 
 import subprocess
 from pathlib import Path
@@ -17,7 +17,7 @@ commands = []
 for y_train_path in y_train_paths:
     output_dir = output_base_dir / y_train_path.stem
     output_dir.mkdir(exist_ok=True)
-    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51"
+    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed 34956765"
     commands.append(command)
 
 # Write the commands to a temporary file
@@ -27,8 +27,12 @@ with commands_file.open("w") as f:
         f.write(f"{command}\n")
 
 # Execute the commands in parallel using GNU Parallel
+# subprocess.run(
+#     ["parallel", "--bar", "-j", "8", "<", f"{commands_file}"], check=True, shell=True
+# )
+command = f"cat {commands_file} | parallel -j 8 --bar"
 subprocess.run(
-    ["parallel", "--bar", "-j", "8", "<", f"{commands_file}"], check=True, shell=True
+    command, check=True, shell=True
 )
 
 # Clean up the temporary file
