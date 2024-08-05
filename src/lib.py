@@ -727,7 +727,7 @@ class Flux_Kernels_No_Ret(nn.Module):
 def train_network(
     model, optimizer, criterion, train_loader, val_loader, max_epochs: int
 ) -> None:
-    early_stopper = EarlyStopper(patience=300, verbose=False)
+    # early_stopper = EarlyStopper(patience=300, verbose=False)
 
     for epoch in range(1, max_epochs + 1):
         # Training phase
@@ -749,14 +749,14 @@ def train_network(
                 val_loss += loss_valid.item()
         val_loss = val_loss / len(val_loader)
 
-        if epoch % max(1, max_epochs // 100) == 0:
+        if epoch % max(1, max_epochs // 10) == 0:
             print(f"Epoch {epoch}, Validation Loss: {val_loss:.6f}")
 
         # Check early stopping condition
-        early_stopper.update(val_loss, model)
-        if early_stopper.early_stop:
-            print("Early stopping")
-            break
+        # early_stopper.update(val_loss, model)
+        # if early_stopper.early_stop:
+        #     print("Early stopping")
+        #     break
 
     # Load the last checkpoint with the best model
     # TODO: This does not actually look better in the plot?
