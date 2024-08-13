@@ -25,8 +25,9 @@ with commands_file.open("w") as f:
         f.write(f"{command}\n")
 
 # Execute the commands in parallel using GNU Parallel
+command = f"cat {commands_file} | parallel -j 8 --bar"
 subprocess.run(
-    ["parallel", "--bar", "-j", "8", "<", f"{commands_file}"], check=True, shell=True
+    command, check=True, shell=True
 )
 
 # Clean up the temporary file

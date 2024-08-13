@@ -429,11 +429,14 @@ class ConcentrationPredictor(nn.Module):
             self.train()
             optimizer.zero_grad()
             ode_pred = self.forward(t)  # aka. y_pred
+            # TODO: mean instead of sum?
             if c_field_seed is not None:
                 # set the not used training data to be equal to the prediction. So no error is calculated there
-                u_full_train[field_mask] = ode_pred[field_mask]
-            # TODO: mean instead of sum?
-            loss = self.cfg.error_mult * torch.sum((u_full_train - ode_pred) ** 2)
+                # u_full_train[field_mask] = ode_pred[field_mask]
+
+                loss = self.cfg.error_mult * torch.sum((u_full_train[field_mask] - ode_pred[field_mask]) ** 2)
+            else:
+                loss = self.cfg.error_mult * torch.sum((u_full_train - ode_pred) ** 2)
 
             # Physical regularization: value of the retardation factor should decrease with increasing concentration
             ret_inv_pred = self.retardation_inv_scaled(u_ret)

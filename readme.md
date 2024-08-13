@@ -89,3 +89,4 @@ TODO:
 -----
 # Zeitmessungen:
 FINN, 251 timesteps, 100 epochen, 26 spatial steps, 7.75 minutes
+FINN, 251 timesteps, 100 epochen, 26 spatial steps, randomly masked c field for loss, 12 minutes
