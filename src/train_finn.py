@@ -379,7 +379,7 @@ class ConcentrationPredictor(nn.Module):
         # return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6)
 
     def run_training(
-        self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100
+        self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100, c_field_seed=None,
     ):
         """Train to predict the concentration from the given full field training data.
 
@@ -416,6 +416,10 @@ class ConcentrationPredictor(nn.Module):
         np.save(out_dir / "retardation_freundlich.npy", ret_freundlich)
         np.save(out_dir / "retardation_langmuir.npy", ret_langmuir)
 
+        if c_field_seed is not None:
+            rng = np.random.default_rng(c_field_seed)
+            field_mask = rng.uniform(size=u_full_train.shape) < 0.5
+
         # Define the closure function that consists of resetting the
         # gradient buffer, loss function calculation, and backpropagation
         # The closure function is necessary for LBFGS optimizer, because
@@ -425,6 +429,9 @@ class ConcentrationPredictor(nn.Module):
             self.train()
             optimizer.zero_grad()
             ode_pred = self.forward(t)  # aka. y_pred
+            if c_field_seed is not None:
+                # set the not used training data to be equal to the prediction. So no error is calculated there
+                u_full_train[field_mask] = ode_pred[field_mask]
             # TODO: mean instead of sum?
             loss = self.cfg.error_mult * torch.sum((u_full_train - ode_pred) ** 2)
 
@@ -519,6 +526,7 @@ def main(
     skip: int,
     max_epochs: int,
     seed: int,
+    c_field_seed: int | None,
 ):
     print(f"Loading data from {y_train_path}")
     print(f"Saving files to {output_dir}")
@@ -526,6 +534,7 @@ def main(
     print(f"Skip: {skip}")
     print(f"Max epochs: {max_epochs}")
     print(f"Seed: {seed}")
+    print(f"C-Loss Seed: {c_field_seed}")
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -564,7 +573,7 @@ def main(
     )
 
     # Train the model
-    model.run_training(t=t_train, u_full_train=Y, max_epochs=max_epochs)
+    model.run_training(t=t_train, u_full_train=Y, max_epochs=max_epochs, c_field_seed=c_field_seed)
     return model, t_train, Y
 
 
@@ -600,6 +609,12 @@ if __name__ == "__main__":
         "--seed",
         type=int,
         default=int(time.time()) % 10**8,
+    )
+    parser.add_argument(
+        "--c_field_seed",
+        type=int,
+        default=None,
+        help="If not None only a random subset of the concentration field will be used in the loss computation.",
     )
     args = vars(parser.parse_args())
     main(**args)
