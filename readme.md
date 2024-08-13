@@ -77,8 +77,10 @@ A) 1. Zeitintervalle mit festem Seed = Modellunsicherheit aufgrund unvollständi
 
 ----
 TODO:
-- 3pinn mit Zeitintervallen nimmt keinen Median im Moment
-- Learining rate decay
-- Loss: MAE vs MSE
-- Zeit messen und vergleichen
-- C für den Loss random sampeln
+- [x] 3pinn mit Zeitintervallen nimmt keinen Median im Moment
+- [] Learining rate decay
+- [] Loss: MAE vs MSE
+- [] Zeit messen und vergleichen
+- [] C für den Loss random sampeln
+- [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
+    - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
