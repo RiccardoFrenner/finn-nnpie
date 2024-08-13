@@ -53,7 +53,7 @@ Milestone Präsentationsterminvorschläge:
 
 # 24.07. Mittwoch 14:00 Meeting
 Alle Fragen die ich im Moment habe:
-## Samples für die Isothermenen
+## Samples für die Isothermen
 - (Wie) kann ich argumentieren, dass die Samples von den R-Kurven sinnvoll sind? (TODO: Was genau meine ich mit sinnvoll?)
 - Was bedeutet es, dass die R-Kurven von verschiedenen Seeds qualitativ nicht von verschiedenen Zeitintervallen zu unterscheiden sind?
     - Müsste ich die verschiedenen Zeitintervalle noch mal mit festem Seed trainieren, um zu schauen, ob sich dann überhaupt was ändert?
@@ -72,7 +72,13 @@ Ideen:
 # Modellunsicherheit
 A) 1. Zeitintervalle mit festem Seed = Modellunsicherheit aufgrund unvollständiger Daten
    2. Unterschiedliche Seeds = Modellunsicherheit aufgrund von Parameterunsicherheit
+   3. C random (bei loss)
 
 
 ----
-Kurven samplen mit 1/wurzel(grad(f))
+TODO:
+- 3pinn mit Zeitintervallen nimmt keinen Median im Moment
+- Learining rate decay
+- Loss: MAE vs MSE
+- Zeit messen und vergleichen
+- C für den Loss random sampeln
