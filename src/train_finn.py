@@ -563,9 +563,11 @@ def main(
     ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
 
     cfg.model_path = output_dir.resolve()
-    clear_dirs = True
+    clear_dirs = False
     if clear_dirs and cfg.model_path.exists():
         shutil.rmtree(cfg.model_path)
+    elif cfg.model_path.exists():
+        raise ValueError(f"Folder {cfg.model_path} already exists.")
     cfg.model_path.mkdir(parents=True, exist_ok=True)
 
     u0 = Y[0].clone()
