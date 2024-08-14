@@ -379,7 +379,11 @@ class ConcentrationPredictor(nn.Module):
         # return odeint(self.dudt_fun, self.u0, t, rtol=1e-5, atol=1e-6)
 
     def run_training(
-        self, t: torch.Tensor, u_full_train: torch.Tensor, max_epochs: int = 100, c_field_seed=None,
+        self,
+        t: torch.Tensor,
+        u_full_train: torch.Tensor,
+        max_epochs: int = 100,
+        c_field_seed=None,
     ):
         """Train to predict the concentration from the given full field training data.
 
@@ -415,6 +419,8 @@ class ConcentrationPredictor(nn.Module):
         np.save(out_dir / "retardation_linear.npy", ret_linear)
         np.save(out_dir / "retardation_freundlich.npy", ret_freundlich)
         np.save(out_dir / "retardation_langmuir.npy", ret_langmuir)
+        np.save(out_dir / "c_train.npy", u_full_train.numpy())
+        np.save(out_dir / "t_train.npy", t.numpy())
 
         if c_field_seed is not None:
             rng = np.random.default_rng(c_field_seed)
@@ -434,7 +440,9 @@ class ConcentrationPredictor(nn.Module):
                 # set the not used training data to be equal to the prediction. So no error is calculated there
                 # u_full_train[field_mask] = ode_pred[field_mask]
 
-                loss = self.cfg.error_mult * torch.sum((u_full_train[field_mask] - ode_pred[field_mask]) ** 2)
+                loss = self.cfg.error_mult * torch.sum(
+                    (u_full_train[field_mask] - ode_pred[field_mask]) ** 2
+                )
             else:
                 loss = self.cfg.error_mult * torch.sum((u_full_train - ode_pred) ** 2)
 
@@ -525,12 +533,15 @@ class ConcentrationChangeRatePredictor(nn.Module):
 def main(
     y_train_path: Path,
     output_dir: Path,
-    train_split_idx: int,
-    skip: int,
-    max_epochs: int,
-    seed: int,
-    c_field_seed: int | None,
+    train_split_idx: int | None = None,
+    skip: int = 0,
+    max_epochs: int = 100,
+    seed: int | None = None,
+    c_field_seed: int | None = None,
 ):
+    if seed is None:
+        seed = int(time.time()) % 10**8
+
     print(f"Loading data from {y_train_path}")
     print(f"Saving files to {output_dir}")
     print(f"Train split index: {train_split_idx}")
@@ -552,7 +563,11 @@ def main(
     print(f"{t_train.shape=}")
 
     # FIXME: This line is needed for normal training, the below for residual network training
-    Y = torch.from_numpy(np.load(y_train_path)[skip:train_split_idx]).float().unsqueeze(-1)
+    Y = (
+        torch.from_numpy(np.load(y_train_path)[skip:train_split_idx])
+        .float()
+        .unsqueeze(-1)
+    )
     # Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
     num_vars = 2
     assert Y.shape == (
@@ -578,12 +593,17 @@ def main(
     )
 
     # Train the model
-    model.run_training(t=t_train, u_full_train=Y, max_epochs=max_epochs, c_field_seed=c_field_seed)
+    model.run_training(
+        t=t_train, u_full_train=Y, max_epochs=max_epochs, c_field_seed=c_field_seed
+    )
     return model, t_train, Y
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train a FINN model.")
+    parser = argparse.ArgumentParser(
+        description="Train a FINN model.",
+        argument_default=argparse.SUPPRESS,
+    )
     parser.add_argument(
         "y_train_path", type=Path, help="Path to concentration field file."
     )
@@ -597,29 +617,23 @@ if __name__ == "__main__":
         "--train_split_idx",
         type=int,
         help="Index after which to split the training data.",
-        default=None,
     )
     parser.add_argument(
         "--skip",
         type=int,
         help="How many time steps to skip in the training data.",
-        default=0,
     )
-    parser.add_argument(
-        "--max_epochs",
-        type=int,
-        default=100,
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=int(time.time()) % 10**8,
-    )
+    parser.add_argument("--max_epochs", type=int)
+    parser.add_argument("--seed", type=int)
     parser.add_argument(
         "--c_field_seed",
         type=int,
-        default=None,
         help="If not None only a random subset of the concentration field will be used in the loss computation.",
     )
     args = vars(parser.parse_args())
-    main(**args)
+    model, t_train, Y = main(**args)
+
+    model.eval()
+    with torch.no_grad():
+        c_predictions = model(t_train)
+    np.save(args["output_dir"] / "c_predictions.npy", c_predictions)
