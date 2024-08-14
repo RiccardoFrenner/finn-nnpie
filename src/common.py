@@ -1,3 +1,8 @@
+import shutil
+from pathlib import Path
+from typing import Callable, Optional
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -81,9 +86,6 @@ def create_mlp(layers: list[int], activation_fun, activation_fun_end):
     return nn.Sequential(*network_layers)
 
 
-import matplotlib.pyplot as plt
-
-
 def plot_c_spaceseries(c, t_idx):
     plt.figure(figsize=(10, 5))
     plt.plot(c[t_idx, 0, :], label="diss")
@@ -139,3 +141,68 @@ def pcolor_from_scatter(x, y, z, placeholder_value=0):
     # Create the pcolor plot
     plt.pcolor(X, Y, Z)
     plt.colorbar()
+
+
+def iter_final_retardation_files(
+    directory,
+    min_epoch: int=100,
+    is_ret_OK: Optional[Callable[[np.ndarray], bool]] = None,
+):
+    """
+    Iterate trough a directory containing multiple
+    folders with FINN simulation results.
+    Return the path to the final ret curve file.
+    """
+    for p in (p for p in Path(directory).iterdir() if p.is_dir()):
+        all_ret_file_paths = sorted(
+            (p / "predicted_retardations").glob("retPred_*.npy"),
+            key=lambda x: int(x.stem.split("_")[-1]),
+        )
+        if not all_ret_file_paths:
+            shutil.rmtree(p)  # remove dirs that have no ret curves
+            continue
+
+        epoch = int(all_ret_file_paths[-1].stem.split("_")[-1])
+        if epoch < min_epoch:
+            continue
+
+        ret = np.load(all_ret_file_paths[-1])
+        if np.any(np.isnan(ret)):
+            continue
+
+        if is_ret_OK is not None:
+            if not is_ret_OK(ret):
+                continue
+
+        yield all_ret_file_paths[-1]
+
+
+def is_below_curve(
+    curve_x: np.ndarray, curve_y: np.ndarray, points: np.ndarray
+) -> np.ndarray:
+    """
+    Checks whether a set of points is below a curve. The curve is a piecewise linear function given by points.
+
+    Args:
+        curve_x (np.ndarray): x-coordinates of the curve points
+        curve_y (np.ndarray): y-coordinates of the curve points
+        points (np.ndarray): (N, 2) array containing the points to check
+
+    Returns:
+        np.ndarray: Boolean array indicating whether each point is below the curve.
+    """
+    # Interpolate the curve using piecewise linear interpolation
+    interpolated_y = np.interp(points[:, 0], curve_x, curve_y)
+
+    # Compare the y-coordinates of the points with the interpolated y-values of the curve
+    below_curve = points[:, 1] < interpolated_y
+
+    return below_curve
+
+
+def is_above_curve(
+    curve_x: np.ndarray, curve_y: np.ndarray, points: np.ndarray
+) -> np.ndarray:
+    interpolated_y = np.interp(points[:, 0], curve_x, curve_y)
+    below_curve = points[:, 1] > interpolated_y
+    return below_curve

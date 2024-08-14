@@ -81,7 +81,7 @@ TODO:
 - [] Learining rate decay
 - [] Loss: MAE vs MSE in 3pinn
 - [] Zeit messen und vergleichen
-- [] C für den Loss random sampeln
+- [x] C für den Loss random sampeln
 - [] What if I use mean for the loss in FINN?
 - [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
     - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
