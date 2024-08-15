@@ -1,3 +1,10 @@
+# TODOs
+
+- [] What if I use mean for the loss in FINN?
+- [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
+    - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
+
+
 - Zu viel Noise notwendig, um Lücken zu füllen -> Residuum = Noise dann
 - Daher Datensätze (+, -) gleich mit Abweichung vom Mittelwert generieren
 - Trainiert OK mit std ca. gleich dem Wert der für Lückenfüllung notwendig ist. Wie kommt man an eine sinnvolle std?
@@ -78,15 +85,14 @@ A) 1. Zeitintervalle mit festem Seed = Modellunsicherheit aufgrund unvollständi
 ----
 TODO:
 - [x] 3pinn mit Zeitintervallen nimmt keinen Median im Moment
-- [] Learining rate decay
-- [] Loss: MAE vs MSE in 3pinn
-- [] Zeit messen und vergleichen
 - [x] C für den Loss random sampeln
-- [] What if I use mean for the loss in FINN?
-- [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
-    - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
+- [x] Loss: MAE vs MSE in 3pinn
+- [x] Learining rate decay
+- [] Zeit messen und vergleichen
+
 
 -----
 # Zeitmessungen:
-FINN, 251 timesteps, 100 epochen, 26 spatial steps, 7.75 minutes
-FINN, 251 timesteps, 100 epochen, 26 spatial steps, randomly masked c field for loss, 12 minutes
+FINN, 30 timesteps, 100 epochen, 26 spatial steps, 5 minutes
+FINN, 51 timesteps, 100 epochen, 26 spatial steps, 7.75 minutes
+FINN, 51 timesteps, 100 epochen, 26 spatial steps, randomly masked c field for loss, 12 minutes

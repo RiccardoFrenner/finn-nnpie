@@ -725,7 +725,7 @@ class Flux_Kernels_No_Ret(nn.Module):
 
 
 def train_network(
-    model, optimizer, criterion, train_loader, val_loader, max_epochs: int
+    model, optimizer, scheduler, criterion, train_loader, val_loader, max_epochs: int
 ) -> None:
     # early_stopper = EarlyStopper(patience=300, verbose=False)
 
@@ -740,17 +740,21 @@ def train_network(
             optimizer.step()
 
         # Validation phase
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for data, target in val_loader:
-                output = model(data)
-                loss_valid = criterion(output, target)
-                val_loss += loss_valid.item()
-        val_loss = val_loss / len(val_loader)
+        # model.eval()
+        # val_loss = 0.0
+        # with torch.no_grad():
+        #     for data, target in val_loader:
+        #         output = model(data)
+        #         loss_valid = criterion(output, target)
+        #         val_loss += loss_valid.item()
+        # val_loss = val_loss / len(val_loader)
 
         if epoch % max(1, max_epochs // 10) == 0:
-            print(f"Epoch {epoch}, Validation Loss: {val_loss:.6f}")
+            # print(f"Epoch {epoch}, Validation Loss: {val_loss:.6f}")
+            print(f"Epoch {epoch}, Train Loss: {loss_train:.6f}")
+
+        # Update learning rate scheduler
+        scheduler.step()
 
         # Check early stopping condition
         # early_stopper.update(val_loss, model)

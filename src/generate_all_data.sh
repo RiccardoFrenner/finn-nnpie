@@ -12,25 +12,25 @@ default_c_train="data/synthetic_data/retardation_freundlich/c_train.npy"
 # ./run_notebook.sh src/make_c_residual_data.ipynb
 
 
-echo "Train residual networks"
+# echo "Train residual networks"
 # export C_TYPE="tot"
 # export C_MODE="pos"
 # ./run_notebook.sh src/train_residual_net_tf.ipynb
-export C_TYPE="diss"
-export C_MODE="pos"
-./run_notebook.sh src/train_residual_net_tf.ipynb
-export C_TYPE="tot"
-export C_MODE="neg"
-./run_notebook.sh src/train_residual_net_tf.ipynb
-export C_TYPE="diss"
-export C_MODE="neg"
-./run_notebook.sh src/train_residual_net_tf.ipynb
+# export C_TYPE="diss"
+# export C_MODE="pos"
+# ./run_notebook.sh src/train_residual_net_tf.ipynb
+# export C_TYPE="tot"
+# export C_MODE="neg"
+# ./run_notebook.sh src/train_residual_net_tf.ipynb
+# export C_TYPE="diss"
+# export C_MODE="neg"
+# ./run_notebook.sh src/train_residual_net_tf.ipynb
 
 
 echo "Generate 3pinn std network training data for different quantiles"
-for quantile in 55 60 65 70 75 80 85 90 95
+for quantile in 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95
 do
-    python src/make_c_PI_datasets.py --quantile ${quantile}
+    python src/make_c_PI_datasets.py ${quantile}
 done
 
 
