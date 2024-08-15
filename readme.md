@@ -90,9 +90,19 @@ TODO:
 - [x] Learining rate decay
 - [] Zeit messen und vergleichen
 
+- [] c_train anschauen ob bestimmte konzentrationen da wo envelope schmall ist häufiger oder weniger häufig vorkommt.
+
 
 -----
 # Zeitmessungen:
-FINN, 30 timesteps, 100 epochen, 26 spatial steps, 5 minutes
-FINN, 51 timesteps, 100 epochen, 26 spatial steps, 7.75 minutes
-FINN, 51 timesteps, 100 epochen, 26 spatial steps, randomly masked c field for loss, 12 minutes
+FINN, 30 timesteps, 100 epochs, 26 spatial steps, 5 minutes
+FINN, 51 timesteps, 100 epochs, 26 spatial steps, 7.75 minutes
+FINN, 51 timesteps, 100 epochs, 26 spatial steps, randomly masked c field for loss, 12 minutes
+
+-----
+11:30
+- Vorstellung
+- FINN nur ganz kurz mit Problemstellung
+- 3pinn erklären
+- Ansätze für Unsicherheiten vorstellen
+- Ergebnisse

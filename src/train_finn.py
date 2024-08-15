@@ -562,13 +562,11 @@ def main(
     t_train = torch.from_numpy(t[skip:train_split_idx]).float()
     print(f"{t_train.shape=}")
 
-    # FIXME: This line is needed for normal training, the below for residual network training
     Y = (
         torch.from_numpy(np.load(y_train_path)[skip:train_split_idx])
         .float()
         .unsqueeze(-1)
     )
-    # Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
     num_vars = 2
     assert Y.shape == (
         len(t_train),
