@@ -14,7 +14,6 @@ seeds = [random.randint(10**4, 10**8) for _ in range(16)]
 commands = []
 for seed in seeds:
     output_dir = output_base_dir / f"{seed}"
-    output_dir.mkdir(exist_ok=True)
     command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed {98374543} --c_field_seed {seed}"
     commands.append(command)
 

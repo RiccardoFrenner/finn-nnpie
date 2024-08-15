@@ -8,13 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def make_dataset(mode="pos"):
-    base_dir = Path("data_out").resolve()
+def make_dataset(mode="pos", quantile=0.95):
+    base_dir = Path("data_out/default_finn").resolve()
     res_net_out_path = base_dir / "residual_nets_output"
 
-    full_residuals_diss = np.load(
-        res_net_out_path / f"predictions_{mode}_diss.npy"
-    )
+    full_residuals_diss = np.load(res_net_out_path / f"predictions_{mode}_diss.npy")
     full_residuals_tot = np.load(res_net_out_path / f"predictions_{mode}_tot.npy")
     # print(
     #     f"Min/Max {mode} residual diss: {full_residuals_diss.min()} {full_residuals_diss.max()}"
@@ -45,12 +43,13 @@ def make_dataset(mode="pos"):
     Y_finn_tot = Y_finn_tot.reshape(pcolor_shape)[:, np.newaxis, ...].copy()
 
     # load training data for mean network
-    Y_train = np.load(Path("data/synthetic_data/retardation_freundlich").resolve() / "c_train.npy")[:51]
+    Y_train = np.load(
+        Path("data/synthetic_data/retardation_freundlich").resolve() / "c_train.npy"
+    )[:51]
     Y_train_diss = Y_train[:, 0, ...][:, np.newaxis, ...]
     Y_train_tot = Y_train[:, 1, ...][:, np.newaxis, ...]
-    
+
     # shift PI datasets
-    quantile = 0.55
     if mode == "pos":
         Y_finn_diss += np.quantile(Y_train_diss - Y_finn_diss, quantile)
         Y_finn_tot += np.quantile(Y_train_tot - Y_finn_tot, quantile)
@@ -59,7 +58,11 @@ def make_dataset(mode="pos"):
         below_tot = (Y_train_tot < Y_finn_tot).sum() / Y_train_tot.size
         print(f"{mode} below diss: {below_diss*100:.1f}")
         print(f"{mode} below tot: {below_tot*100:.1f}")
-        assert below_diss >= quantile*0.9 and below_tot >= quantile*0.9, (below_diss, below_tot, quantile)
+        assert below_diss >= quantile * 0.9 and below_tot >= quantile * 0.9, (
+            below_diss,
+            below_tot,
+            quantile,
+        )
     elif mode == "neg":
         Y_finn_diss -= np.quantile(Y_finn_diss - Y_train_diss, quantile)
         Y_finn_tot -= np.quantile(Y_finn_tot - Y_train_tot, quantile)
@@ -68,10 +71,13 @@ def make_dataset(mode="pos"):
         above_tot = (Y_train_tot > Y_finn_tot).sum() / Y_train_tot.size
         print(f"{mode} above diss: {above_diss*100:.1f}")
         print(f"{mode} above tot: {above_tot*100:.1f}")
-        assert above_diss >= quantile*0.9 and above_tot >= quantile*0.9, (above_diss, above_tot, quantile)
+        assert above_diss >= quantile * 0.9 and above_tot >= quantile * 0.9, (
+            above_diss,
+            above_tot,
+            quantile,
+        )
     else:
         raise ValueError("mode must be 'pos' or 'neg'")
-        
 
     Y_finn = np.concatenate([Y_finn_diss, Y_finn_tot], axis=1)
 
@@ -82,5 +88,13 @@ def make_dataset(mode="pos"):
     # plt.show()
 
 
-make_dataset("pos")
-make_dataset("neg")
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("quantile", type=float)
+args = parser.parse_args()
+
+assert args.quantile > 0.5 and args.quantile < 1.0, args.quantile
+
+make_dataset("pos", quantile=args.quantile)
+make_dataset("neg", quantile=args.quantile)

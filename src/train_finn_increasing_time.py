@@ -1,22 +1,20 @@
-"""Train +/- FINN models for multiple quantiles with same seed."""
+"""Train mean FINN models for different time intervals."""
 
 import subprocess
 from pathlib import Path
 
 # Directory containing the y_train_path files
-input_dir = Path("data_out/default_finn/finn_stds_input")
+y_train_path = Path("data/synthetic_data/retardation_freundlich/c_train.npy")
 # Directory for output
-output_base_dir = Path("data_out/default_finn/finn_stds_output")
+output_base_dir = Path("data_out/finn_increasing_time")
 output_base_dir.mkdir(exist_ok=True)
 
-# Gather all y_train_path files in the input directory
-y_train_paths = list(input_dir.glob("*"))
 
 # Create a list of commands to be executed in parallel
 commands = []
-for y_train_path in y_train_paths:
-    output_dir = output_base_dir / y_train_path.stem
-    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed 34956765"
+for i in range(1, 30):
+    output_dir = output_base_dir / f"finn_increasing_time_{i}"
+    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {10*i} --seed 34956765"
     commands.append(command)
 
 # Write the commands to a temporary file
@@ -27,9 +25,7 @@ with commands_file.open("w") as f:
 
 # Execute the commands in parallel using GNU Parallel
 command = f"cat {commands_file} | parallel -j 8 --bar"
-subprocess.run(
-    command, check=True, shell=True
-)
+subprocess.run(command, check=True, shell=True)
 
 # Clean up the temporary file
 commands_file.unlink()
