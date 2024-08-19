@@ -4,7 +4,7 @@ import random
 import subprocess
 from pathlib import Path
 
-output_base_dir = Path("data_out/finn_different_seeds")
+output_base_dir = Path("data_out/finn_different_seeds_epochs_1000")
 output_base_dir.mkdir(exist_ok=True)
 y_train_path = Path("data/synthetic_data/retardation_freundlich/c_train.npy")
 
@@ -14,7 +14,7 @@ seeds = [random.randint(10**4, 10**8) for _ in range(16)]
 commands = []
 for seed in seeds:
     output_dir = output_base_dir / f"{seed}"
-    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed {seed}"
+    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed {seed} --max_epochs {1000}"
     commands.append(command)
 
 # Write the commands to a temporary file

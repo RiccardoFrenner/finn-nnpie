@@ -12,6 +12,7 @@ default_c_train="data/synthetic_data/retardation_freundlich/c_train.npy"
 # ./run_notebook.sh src/make_c_residual_data.ipynb
 
 
+# FIXME: Does somehow not work. Running these manually leads to conversion. But not if run like this.
 # echo "Train residual networks"
 # export C_TYPE="tot"
 # export C_MODE="pos"
@@ -27,22 +28,22 @@ default_c_train="data/synthetic_data/retardation_freundlich/c_train.npy"
 # ./run_notebook.sh src/train_residual_net_tf.ipynb
 
 
-echo "Generate 3pinn std network training data for different quantiles"
-for quantile in 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95
-do
-    python src/make_c_PI_datasets.py ${quantile}
-done
+# echo "Generate 3pinn std network training data for different quantiles"
+# for quantile in 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95
+# do
+#     python src/make_c_PI_datasets.py ${quantile}
+# done
 
 
 # train negative and positive c quantiles
-echo "Train std finns"
-python src/train_std_finns.py
+# echo "Train std finns"
+# python src/train_std_finns.py
 
 # echo "Train finns with different seeds"
 # python src/train_finn_different_seeds.py
 
-# echo "Train finn running intervals"
-# python src/train_finn_running_intervals.py
+echo "Train finn running intervals"
+python src/train_finn_running_intervals.py --max_epochs 1000
 
 # echo "Train finn increasing time"
 # python src/train_finn_increasing_time.py

@@ -1,7 +1,13 @@
 """Train mean FINN models for different time intervals."""
 
+import argparse
 import subprocess
 from pathlib import Path
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--max_epochs", type=int, default=100)
+args = parser.parse_args()
 
 # Directory containing the y_train_path files
 input_dir = Path("data/synthetic_data/retardation_freundlich/sub_intervals")
@@ -16,7 +22,7 @@ y_train_paths = [input_dir / f"c_{i}.npy" for i in range(16)]
 commands = []
 for y_train_path in y_train_paths:
     output_dir = output_base_dir / y_train_path.stem
-    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 30 --seed 34956765"
+    command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 30 --seed 34956765 --max_epochs {args.max_epochs}"
     commands.append(command)
 
 # Write the commands to a temporary file
