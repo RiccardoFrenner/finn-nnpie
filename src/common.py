@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -94,37 +93,46 @@ def pcolor_from_scatter(x, y, z, placeholder_value=0):
 
 
 def iter_final_retardation_files(
-    directory,
+    root,
     min_epoch: int=100,
     is_ret_OK: Optional[Callable[[np.ndarray], bool]] = None,
+    verbose: bool = False,
 ):
     """
     Iterate trough a directory containing multiple
     folders with FINN simulation results.
     Return the path to the final ret curve file.
     """
-    for p in (p for p in Path(directory).iterdir() if p.is_dir()):
+    finn_dirs = (p.parent for p in root.rglob("c_predictions.npy"))
+    for p in finn_dirs:
         all_ret_file_paths = sorted(
             (p / "predicted_retardations").glob("retPred_*.npy"),
             key=lambda x: int(x.stem.split("_")[-1]),
         )
         if not all_ret_file_paths:
-            shutil.rmtree(p)  # remove dirs that have no ret curves
+            if verbose:
+                print(f"Skipped {p} because no files found")
             continue
 
         epoch = int(all_ret_file_paths[-1].stem.split("_")[-1])
         if epoch < min_epoch:
+            if verbose:
+                print(f"Skipped {p} because epoch < {min_epoch}")
             continue
 
         ret = np.load(all_ret_file_paths[-1])
         if np.any(np.isnan(ret)):
+            if verbose:
+                print(f"Skipped {p} because ret contains NaNs")
             continue
 
         if is_ret_OK is not None:
             if not is_ret_OK(ret):
+                if verbose:
+                    print(f"Skipped {p} because ret is not OK")
                 continue
 
-        yield all_ret_file_paths[-1]
+        yield p, all_ret_file_paths[-1]
 
 
 def is_below_curve(
