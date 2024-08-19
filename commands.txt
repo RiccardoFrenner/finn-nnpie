@@ -1,0 +1,16 @@
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_0.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_0 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_1.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_1 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_2.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_2 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_3.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_3 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_4.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_4 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_5.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_5 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_6.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_6 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_7.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_7 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_8.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_8 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_9.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_9 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_10.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_10 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_11.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_11 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_12.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_12 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_13.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_13 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_14.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_14 --train_split_idx 30 --seed 34956765 --max_epochs 1000
+python src/train_finn.py data/synthetic_data/retardation_freundlich/sub_intervals/c_15.npy data_out/finn_running_intervals_stepsize_30_epochs_1000/c_15 --train_split_idx 30 --seed 34956765 --max_epochs 1000

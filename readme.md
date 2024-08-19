@@ -106,3 +106,6 @@ FINN, 51 timesteps, 100 epochs, 26 spatial steps, randomly masked c field for lo
 - 3pinn erklären
 - Ansätze für Unsicherheiten vorstellen
 - Ergebnisse
+
+# Interesting Observation for Running Intervals
+- It seems like only the first interval even converges (MSE < 1e-2)

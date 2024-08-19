@@ -12,7 +12,7 @@ args = parser.parse_args()
 # Directory containing the y_train_path files
 input_dir = Path("data/synthetic_data/retardation_freundlich/sub_intervals")
 # Directory for output
-output_base_dir = Path("data_out/finn_running_intervals_stepsize_30")
+output_base_dir = Path(f"data_out/finn_running_intervals_stepsize_30_epochs_{args.max_epochs}")
 output_base_dir.mkdir(exist_ok=True)
 
 # Gather all y_train_path files in the input directory

@@ -1,4 +1,6 @@
 default_c_train="data/synthetic_data/retardation_freundlich/c_train.npy"
+base_in_dir="data/synthetic_data/retardation_freundlich"
+base_out_dir="data_out"
 
 # TODO: Why 51 and not 251 as in paper?
 
@@ -50,3 +52,11 @@ python src/train_finn_running_intervals.py --max_epochs 1000
 
 # echo "Train finns with different loss patterns"
 # python src/train_finn_different_loss_patterns.py
+
+# echo "Train finn with first, second and third running interval but for many seeds to see if the latter converge at all"
+# for i in 0 1 2; do
+#     echo $i$/2
+#     seeds=$(for j in $(seq 1 5); do echo $RANDOM; done | xargs)
+#     parallel -j 8 --bar python src/train_finn.py ${base_in_dir}/sub_intervals/c_${i}.npy ${base_out_dir}/finn_first_running_intervals_stepsize_30_epochs_1000/c_${i}_seed_{} --train_split_idx 30 --seed {} --max_epochs 1000 ::: ${seeds}
+# done
+

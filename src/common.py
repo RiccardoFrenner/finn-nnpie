@@ -126,6 +126,16 @@ def iter_final_retardation_files(
                 print(f"Skipped {p} because ret contains NaNs")
             continue
 
+        if np.any(np.isinf(ret)):
+            if verbose:
+                print(f"Skipped {p} because ret contains infs")
+            continue
+
+        if np.any(ret > 1e6) or np.any(ret < 1e-6):
+            if verbose:
+                print(f"Skipped {p} because ret is not in [1e-6, 1e6]")
+            continue
+
         if is_ret_OK is not None:
             if not is_ret_OK(ret):
                 if verbose:
