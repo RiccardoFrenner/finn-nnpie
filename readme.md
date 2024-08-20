@@ -89,6 +89,7 @@ TODO:
 - [x] Loss: MAE vs MSE in 3pinn
 - [x] Learining rate decay
 - [] Zeit messen und vergleichen
+- [] Von Kurven samplen und nicht uniform zwischen envelopes
 
 - [] c_train anschauen ob bestimmte konzentrationen da wo envelope schmall ist häufiger oder weniger häufig vorkommt.
 
@@ -109,3 +110,6 @@ FINN, 51 timesteps, 100 epochs, 26 spatial steps, randomly masked c field for lo
 
 # Interesting Observation for Running Intervals
 - It seems like only the first interval even converges (MSE < 1e-2)
+
+TODO
+- [] Compare Rs for running intervals epochs=100 and epochs=1000

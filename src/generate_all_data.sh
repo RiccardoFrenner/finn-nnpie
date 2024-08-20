@@ -42,10 +42,10 @@ base_out_dir="data_out"
 # python src/train_std_finns.py
 
 # echo "Train finns with different seeds"
-# python src/train_finn_different_seeds.py
+python src/train_finn_different_seeds.py
 
-echo "Train finn running intervals"
-python src/train_finn_running_intervals.py --max_epochs 1000
+# echo "Train finn running intervals"
+# python src/train_finn_running_intervals.py --max_epochs 1000
 
 # echo "Train finn increasing time"
 # python src/train_finn_increasing_time.py

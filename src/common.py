@@ -103,7 +103,7 @@ def iter_final_retardation_files(
     folders with FINN simulation results.
     Return the path to the final ret curve file.
     """
-    finn_dirs = (p.parent for p in root.rglob("c_predictions.npy"))
+    finn_dirs = (p.parent for p in root.rglob("u_ret.npy"))
     for p in finn_dirs:
         all_ret_file_paths = sorted(
             (p / "predicted_retardations").glob("retPred_*.npy"),
