@@ -113,3 +113,20 @@ FINN, 51 timesteps, 100 epochs, 26 spatial steps, randomly masked c field for lo
 
 TODO
 - [] Compare Rs for running intervals epochs=100 and epochs=1000
+
+----
+# 20.08.24
+Was ich vom Milestone mitgenommen habe:
+- Wir shiften den Fokus von "FINN mit 3PINN kombinieren" zu "Wie kann man/Welche Arten gibt es, FINN zu stören und wie sehen die Isotherme dafür aus? Und danach 3PINN als post-processing anwenden."
+- Welche Störungsart hat den größten Einfluss?
+- Wie kann man noch lokale Minima sampeln? Reicht verschiedene Seeds oder sollte man noch am Löser etwas ändern? Möglich wären Art des Optimierers, Early Stopping,
+- Langmuir statt Freundlich verwenden, da keine Singularität bei Null (und im Allgemeinen weil Langmuir physikalisch fundiert ist und Freundlich nicht (Freundlich hat auch unangenehme physikalische Einheiten))
+- "Analyseunsicherheit" ist besser als "Modellunsicherheit", weil Modellunsicherheit sich auf das mathematische Modell, also die PDE bezieht.
+    - Was ist aber wenn ich experimentelle Daten nehme? Habe ich dann nicht das Modell als dritte Unsicherheit immer dabei?
+    - Entfernt verwandt: Ist R(c) eigenlich mathematisch eindeutig mit gegebener PDE und Randbedingungen?
+- Datenunsicherheit entweder direkt mit experimentellen Daten oder mit Noise auf synthetischen. Parameter des Noises entweder durch Residuen mit exp. Daten oder von Laboranmerkungen (sollte es öffentlich auf Github? wohl geben) ableiten.
+- Auch verschiedene Störungen zusammen sampeln (z.B. Noise auf Daten + Seeds (Braucht auch nicht mehr Samples, weil MC dimensionsunabhängig ist.)). Das kann dann mit MCMC von Timothy verglichen werden, da dies auch beide Unsicherheiten zusammen betrachtet.
+- Die zwei Schnittpunkte der Isothermen in allen Methoden könnten Ursache von globaler, hidden Features dieses Problems (oder dieser Daten? (Man könnte mal schauen ob für andere Daten die gleichen Punkte auftreten.)) sein.
+- Warum sind alle Rs bei großem c größer als Freundlich R? Dazu wurde was gesagt, aber weiß nicht sicher mehr was. (Ich erinnere mich vage, dass möglicherweise die potenziell unterschiedlichen Vorwärtslöser, die in FINN und für die Trainingsdaten verwendet wurden, als Ursache dafür postuliert wurden.)
+
+
