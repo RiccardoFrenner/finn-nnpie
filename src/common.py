@@ -22,13 +22,16 @@ class AnalyticRetardation:
         return 1 + (1 - por) / por * rho_s * smax * Kl / ((u + Kl) ** 2)
 
 
-def create_mlp(layers: list[int], activation_fun, activation_fun_end):
+def create_mlp(layers: list[int], activation_fun, activation_fun_end, dropout: int = 0):
     network_layers = []
 
     for i in range(len(layers) - 1):
         network_layers.append(nn.Linear(layers[i], layers[i + 1]))
         if i < len(layers) - 2:
             network_layers.append(activation_fun)
+            if dropout > 0:
+                print("Adding dropout")
+                network_layers.append(nn.Dropout(p=dropout/100.0))
 
     network_layers.append(activation_fun_end)
 

@@ -538,6 +538,7 @@ def main(
     max_epochs: int = 100,
     seed: int | None = None,
     c_field_seed: int | None = None,
+    dropout: int = 0,
 ):
     if seed is None:
         seed = int(time.time()) % 10**8
@@ -549,6 +550,7 @@ def main(
     print(f"Max epochs: {max_epochs}")
     print(f"Seed: {seed}")
     print(f"C-Loss Seed: {c_field_seed}")
+    print(f"Dropout: {dropout}")
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -587,7 +589,7 @@ def main(
     model = ConcentrationPredictor(
         u0=u0,
         cfg=cfg,
-        ret_inv_funs=[create_mlp([1, 15, 15, 15, 1], nn.Tanh(), nn.Sigmoid()), None],
+        ret_inv_funs=[create_mlp([1, 15, 15, 15, 1], nn.Tanh(), nn.Sigmoid(), dropout=dropout), None],
     )
 
     # Train the model
@@ -628,8 +630,23 @@ if __name__ == "__main__":
         type=int,
         help="If not None only a random subset of the concentration field will be used in the loss computation.",
     )
+    parser.add_argument(
+        "--dropout",
+        type=int,
+        help="Dropout rate (in percent) for the R(c) MLP. 0 to disable.",
+    )
     args = vars(parser.parse_args())
     model, t_train, Y = main(**args)
+
+    if args["dropout"] > 0:
+        u = torch.linspace(0,1,100).reshape(-1, 1)
+        n_ensemble = 200
+        rs_with_dropout = np.zeros((n_ensemble, len(u)))
+        model.train()
+        with torch.no_grad():
+            for i in range(n_ensemble):
+                rs_with_dropout[i] = model.retardation(u).numpy().reshape(-1)
+        np.save(args["output_dir"] / "dropout_retardations.npy", rs_with_dropout)
 
     model.eval()
     with torch.no_grad():

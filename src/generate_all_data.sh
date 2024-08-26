@@ -42,7 +42,7 @@ base_out_dir="data_out"
 # python src/train_std_finns.py
 
 # echo "Train finns with different seeds"
-python src/train_finn_different_seeds.py
+# python src/train_finn_different_seeds.py
 
 # echo "Train finn running intervals"
 # python src/train_finn_running_intervals.py --max_epochs 1000
@@ -60,3 +60,10 @@ python src/train_finn_different_seeds.py
 #     parallel -j 8 --bar python src/train_finn.py ${base_in_dir}/sub_intervals/c_${i}.npy ${base_out_dir}/finn_first_running_intervals_stepsize_30_epochs_1000/c_${i}_seed_{} --train_split_idx 30 --seed {} --max_epochs 1000 ::: ${seeds}
 # done
 
+# echo "Train FINN with c plus noise"
+# python src/train_finn_c_plus_noise.py --max_epochs 100
+
+echo "Train FINN with dropout"
+python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=10" -s 51 --skip 0 --max_epochs 100 --seed 2134834 --dropout 10
+python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=50" -s 51 --skip 0 --max_epochs 100 --seed 3485637 --dropout 50
+python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=90" -s 51 --skip 0 --max_epochs 100 --seed 9837432 --dropout 90
