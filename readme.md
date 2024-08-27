@@ -4,6 +4,7 @@
 - [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
     - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
 
+-----
 
 - Zu viel Noise notwendig, um Lücken zu füllen -> Residuum = Noise dann
 - Daher Datensätze (+, -) gleich mit Abweichung vom Mittelwert generieren
@@ -121,7 +122,7 @@ Was ich vom Milestone mitgenommen habe:
 - Welche Störungsart hat den größten Einfluss?
 - Wie kann man noch lokale Minima sampeln? Reicht verschiedene Seeds oder sollte man noch am Löser etwas ändern? Möglich wären Art des Optimierers, Early Stopping,
 - Langmuir statt Freundlich verwenden, da keine Singularität bei Null (und im Allgemeinen weil Langmuir physikalisch fundiert ist und Freundlich nicht (Freundlich hat auch unangenehme physikalische Einheiten))
-- "Analyseunsicherheit" ist besser als "Modellunsicherheit", weil Modellunsicherheit sich auf das mathematische Modell, also die PDE bezieht.
+- "Analyseunsicherheit" ist besseres Wort als "Modellunsicherheit", weil Modellunsicherheit sich auf das mathematische Modell, also die PDE bezieht.
     - Was ist aber wenn ich experimentelle Daten nehme? Habe ich dann nicht das Modell als dritte Unsicherheit immer dabei?
     - Entfernt verwandt: Ist R(c) eigenlich mathematisch eindeutig mit gegebener PDE und Randbedingungen?
 - Datenunsicherheit entweder direkt mit experimentellen Daten oder mit Noise auf synthetischen. Parameter des Noises entweder durch Residuen mit exp. Daten oder von Laboranmerkungen (sollte es öffentlich auf Github? wohl geben) ableiten.
@@ -129,4 +130,20 @@ Was ich vom Milestone mitgenommen habe:
 - Die zwei Schnittpunkte der Isothermen in allen Methoden könnten Ursache von globaler, hidden Features dieses Problems (oder dieser Daten? (Man könnte mal schauen ob für andere Daten die gleichen Punkte auftreten.)) sein.
 - Warum sind alle Rs bei großem c größer als Freundlich R? Dazu wurde was gesagt, aber weiß nicht sicher mehr was. (Ich erinnere mich vage, dass möglicherweise die potenziell unterschiedlichen Vorwärtslöser, die in FINN und für die Trainingsdaten verwendet wurden, als Ursache dafür postuliert wurden.)
 
-
+-----
+# TODO
+- [] FINN Training für C mit Noise analysieren
+    - [x] Habe ich mit gleichen Anfangsgewichten trainiert?
+        - Ja, habe ich.
+    - [x] Warum konvergieren so viele nicht?
+        - [x] Wie definiere ich hier Konvergenz überhaupt? Die Fehler sind immer im Rahmen des Noises. MSE sagt mir ja nicht, ob ich immer noch einen guten Mean habe. Wenn die Daten unsicherer sind, ist auch der MSE größer, egal ob ich noch die gleich gute Mean Kurve bestimme. Deshalb würde es eigentlich mehr Sinn ergeben den MSE mit den ursprünglichen nicht-noisy Daten zu berechnen.
+            - **Bei vielen Daten steigt MSE(Model, Reality) nicht wirklich an, weil das Model eben durch den gleichmäßigen Noise die Realität noch erkennen kann.**
+            - **"MSE mit den ursprünglichen nicht-noisy Daten zu berechnen" ist MSE(Model, Reality). Bei FINN steigt dieser an, was aber an der geringen Datenmenge liegt. Was kann ich dann über die Konvergenz aussagen? Eigentlich bleibt mir nichts anderes übrig als trotzdem diesen MSE zu nehmen.**
+        - **Es konvergieren so wenig, weil das Sigma für die meisten zu groß ist und wenig Daten vorhanden sind. Ich weiß, keine wirklich zufriedenstellende Antwort, weil FINN ja eigentlich ohne viele Daten auskommen sollte, aber was besseres ist schwer zu sagen, ohne die generelle Konvergenz von FINN unter verschiedenen Bedinungen zu analysieren.**
+    - [x] Welche konvergieren überhaupt?
+        - **Diese Frage hätte sich mit der obigen "Definition" von Konvergenz geklärt. Interessant ist nur noch, dass auch stark (von der analytischen) abweichende Isotherme zu Konvergenz führen.**
+    - [x] Wieso kommen so krass unterschiedliche Isotherme raus? Wieso wird nicht immer die gleiche Isotherme gelernt, die die mittlere Konzentration lernt? Wenn ich nen Sinus mit unterschiedlichem Noise lerne, ist die Kurve ja auch immer gleich.
+        - **Nur wenn genug Daten vorhanden sind und nicht overfitted wird. Sollte eigentlich für FINN beides kein Problem sein. (TODO: Warum also doch?)**
+    - [] Wieso gibt es die eine R(c) Kurve die fast Steigung = 0 hat für c > 0.5?
+        - **Diese Kurve gibt es nicht nur einmal, sonder häufig. Ich weiß nicht, ob sie immer identisch ist (TODO), aber MSE(pred, real) ist schon mal unterschiedlich zwischen ihnen.**
+    - [] Welches Sigma wäre jetzt überhaupt realistisch?
