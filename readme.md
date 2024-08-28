@@ -132,8 +132,12 @@ Was ich vom Milestone mitgenommen habe:
 
 -----
 # TODO
-- [] FINN mit Langmuir scheint überhaupt nicht zu funktionieren. Siehe `analyze_finn_forward_code_differences.ipynb`. Weder mit github c_langmuir noch mit FINN forward c_langmuir.
-    - [] Schauen ob es mit dem originalen Code funktioniert.
+- [] Alle FINNs neu machen mit selfgen c
+    - [] Freundlich
+    - [] Langmuir
+- [x] FINN mit Langmuir scheint überhaupt nicht zu funktionieren. Siehe `analyze_finn_forward_code_differences.ipynb`. Weder mit github c_langmuir noch mit FINN forward c_langmuir.
+    - **Das Problem war mein Forward FINN Code und dass das github langmuir c scheinbar andere Parameter für die langmuir Isotherme verwendet hat. Ersichtlich aus dem riesigen Unterschied zwischen meiner Langmuir und den github c predicted langmuirs trotz kleinem c_pred error.**
+    - [o] Schauen ob es mit dem originalen Code funktioniert.
         - [] Cognitive Modelling: Hier wird die Datengenerierung explizit implementiert.
             - [x] Wie ist die Datengenerierung implementiert?
                 - **solve_ivp** von scipy. Wird aber nur für die Datengenerierung verwendet, nicht für FINN. Also auch unterschiedliche forward-codes.
@@ -145,7 +149,8 @@ Was ich vom Milestone mitgenommen habe:
         - [] Timothy: Hier könnte ich den Code wieder um die Datengenerierung erweitern wie schon mal gemacht.
             - [] Ergebnisse des umgeschriebenen Codes
             - [] Ergebnisse für Langmuir von github
-- [] Neues c_train erzeugen mit FINN forward Löser (statt dem bisherigen von Github c_train.csv)
+- [x] Neues c_train erzeugen mit FINN forward Löser (statt dem bisherigen von Github c_train.csv)
+    - **Alles egal, hatte falschen FINN forward Code. Siehe oben.**
     - **Tja, der FINN forward Code erzeugt ganz schön andere Ergebnisse. Linf-Fehler liegt für Langmuir bei ca. 0,4. Für Freundlich konvergiert es gar nicht. Der Linf-Fehler zwischen FINN-langmuir und FINN-linear ist viel geringer (0,07).**
     - [] Wie sieht es mit dem Datengenerierendem Code aus dem Fehlerhaften Github aus?
     - [] Wieso konvergiert hier Freundlich nicht?
