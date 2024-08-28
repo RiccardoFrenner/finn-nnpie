@@ -132,6 +132,25 @@ Was ich vom Milestone mitgenommen habe:
 
 -----
 # TODO
+- [] FINN mit Langmuir scheint überhaupt nicht zu funktionieren. Siehe `analyze_finn_forward_code_differences.ipynb`. Weder mit github c_langmuir noch mit FINN forward c_langmuir.
+    - [] Schauen ob es mit dem originalen Code funktioniert.
+        - [] Cognitive Modelling: Hier wird die Datengenerierung explizit implementiert.
+            - [x] Wie ist die Datengenerierung implementiert?
+                - **solve_ivp** von scipy. Wird aber nur für die Datengenerierung verwendet, nicht für FINN. Also auch unterschiedliche forward-codes.
+            - [] Nur zur Sicherheit schaue ich mir hier auch noch mal die Isotherme an
+                - [] Langmuir scipy
+                - [] Freundlich scipy
+                - [] Langmuir FINN forward (meine Modifikation)
+                - [] Freundlich FINN forward (meine Modifikation)
+        - [] Timothy: Hier könnte ich den Code wieder um die Datengenerierung erweitern wie schon mal gemacht.
+            - [] Ergebnisse des umgeschriebenen Codes
+            - [] Ergebnisse für Langmuir von github
+- [] Neues c_train erzeugen mit FINN forward Löser (statt dem bisherigen von Github c_train.csv)
+    - **Tja, der FINN forward Code erzeugt ganz schön andere Ergebnisse. Linf-Fehler liegt für Langmuir bei ca. 0,4. Für Freundlich konvergiert es gar nicht. Der Linf-Fehler zwischen FINN-langmuir und FINN-linear ist viel geringer (0,07).**
+    - [] Wie sieht es mit dem Datengenerierendem Code aus dem Fehlerhaften Github aus?
+    - [] Wieso konvergiert hier Freundlich nicht?
+    - [] Was ist der Unterschied zwischen der Trainingsergebnissen der beiden?
+    - [] Mit selfgen Langmuir braucht das Training Ewigkeiten. (100s für die meisten ersten Epochen statt den üblichen 20s)
 - [] FINN Training für C mit Noise analysieren
     - [x] Habe ich mit gleichen Anfangsgewichten trainiert?
         - Ja, habe ich.

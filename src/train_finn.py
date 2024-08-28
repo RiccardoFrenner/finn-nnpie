@@ -638,7 +638,7 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     model, t_train, Y = main(**args)
 
-    if args["dropout"] > 0:
+    if "dropout" in args and args["dropout"] > 0:
         u = torch.linspace(0,1,100).reshape(-1, 1)
         n_ensemble = 200
         rs_with_dropout = np.zeros((n_ensemble, len(u)))

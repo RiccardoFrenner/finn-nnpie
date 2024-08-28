@@ -63,7 +63,11 @@ base_out_dir="data_out"
 # echo "Train FINN with c plus noise"
 # python src/train_finn_c_plus_noise.py --max_epochs 100
 
-echo "Train FINN with dropout"
-python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=10" -s 51 --skip 0 --max_epochs 100 --seed 2134834 --dropout 10
-python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=50" -s 51 --skip 0 --max_epochs 100 --seed 3485637 --dropout 50
-python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=90" -s 51 --skip 0 --max_epochs 100 --seed 9837432 --dropout 90
+# echo "Train FINN with dropout"
+# python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=10" -s 51 --skip 0 --max_epochs 100 --seed 2134834 --dropout 10
+# python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=50" -s 51 --skip 0 --max_epochs 100 --seed 3485637 --dropout 50
+# python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=90" -s 51 --skip 0 --max_epochs 100 --seed 9837432 --dropout 90
+
+echo "Train FINN with github data and self-generated data to compare both"
+parallel --bar python src/train_finn.py "data/synthetic_data/FINN_forward_solver/retardation_{}/c_train.npy" "data_out/FINN_forward_tests/finn_{}_selfgen_c" -s 51 --skip 0 --max_epochs 100 --seed 123456 ::: langmuir freundlich linear
+parallel --bar python src/train_finn.py "data/synthetic_data/retardation_{}/c_train.npy" "data_out/FINN_forward_tests/finn_{}_github_c" -s 51 --skip 0 --max_epochs 100 --seed 123456 ::: langmuir freundlich linear
