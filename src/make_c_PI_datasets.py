@@ -2,14 +2,15 @@
 Creates the PI datasets for the FINN models (+, -) by using the mean predictions, median shifts and residual net predictions.
 """
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def make_dataset(mode="pos", quantile=0.95):
-    base_dir = Path("data_out/default_finn").resolve()
+def make_dataset(mode, quantile, ret_type):
+    base_dir = Path(f"data_out/{ret_type}/default_finn").resolve()
     res_net_out_path = base_dir / "residual_nets_output"
 
     full_residuals_diss = np.load(res_net_out_path / f"predictions_{mode}_diss.npy")
@@ -44,7 +45,7 @@ def make_dataset(mode="pos", quantile=0.95):
 
     # load training data for mean network
     Y_train = np.load(
-        Path("data/synthetic_data/retardation_freundlich").resolve() / "c_train.npy"
+        Path(f"data/FINN_forward_solver/retardation_{ret_type}").resolve() / "c_train.npy"
     )[:51]
     Y_train_diss = Y_train[:, 0, ...][:, np.newaxis, ...]
     Y_train_tot = Y_train[:, 1, ...][:, np.newaxis, ...]
@@ -85,16 +86,16 @@ def make_dataset(mode="pos", quantile=0.95):
     out_dir.mkdir(exist_ok=True, parents=True)
     np.save(out_dir / f"Y_{mode}_finn_quantile={int(quantile*100)}.npy", Y_finn)
 
-    # plt.show()
 
 
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("quantile", type=float)
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("quantile", type=float)
+    parser.add_argument("--ret_type", type=str, default="langmuir")
+    args = vars(parser.parse_args())
 
-assert args.quantile > 0.5 and args.quantile < 1.0, args.quantile
+    assert args["quantile"] > 0.5 and args["quantile"] < 1.0, args["quantile"]
 
-make_dataset("pos", quantile=args.quantile)
-make_dataset("neg", quantile=args.quantile)
+    make_dataset(mode="pos", **args)
+    make_dataset(mode="neg", **args)
