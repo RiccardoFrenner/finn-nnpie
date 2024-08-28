@@ -134,7 +134,7 @@ Was ich vom Milestone mitgenommen habe:
 # TODO
 - [] Alle FINNs neu machen mit selfgen c
     - [] Freundlich
-    - [] Langmuir
+    - [x] Langmuir
 - [x] FINN mit Langmuir scheint überhaupt nicht zu funktionieren. Siehe `analyze_finn_forward_code_differences.ipynb`. Weder mit github c_langmuir noch mit FINN forward c_langmuir.
     - **Das Problem war mein Forward FINN Code und dass das github langmuir c scheinbar andere Parameter für die langmuir Isotherme verwendet hat. Ersichtlich aus dem riesigen Unterschied zwischen meiner Langmuir und den github c predicted langmuirs trotz kleinem c_pred error.**
     - [o] Schauen ob es mit dem originalen Code funktioniert.

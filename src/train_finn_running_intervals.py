@@ -11,7 +11,7 @@ def main(ret_type: str, max_epochs: int, step_size: int):
     data_in_dir = Path("data/FINN_forward_solver/")
 
     # Directory containing the y_train_path files
-    input_dir = data_in_dir / f"retardation_{ret_type}/sub_intervals"
+    input_dir = data_in_dir / f"retardation_{ret_type}/sub_intervals_{step_size}"
 
     # Dataset generation
     input_dir.mkdir(exist_ok=True, parents=True)
@@ -34,13 +34,13 @@ def main(ret_type: str, max_epochs: int, step_size: int):
     output_base_dir.mkdir(exist_ok=True)
 
     # Gather all y_train_path files in the input directory
-    y_train_paths = [input_dir / f"c_{i}.npy" for i in range(16)]
+    y_train_paths = [input_dir / f"c_{i}.npy" for i in range(12)]
 
     # Create a list of commands to be executed in parallel
     commands = []
     for y_train_path in y_train_paths:
         output_dir = output_base_dir / y_train_path.stem
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 30 --seed 34956765 --max_epochs {max_epochs}"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {step_size} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 
     # Write the commands to a temporary file
