@@ -1,17 +1,17 @@
-for analytical_ret in "langmuir" "freundlich"; do
+for analytical_ret in "freundlich"; do
 
     base_in_dir="data/FINN_forward_solver/retardation_${analytical_ret}"
     default_c_train="${base_in_dir}/c_train.npy"
     base_out_dir="data_out"
 
-    max_epochs=100
+    max_epochs=10
 
     # TODO: Why 51 and not 251 as in paper?
 
 
     # train finn with default parameters. used for residual training data to perform 3pinn on that and just to have the data for plots to compare against
-    # echo "Train finn with default parameters"
-    # python src/train_finn.py ${default_c_train} "data_out/${analytical_ret}/default_finn" -s 51 --skip 0 --max_epochs ${max_epochs} --seed 564345
+    echo "Train finn with default parameters"
+    python src/train_finn.py ${default_c_train} "data_out/${analytical_ret}/default_finn" -s 51 --skip 0 --max_epochs ${max_epochs} --seed 564345
 
 
     # echo "Generate 3pinn residual training data for C"
@@ -32,11 +32,11 @@ for analytical_ret in "langmuir" "freundlich"; do
     echo "Train finn running intervals"
     python src/train_finn_running_intervals.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --step_size 51
 
-    echo "Train finn increasing time"
-    python src/train_finn_increasing_time.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
+    # echo "Train finn increasing time"
+    # python src/train_finn_increasing_time.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
-    # echo "Train finns with different loss patterns"
-    # python src/train_finn_different_loss_patterns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
+    echo "Train finns with different loss patterns"
+    python src/train_finn_different_loss_patterns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
     # echo "Train finn with first, second and third running interval but for many seeds to see if the latter converge at all"
     # for i in 0 1 2; do
@@ -49,8 +49,8 @@ for analytical_ret in "langmuir" "freundlich"; do
     python src/train_finn_c_plus_noise.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
     # train negative and positive c quantiles
-    echo "Train std finns"
-    python src/train_std_finns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
+    # echo "Train std finns"
+    # python src/train_std_finns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
     # echo "Train FINN with dropout"
     # python src/train_finn.py ${default_c_train} "data_out/finn_with_dropout/p=10" -s 51 --skip 0 --max_epochs ${max_epochs} --seed 2134834 --dropout 10
@@ -71,7 +71,6 @@ for analytical_ret in "langmuir" "freundlich"; do
 
 done
 
-python src/train_finn_different_loss_patterns.py --ret_type freundlich --max_epochs 100
 python src/train_finn_different_loss_patterns.py --ret_type langmuir --max_epochs 10
 
 echo "DONE!!=!"

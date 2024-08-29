@@ -171,3 +171,21 @@ Was ich vom Milestone mitgenommen habe:
     - [] Wieso gibt es die eine R(c) Kurve die fast Steigung = 0 hat für c > 0.5?
         - **Diese Kurve gibt es nicht nur einmal, sonder häufig. Ich weiß nicht, ob sie immer identisch ist (TODO), aber MSE(pred, real) ist schon mal unterschiedlich zwischen ihnen.**
     - [] Welches Sigma wäre jetzt überhaupt realistisch?
+
+
+# Meeting 29.08.24
+## Milestone
+- Fokuswechsel: Wie kann man FINN stören?
+    - Welche Störungsart hat größten Einfluss?
+    - Wie kann man lokale Minima noch sampeln?
+        - Anfangsgewichte
+        - Dropout?
+        - Wahl des Optimierers / seiner Parameter?
+- "Analyseunsicherheit" statt "Modellunsicherheit" als Wort verwenden.
+    - Was wenn wir experimentelle Daten nehmen? Haben wir dann nicht auch Modellunsicherheit? (Vergleiche mit Ergebnissen durch Wechseln zu FINN forward solver)
+- Entfernt: Ist R(c) eindeutig?
+
+## Neue Ergebnisse
+- Datenunsicherheit via Noise auf Synthetic C
+- FINN als Forwärtslöser statt Daten von Github (+ Langmuir statt Freundlich)
+- 
