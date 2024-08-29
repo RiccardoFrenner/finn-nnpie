@@ -188,4 +188,10 @@ Was ich vom Milestone mitgenommen habe:
 ## Neue Ergebnisse
 - Datenunsicherheit via Noise auf Synthetic C
 - FINN als Forwärtslöser statt Daten von Github (+ Langmuir statt Freundlich)
-- 
+- MSE(c_pred,c_train) für running intervals
+
+## Weiteres Vorgehen
+- Masterarbeit wolfgang 2000? Waterloo, sonst timothy (für noise parameter)
+- Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
+- Matze Gültig (FINN mit PEFAS), Juni Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
+- Gliederung schreiben
