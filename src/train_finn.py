@@ -16,7 +16,6 @@ def main(
     y_train_path: Path,
     output_dir: Path,
     train_split_idx: int | None = None,
-    skip: int = 0,
     max_epochs: int = 100,
     seed: int | None = None,
     c_field_seed: int | None = None,
@@ -28,7 +27,6 @@ def main(
     print(f"Loading data from {y_train_path}")
     print(f"Saving files to {output_dir}")
     print(f"Train split index: {train_split_idx}")
-    print(f"Skip: {skip}")
     print(f"Max epochs: {max_epochs}")
     print(f"Seed: {seed}")
     print(f"C-Loss Seed: {c_field_seed}")
@@ -39,18 +37,11 @@ def main(
     random.seed(seed)
     np.random.seed(seed)
 
-    if train_split_idx is not None:
-        assert skip < train_split_idx, (skip, train_split_idx)
-
     t = np.linspace(0.0, cfg.T, cfg.Nt)
-    t_train = torch.from_numpy(t[skip:train_split_idx]).float()
+    t_train = torch.from_numpy(t[:train_split_idx]).float()
     print(f"{t_train.shape=}")
 
-    Y = (
-        torch.from_numpy(np.load(y_train_path)[skip:train_split_idx])
-        .float()
-        .unsqueeze(-1)
-    )
+    Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
     num_vars = 2
     assert Y.shape == (
         len(t_train),
@@ -102,11 +93,6 @@ if __name__ == "__main__":
         "--train_split_idx",
         type=int,
         help="Index after which to split the training data.",
-    )
-    parser.add_argument(
-        "--skip",
-        type=int,
-        help="How many time steps to skip in the training data.",
     )
     parser.add_argument("--max_epochs", type=int)
     parser.add_argument("--seed", type=int)
