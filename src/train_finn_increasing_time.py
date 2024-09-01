@@ -15,8 +15,9 @@ def main(ret_type: str, max_epochs: int):
     # Create a list of commands to be executed in parallel
     commands = []
     for i in range(1, 30):
-        output_dir = output_base_dir / f"finn_increasing_time_{i}"
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {10*i} --seed 34956765 --max_epochs {max_epochs}"
+        n_steps = 10*i
+        output_dir = output_base_dir / f"finn_increasing_time_tend_{n_steps}"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_steps} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 
     # Write the commands to a temporary file
