@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
+from common import random_fixed_length_seed
 
 def main(ret_type: str, max_epochs: int, step_size: int):
     data_in_dir = Path("data/FINN_forward_solver/")
@@ -29,9 +30,9 @@ def main(ret_type: str, max_epochs: int, step_size: int):
 
     # Directory for output
     output_base_dir = Path(
-        f"data_out/{ret_type}/finn_running_intervals_stepsize_{step_size}_epochs_{max_epochs}"
+        f"data_out/{ret_type}/finn_running_intervals/stepsize_{step_size}"
     )
-    output_base_dir.mkdir(exist_ok=True)
+    output_base_dir.mkdir(exist_ok=True, parents=True)
 
     # Gather all y_train_path files in the input directory
     y_train_paths = [input_dir / f"c_{i}.npy" for i in range(12)]
@@ -39,7 +40,7 @@ def main(ret_type: str, max_epochs: int, step_size: int):
     # Create a list of commands to be executed in parallel
     commands = []
     for y_train_path in y_train_paths:
-        output_dir = output_base_dir / y_train_path.stem
+        output_dir = output_base_dir / f"{random_fixed_length_seed()}_finn_running_intervals"
         command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {step_size} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 

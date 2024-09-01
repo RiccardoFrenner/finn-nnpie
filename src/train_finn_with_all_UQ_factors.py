@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
+from common import random_fixed_length_seed
+
 N_RUNS = 10
 
 def main(ret_type: str, max_epochs: int, n_timesteps: int):
@@ -25,8 +27,8 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
         np.save(out_path, c_noise)
 
     # Directory for output
-    output_base_dir = Path(f"data_out/{ret_type}/finn_all_UQ_factors_epochs_{max_epochs}")
-    output_base_dir.mkdir(exist_ok=True)
+    output_base_dir = Path(f"data_out/{ret_type}/finn_all_UQ_factors")
+    output_base_dir.mkdir(exist_ok=True, parents=True)
 
     # Gather all y_train_path files in the input directory
     y_train_paths = list(input_dir.glob("cFullNoise*.npy"))
@@ -35,7 +37,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     commands = []
     for y_train_path in y_train_paths:
         seed = rng.integers(10**9, 10**10 - 1)
-        output_dir = output_base_dir / y_train_path.stem
+        output_dir = output_base_dir / f"{random_fixed_length_seed}_{y_train_path.stem}_finn_all_UQ_factors"
         command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_timesteps} --seed {seed} --max_epochs {max_epochs} --c_field_seed {seed}"
         commands.append(command)
 

@@ -674,3 +674,6 @@ def is_above_curve(
     interpolated_y = np.interp(points[:, 0], curve_x, curve_y)
     below_curve = points[:, 1] > interpolated_y
     return below_curve
+
+def random_fixed_length_seed():
+    return np.random.randint(10**9, 10**10 - 1)

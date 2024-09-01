@@ -1,4 +1,6 @@
 import argparse
+import json
+import pprint
 import random
 import shutil
 import time
@@ -24,13 +26,16 @@ def main(
     if seed is None:
         seed = int(time.time()) % 10**8
 
-    print(f"Loading data from {y_train_path}")
-    print(f"Saving files to {output_dir}")
-    print(f"Train split index: {train_split_idx}")
-    print(f"Max epochs: {max_epochs}")
-    print(f"Seed: {seed}")
-    print(f"C-Loss Seed: {c_field_seed}")
-    print(f"Dropout: {dropout}")
+    input_dir = {
+        "y_train_path": y_train_path,
+        "output_dir": output_dir,
+        "train_split_idx": train_split_idx,
+        "max_epochs": max_epochs,
+        "seed": seed,
+        "c_field_seed": c_field_seed,
+        "dropout": dropout,
+    }
+    pprint.pprint(input_dir)
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -53,13 +58,6 @@ def main(
     ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
     assert Y.shape[0] == train_split_idx
 
-    clear_dirs = False
-    if clear_dirs and output_dir.exists():
-        shutil.rmtree(output_dir)
-    elif output_dir.exists():
-        raise ValueError(f"Folder {output_dir} already exists.")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     u0 = Y_train[0].clone()
     model = ConcentrationPredictor(
         u0=u0,
@@ -70,16 +68,31 @@ def main(
         ],
     )
 
+    clear_dirs = False
+    if clear_dirs and output_dir.exists():
+        shutil.rmtree(output_dir)
+    elif output_dir.exists():
+        raise ValueError(f"Folder {output_dir} already exists.")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_dir / "input.json", "w") as f:
+        json.dump(input_dir, f, indent=4)
+
     # Train the model
     model.run_training(
-        t=t_train, u_train=Y_train, out_dir=output_dir, max_epochs=max_epochs, c_field_seed=c_field_seed
+        t=t_train,
+        u_train=Y_train,
+        out_dir=output_dir,
+        max_epochs=max_epochs,
+        c_field_seed=c_field_seed,
     )
 
     model.eval()
     with torch.no_grad():
         c_predictions = model(t)
     np.save(args["output_dir"] / "c_full.npy", Y.detach().numpy())
-    np.save(args["output_dir"] / "c_full_predictions.npy", c_predictions.detach().numpy())
+    np.save(
+        args["output_dir"] / "c_full_predictions.npy", c_predictions.detach().numpy()
+    )
 
     return model, t_train, Y_train
 
@@ -131,4 +144,6 @@ if __name__ == "__main__":
     model.eval()
     with torch.no_grad():
         c_predictions = model(t_train)
-    np.save(args["output_dir"] / "c_train_predictions.npy", c_predictions.detach().numpy())
+    np.save(
+        args["output_dir"] / "c_train_predictions.npy", c_predictions.detach().numpy()
+    )

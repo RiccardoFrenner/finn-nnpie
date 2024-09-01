@@ -1,10 +1,11 @@
 """Train mean FINN models for different noise on c_train."""
-#FIXME: Just completely in general: Folder paths should be more generic and not contain all params.
+
 import argparse
 import subprocess
 from pathlib import Path
 
 import numpy as np
+from common import random_fixed_length_seed
 
 
 def main(ret_type: str, max_epochs: int, n_timesteps: int):
@@ -13,7 +14,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     input_dir.mkdir(exist_ok=True, parents=True)
 
     # generate c data with noise
-    rng = np.random.default_rng(329476)
+    rng = np.random.default_rng()
     c_full = np.load(Path(f"data/FINN_forward_solver/retardation_{ret_type}/c_train.npy"))
     sigma_min = 1e-3
     for i in range(1, 9):
@@ -24,8 +25,8 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
             np.save(out_path, c_noise)
     
     # Directory for output
-    output_base_dir = Path(f"data_out/{ret_type}/finn_c_plus_noise_epochs_{max_epochs}")
-    output_base_dir.mkdir(exist_ok=True)
+    output_base_dir = Path(f"data_out/{ret_type}/finn_c_plus_noise")
+    output_base_dir.mkdir(exist_ok=True, parents=True)
 
     # Gather all y_train_path files in the input directory
     y_train_paths = list(input_dir.glob("cFullNoise*.npy"))
@@ -33,7 +34,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     # Create a list of commands to be executed in parallel
     commands = []
     for y_train_path in y_train_paths:
-        output_dir = output_base_dir / y_train_path.stem
+        output_dir = output_base_dir / f"{random_fixed_length_seed()}_{y_train_path.stem}_finn_c_plus_noise"
         command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_timesteps} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 

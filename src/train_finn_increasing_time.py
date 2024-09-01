@@ -4,19 +4,20 @@ import argparse
 import subprocess
 from pathlib import Path
 
+from common import random_fixed_length_seed
 
 def main(ret_type: str, max_epochs: int):
     # Directory containing the y_train_path files
     y_train_path = Path(f"data/FINN_forward_solver/retardation_{ret_type}/c_train.npy")
     # Directory for output
-    output_base_dir = Path(f"data_out/{ret_type}/finn_increasing_time_epochs_{max_epochs}")
-    output_base_dir.mkdir(exist_ok=True)
+    output_base_dir = Path(f"data_out/{ret_type}/finn_increasing_time")
+    output_base_dir.mkdir(exist_ok=True, parents=True)
 
     # Create a list of commands to be executed in parallel
     commands = []
     for i in range(1, 30):
         n_steps = 10*i
-        output_dir = output_base_dir / f"finn_increasing_time_tend_{n_steps}"
+        output_dir = output_base_dir / f"{random_fixed_length_seed()}_finn_increasing_time"
         command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_steps} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 
