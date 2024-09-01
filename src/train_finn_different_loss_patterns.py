@@ -19,7 +19,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     commands = []
     for seed in seeds:
         output_dir = output_base_dir / f"{seed}_finn_different_loss_patterns"
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_timesteps} --seed {98374543} --c_field_seed {seed} --max_epochs {max_epochs}"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_timesteps} --seed 98374543 --c_field_seed {seed} --max_epochs {max_epochs}"
         commands.append(command)
 
     # Write the commands to a temporary file

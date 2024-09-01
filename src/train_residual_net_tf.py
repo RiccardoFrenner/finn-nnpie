@@ -1,4 +1,5 @@
 # %%
+import json
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
@@ -46,6 +47,8 @@ class ProgramOptions:
 
 
 base_dir = Path(f"data_out/{clargs.ret_type}/default_finn").resolve()
+Nt = json.loads((base_dir / "input.json").read_text())["train_split_index"]
+Nx = 26  # TODO: Read from cfg?
 base_input_dir = base_dir / "residual_training_data"
 args = ProgramOptions(
     x_train=base_input_dir / f"X_{MODE}_train_{C_TYPE}.npy",
@@ -76,7 +79,7 @@ if len(y_train.shape) == 1:
 
 # %%
 # --- Transform data ---
-T_MAX = 251  # FIXME: This is not good. Only works if we have 51 time steps?
+T_MAX = max(x_train.max(), x_test.max())
 y_scaler = MinMaxScaler()
 
 # make data positive
@@ -168,8 +171,8 @@ train_loss = model.evaluate(x_train, y_train, verbose=0)
 print(f"Train Loss: {train_loss:.4f}")
 
 # Generate predictions for plotting
-t_range = np.linspace(0.0, 1.0, 51)
-x_range = np.linspace(0.0, 1.0, 26)
+t_range = np.linspace(0.0, 1.0, Nt)
+x_range = np.linspace(0.0, 1.0, Nx)
 X, T = np.meshgrid(x_range, t_range)
 X_full = np.c_[T.ravel(), X.ravel()]
 
@@ -243,6 +246,6 @@ if SAVE_DATA:
 fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
 plt.title("Full Prediction")
 axs[0].scatter(*X_full.T, c=y_pred_full)
-axs[1].pcolor(y_pred_full.reshape(51, 26).T)
+axs[1].pcolor(y_pred_full.reshape(Nt, Nx).T)
 
 fig.savefig(image_out_dir / f"predictions_pcolor_{MODE}_{C_TYPE}.png")

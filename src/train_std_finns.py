@@ -1,15 +1,17 @@
 """Train +/- FINN models for multiple quantiles with same seed."""
 
+# FIXME: Rename this file to: train_finn_stds
 import subprocess
 import argparse
 from pathlib import Path
 
+from common import random_fixed_length_seed
 
-def main(ret_type: str, max_epochs: int):
+def main(ret_type: str, max_epochs: int, train_split_idx: int):
     # Directory containing the y_train_path files
     input_dir = Path(f"data_out/{ret_type}/default_finn/finn_stds_input")
     # Directory for output
-    output_base_dir = Path(f"data_out/{ret_type}/default_finn/finn_stds_output_epochs_{max_epochs}")
+    output_base_dir = Path(f"data_out/{ret_type}/default_finn/finn_stds_output")
     output_base_dir.mkdir(exist_ok=True)
 
     # Gather all y_train_path files in the input directory
@@ -18,8 +20,8 @@ def main(ret_type: str, max_epochs: int):
     # Create a list of commands to be executed in parallel
     commands = []
     for y_train_path in y_train_paths:
-        output_dir = output_base_dir / y_train_path.stem
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx 51 --seed 34956765 --max_epochs {max_epochs}"
+        output_dir = output_base_dir / f"{random_fixed_length_seed()}_{y_train_path.stem}_finn_stds"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {train_split_idx} --seed 34956765 --max_epochs {max_epochs}"
         commands.append(command)
 
     # Write the commands to a temporary file
@@ -42,5 +44,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--ret_type", type=str, default="langmuir")
     parser.add_argument("--max_epochs", type=int, default=100)
+    parser.add_argument("--train_split_idx", type=int, default=51)
     args = vars(parser.parse_args())
     main(**args)

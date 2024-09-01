@@ -2,6 +2,7 @@
 Creates the PI datasets for the FINN models (+, -) by using the mean predictions, median shifts and residual net predictions.
 """
 
+import json
 import argparse
 from pathlib import Path
 
@@ -11,6 +12,8 @@ import numpy as np
 
 def make_dataset(mode, quantile, ret_type):
     base_dir = Path(f"data_out/{ret_type}/default_finn").resolve()
+    Nt = json.loads((base_dir / "input.json").read_text())["Nt"]
+    Nx = 26  # TODO
     res_net_out_path = base_dir / "residual_nets_output"
 
     full_residuals_diss = np.load(res_net_out_path / f"predictions_{mode}_diss.npy")
@@ -36,7 +39,7 @@ def make_dataset(mode, quantile, ret_type):
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6))
     fig.suptitle(f"{mode} FINN PI datasets")
-    pcolor_shape = (51, 26)
+    pcolor_shape = (Nt, Nx)
     ax1.pcolor(Y_finn_diss.reshape(pcolor_shape).T)
     ax2.pcolor(Y_finn_tot.reshape(pcolor_shape).T)
 
@@ -44,9 +47,7 @@ def make_dataset(mode, quantile, ret_type):
     Y_finn_tot = Y_finn_tot.reshape(pcolor_shape)[:, np.newaxis, ...].copy()
 
     # load training data for mean network
-    Y_train = np.load(
-        Path(f"data/FINN_forward_solver/retardation_{ret_type}").resolve() / "c_train.npy"
-    )[:51]
+    Y_train = np.load(base_dir / "c_train.npy")
     Y_train_diss = Y_train[:, 0, ...][:, np.newaxis, ...]
     Y_train_tot = Y_train[:, 1, ...][:, np.newaxis, ...]
 
