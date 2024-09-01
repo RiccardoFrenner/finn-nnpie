@@ -53,13 +53,12 @@ def main(
     ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
     assert Y.shape[0] == train_split_idx
 
-    cfg.model_path = output_dir.resolve()
     clear_dirs = False
-    if clear_dirs and cfg.model_path.exists():
-        shutil.rmtree(cfg.model_path)
-    elif cfg.model_path.exists():
-        raise ValueError(f"Folder {cfg.model_path} already exists.")
-    cfg.model_path.mkdir(parents=True, exist_ok=True)
+    if clear_dirs and output_dir.exists():
+        shutil.rmtree(output_dir)
+    elif output_dir.exists():
+        raise ValueError(f"Folder {output_dir} already exists.")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     u0 = Y_train[0].clone()
     model = ConcentrationPredictor(
@@ -73,7 +72,7 @@ def main(
 
     # Train the model
     model.run_training(
-        t=t_train, u_train=Y_train, max_epochs=max_epochs, c_field_seed=c_field_seed
+        t=t_train, u_train=Y_train, out_dir=output_dir, max_epochs=max_epochs, c_field_seed=c_field_seed
     )
 
     model.eval()

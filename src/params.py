@@ -7,17 +7,6 @@ This script contains all inputs necessary to configure and set up the model and
 simulation
 """
 
-from pathlib import Path
-
-clear_dirs = False
-
-# MODEL NAME & SETTING
-model_name = "syn_freundlich"
-main_path = Path().cwd() / "data_out"
-model_path = main_path / model_name
-device_name = "cpu"  # Choose between "cpu" or "cuda"
-
-
 # NETWORK HYPER-PARAMETERS
 flux_layers = 3  # number of hidden layers for the NN in the flux kernels
 state_layers = 3  # number of hidden layers for the NN in the state kernels

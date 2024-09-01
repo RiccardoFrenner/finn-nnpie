@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from typing import Callable, Optional
 
 import matplotlib.pyplot as plt
@@ -381,6 +382,7 @@ class ConcentrationPredictor(nn.Module):
         self,
         t: torch.Tensor,
         u_train: torch.Tensor,
+        out_dir: Path,
         max_epochs: int = 100,
         c_field_seed=None,
     ):
@@ -391,7 +393,6 @@ class ConcentrationPredictor(nn.Module):
             t (tensor): time steps for integration, dim: [Nt,]
             x_train (tensor): full field solution at each time step, dim: [Nt, num_features, Nx]
         """
-        out_dir = self.cfg.model_path
         out_dir.mkdir(parents=True, exist_ok=True)
 
         optimizer = torch.optim.LBFGS(self.parameters(), lr=0.1)
