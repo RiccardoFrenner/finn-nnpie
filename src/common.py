@@ -380,7 +380,7 @@ class ConcentrationPredictor(nn.Module):
     def run_training(
         self,
         t: torch.Tensor,
-        u_full_train: torch.Tensor,
+        u_train: torch.Tensor,
         max_epochs: int = 100,
         c_field_seed=None,
     ):
@@ -418,18 +418,19 @@ class ConcentrationPredictor(nn.Module):
         np.save(out_dir / "retardation_linear.npy", ret_linear)
         np.save(out_dir / "retardation_freundlich.npy", ret_freundlich)
         np.save(out_dir / "retardation_langmuir.npy", ret_langmuir)
-        np.save(out_dir / "c_train.npy", u_full_train.numpy())
+        np.save(out_dir / "c_train.npy", u_train.numpy())
         np.save(out_dir / "t_train.npy", t.numpy())
 
         if c_field_seed is not None:
             rng = np.random.default_rng(c_field_seed)
-            field_mask = rng.uniform(size=u_full_train.shape) < 0.5
+            field_mask = rng.uniform(size=u_train.shape) < 0.5
 
         # Define the closure function that consists of resetting the
         # gradient buffer, loss function calculation, and backpropagation
         # The closure function is necessary for LBFGS optimizer, because
         # it requires multiple function evaluations
         # The closure function returns the loss value
+        epoch = 0
         def closure():
             self.train()
             optimizer.zero_grad()
@@ -437,13 +438,13 @@ class ConcentrationPredictor(nn.Module):
             # TODO: mean instead of sum?
             if c_field_seed is not None:
                 # set the not used training data to be equal to the prediction. So no error is calculated there
-                # u_full_train[field_mask] = ode_pred[field_mask]
+                # u_train[field_mask] = ode_pred[field_mask]
 
                 loss = self.cfg.error_mult * torch.sum(
-                    (u_full_train[field_mask] - ode_pred[field_mask]) ** 2
+                    (u_train[field_mask] - ode_pred[field_mask]) ** 2
                 )
             else:
-                loss = self.cfg.error_mult * torch.sum((u_full_train - ode_pred) ** 2)
+                loss = self.cfg.error_mult * torch.sum((u_train - ode_pred) ** 2)
 
             # Physical regularization: value of the retardation factor should decrease with increasing concentration
             ret_inv_pred = self.retardation_inv_scaled(u_ret)
@@ -453,10 +454,14 @@ class ConcentrationPredictor(nn.Module):
 
             loss.backward()
 
+            c_pred_path = out_dir / f"predicted_concentrations/c_pred_{epoch}.npy"
+            np.save(c_pred_path, ode_pred.detach().numpy())
+
             return loss
 
         # Iterate until maximum epoch number is reached
-        for epoch in range(1, max_epochs + 1):
+        for _ in range(1, max_epochs + 1):
+            epoch += 1
             dt = time.time()
             optimizer.step(closure)
             loss = closure()

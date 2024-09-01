@@ -42,13 +42,16 @@ def main(
     print(f"{t_train.shape=}")
 
     Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
+    Y_train = Y[:train_split_idx].clone()
+
     num_vars = 2
     assert Y.shape == (
-        len(t_train),
+        len(t),
         num_vars,
         cfg.Nx,
         1,
     ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
+    assert Y.shape[0] == train_split_idx
 
     cfg.model_path = output_dir.resolve()
     clear_dirs = False
@@ -58,7 +61,7 @@ def main(
         raise ValueError(f"Folder {cfg.model_path} already exists.")
     cfg.model_path.mkdir(parents=True, exist_ok=True)
 
-    u0 = Y[0].clone()
+    u0 = Y_train[0].clone()
     model = ConcentrationPredictor(
         u0=u0,
         cfg=cfg,
@@ -70,9 +73,16 @@ def main(
 
     # Train the model
     model.run_training(
-        t=t_train, u_full_train=Y, max_epochs=max_epochs, c_field_seed=c_field_seed
+        t=t_train, u_train=Y_train, max_epochs=max_epochs, c_field_seed=c_field_seed
     )
-    return model, t_train, Y
+
+    model.eval()
+    with torch.no_grad():
+        c_predictions = model(t)
+    np.save(args["output_dir"] / "c_full.npy", Y.detach().numpy())
+    np.save(args["output_dir"] / "c_full_predictions.npy", c_predictions.detach().numpy())
+
+    return model, t_train, Y_train
 
 
 if __name__ == "__main__":
@@ -122,4 +132,4 @@ if __name__ == "__main__":
     model.eval()
     with torch.no_grad():
         c_predictions = model(t_train)
-    np.save(args["output_dir"] / "c_predictions.npy", c_predictions)
+    np.save(args["output_dir"] / "c_train_predictions.npy", c_predictions.detach().numpy())

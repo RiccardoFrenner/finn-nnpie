@@ -22,10 +22,10 @@ def make_dataset(mode, quantile, ret_type):
     #     f"Min/Max {mode} residual tot: {full_residuals_tot.min()} {full_residuals_tot.max()}"
     # )
 
-    Y_finn_mean_diss = np.load(base_dir / "c_predictions.npy")[:, 0, ...].reshape(
+    Y_finn_mean_diss = np.load(base_dir / "c_train_predictions.npy")[:, 0, ...].reshape(
         (-1, 1)
     )
-    Y_finn_mean_tot = np.load(base_dir / "c_predictions.npy")[:, 1, ...].reshape(
+    Y_finn_mean_tot = np.load(base_dir / "c_train_predictions.npy")[:, 1, ...].reshape(
         (-1, 1)
     )
     residual_medians = np.load(base_dir / "residual_medians.npy")

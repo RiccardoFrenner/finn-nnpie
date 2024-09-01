@@ -19,7 +19,7 @@ image_out_dir.mkdir(parents=True, exist_ok=True)
 
 # %%
 c_train = np.load(base_dir / "c_train.npy")
-c_predictions = np.load(base_dir / "c_predictions.npy")
+c_predictions = np.load(base_dir / "c_train_predictions.npy")
 residuals = c_train - c_predictions
 
 NOISE_SIGMA = 0  # 8e-4  # 4e-4 is the lowest I can go since otherwise there will be too large gaps
