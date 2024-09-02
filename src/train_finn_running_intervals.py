@@ -39,9 +39,11 @@ def main(ret_type: str, max_epochs: int, step_size: int):
 
     # Create a list of commands to be executed in parallel
     commands = []
-    for y_train_path in y_train_paths:
+    for i in range(12):
+        y_train_path = input_dir / f"c_{i}.npy"
+        skip = step_size * i
         output_dir = output_base_dir / f"{random_fixed_length_seed()}_finn_running_intervals"
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {step_size} --seed 34956765 --max_epochs {max_epochs}"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {step_size} --seed 34956765 --max_epochs {max_epochs} --skip {skip}"
         commands.append(command)
 
     # Write the commands to a temporary file

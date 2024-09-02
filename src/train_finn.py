@@ -22,6 +22,7 @@ def main(
     seed: int | None = None,
     c_field_seed: int | None = None,
     dropout: int = 0,
+    skip: int = 0,
 ):
     if seed is None:
         seed = int(time.time()) % 10**8
@@ -34,6 +35,7 @@ def main(
         "seed": seed,
         "c_field_seed": c_field_seed,
         "dropout": dropout,
+        "skip": skip,
     }
     pprint.pprint(input_dir)
 
@@ -43,11 +45,13 @@ def main(
     np.random.seed(seed)
 
     t = torch.linspace(0.0, cfg.T, cfg.Nt).float()
-    t_train = t[:train_split_idx].clone()
+    if train_split_idx is None:
+        train_split_idx = cfg.Nt
+    t_train = t[:train_split_idx-skip].clone()  # we always have to start at t=0 for odeint
     print(f"{t_train.shape=}")
 
     Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
-    Y_train = Y[:train_split_idx].clone()
+    Y_train = Y[skip:train_split_idx].clone()
 
     num_vars = 2
     assert Y.shape == (
@@ -55,7 +59,7 @@ def main(
         num_vars,
         cfg.Nx,
         1,
-    ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
+    ), f"{Y.shape} != {(t.shape[0], num_vars, cfg.Nx, 1)}"
     assert Y_train.shape[0] == train_split_idx, f"{Y.shape}[0] != {train_split_idx}"
 
     u0 = Y_train[0].clone()
@@ -130,6 +134,11 @@ if __name__ == "__main__":
         "--dropout",
         type=int,
         help="Dropout rate (in percent) for the R(c) MLP. 0 to disable.",
+    )
+    parser.add_argument(
+        "--skip",
+        type=int,
+        help="Number of time steps to skip in the training data.",
     )
     args = vars(parser.parse_args())
     model, t_train, Y_train = main(**args)
