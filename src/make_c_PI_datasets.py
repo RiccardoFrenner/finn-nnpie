@@ -12,7 +12,7 @@ import numpy as np
 
 def make_dataset(mode, quantile, ret_type):
     base_dir = Path(f"data_out/{ret_type}/default_finn").resolve()
-    Nt = json.loads((base_dir / "input.json").read_text())["Nt"]
+    Nt = json.loads((base_dir / "input.json").read_text())["train_split_index"]
     Nx = 26  # TODO
     res_net_out_path = base_dir / "residual_nets_output"
 

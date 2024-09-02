@@ -9,8 +9,11 @@ for analytical_ret in "langmuir" "freundlich"; do
 
 
     echo "Train finn with default parameters"
-    python src/train_finn.py ${default_c_train} "data_out/${analytical_ret}/default_finn" -s 51 --max_epochs ${max_epochs} --seed 123456789
-    # python src/train_finn.py ${default_c_train} "data_out/${analytical_ret}/default_finn_251" -s 251 --max_epochs ${max_epochs} --seed 123456789
+    finn_dir="data_out/${analytical_ret}/default_finn"
+    python src/train_finn.py ${default_c_train} ${finn_dir} -s 51 --max_epochs ${max_epochs} --seed 87364854
+
+    # finn_dir="data_out/${analytical_ret}/default_finn_251"
+    # python src/train_finn.py ${default_c_train} ${finn_dir} -s 251 --max_epochs ${max_epochs} --seed 87364854
 
 
     # echo "Generate 3pinn residual training data for C"

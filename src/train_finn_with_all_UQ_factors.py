@@ -8,7 +8,7 @@ import numpy as np
 
 from common import random_fixed_length_seed
 
-N_RUNS = 10
+N_RUNS = 16
 
 def main(ret_type: str, max_epochs: int, n_timesteps: int):
     # Directory containing the y_train_path files
@@ -16,7 +16,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     input_dir.mkdir(exist_ok=True, parents=True)
 
     # generate c data with noise
-    rng = np.random.default_rng(1234567)
+    rng = np.random.default_rng()
     c_full = np.load(
         Path(f"data/FINN_forward_solver/retardation_{ret_type}/c_train.npy")
     )
@@ -36,8 +36,8 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     # Create a list of commands to be executed in parallel
     commands = []
     for y_train_path in y_train_paths:
-        seed = rng.integers(10**9, 10**10 - 1)
-        output_dir = output_base_dir / f"{random_fixed_length_seed}_{y_train_path.stem}_finn_all_UQ_factors"
+        seed = random_fixed_length_seed()
+        output_dir = output_base_dir / f"{seed}_{y_train_path.stem}_finn_all_UQ_factors"
         command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {n_timesteps} --seed {seed} --max_epochs {max_epochs} --c_field_seed {seed}"
         commands.append(command)
 

@@ -447,15 +447,22 @@ class ConcentrationPredictor(nn.Module):
             else:
                 loss = self.cfg.error_mult * torch.sum((u_train - ode_pred) ** 2)
 
+            # with open(out_dir / "loss_mse.txt", "a") as f:
+            #     f.write(f"{loss.item():.16f}\n")
+
             # Physical regularization: value of the retardation factor should decrease with increasing concentration
             ret_inv_pred = self.retardation_inv_scaled(u_ret)
-            loss += self.cfg.phys_mult * torch.sum(
+            loss_phys = self.cfg.phys_mult * torch.sum(
                 torch.relu(ret_inv_pred[:-1] - ret_inv_pred[1:])
             )  # TODO: mean instead of sum?
+            # with open(out_dir / "loss_phys.txt", "a") as f:
+            #     f.write(f"{loss.item():.16f}\n")
+            loss += loss_phys
 
             loss.backward()
 
             c_pred_path = out_dir / f"predicted_concentrations/c_pred_{epoch}.npy"
+            c_pred_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(c_pred_path, ode_pred.detach().numpy())
 
             return loss
@@ -470,12 +477,14 @@ class ConcentrationPredictor(nn.Module):
 
             print(
                 f"Training: Epoch [{epoch + 1}/{max_epochs}], "
-                f"Training Loss: {loss.item():.4f}, Runtime: {dt:.4f} secs"
+                f"Training Loss: {loss.item():.3e}, Runtime: {dt:.2f} secs"
             )
 
             ret_pred_path = out_dir / f"predicted_retardations/retPred_{epoch}.npy"
             ret_pred_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(ret_pred_path, self.retardation(u_ret).detach().numpy())
+            with open(out_dir / "loss.txt", "a") as f:
+                f.write(f"{loss.item():.16f}\n")
 
     def retardation_inv_scaled(self, u):
         return self.dudt_fun.flux_modules[0].ret_inv_fun(u)
@@ -676,4 +685,4 @@ def is_above_curve(
     return below_curve
 
 def random_fixed_length_seed():
-    return np.random.randint(10**9, 10**10 - 1)
+    return np.random.randint(10**8, 10**9 - 1)

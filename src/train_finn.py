@@ -27,8 +27,8 @@ def main(
         seed = int(time.time()) % 10**8
 
     input_dir = {
-        "y_train_path": y_train_path,
-        "output_dir": output_dir,
+        "y_train_path": str(y_train_path),
+        "output_dir": str(output_dir),
         "train_split_idx": train_split_idx,
         "max_epochs": max_epochs,
         "seed": seed,
@@ -42,8 +42,8 @@ def main(
     random.seed(seed)
     np.random.seed(seed)
 
-    t = np.linspace(0.0, cfg.T, cfg.Nt)
-    t_train = torch.from_numpy(t[:train_split_idx]).float()
+    t = torch.linspace(0.0, cfg.T, cfg.Nt).float()
+    t_train = t[:train_split_idx].clone()
     print(f"{t_train.shape=}")
 
     Y = torch.from_numpy(np.load(y_train_path)).float().unsqueeze(-1)
@@ -51,12 +51,12 @@ def main(
 
     num_vars = 2
     assert Y.shape == (
-        len(t),
+        t.shape[0],
         num_vars,
         cfg.Nx,
         1,
     ), f"{Y.shape} != {(len(t_train), num_vars, cfg.Nx, 1)}"
-    assert Y.shape[0] == train_split_idx
+    assert Y_train.shape[0] == train_split_idx, f"{Y.shape}[0] != {train_split_idx}"
 
     u0 = Y_train[0].clone()
     model = ConcentrationPredictor(
@@ -71,11 +71,15 @@ def main(
     clear_dirs = False
     if clear_dirs and output_dir.exists():
         shutil.rmtree(output_dir)
-    elif output_dir.exists():
-        raise ValueError(f"Folder {output_dir} already exists.")
+    elif output_dir.exists() and len([p for p in output_dir.glob("*") if p.is_dir()]) > 0:
+        raise ValueError(
+            f"Folder {output_dir} already exists and is not empty: {list(output_dir.glob('*'))}."
+        )
     output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / "input.json", "w") as f:
         json.dump(input_dir, f, indent=4)
+
+    np.save(output_dir / "c_full.npy", Y.numpy())
 
     # Train the model
     model.run_training(
@@ -89,9 +93,8 @@ def main(
     model.eval()
     with torch.no_grad():
         c_predictions = model(t)
-    np.save(args["output_dir"] / "c_full.npy", Y.detach().numpy())
     np.save(
-        args["output_dir"] / "c_full_predictions.npy", c_predictions.detach().numpy()
+        output_dir / "c_full_predictions.npy", c_predictions.detach().numpy()
     )
 
     return model, t_train, Y_train
@@ -129,7 +132,7 @@ if __name__ == "__main__":
         help="Dropout rate (in percent) for the R(c) MLP. 0 to disable.",
     )
     args = vars(parser.parse_args())
-    model, t_train, Y = main(**args)
+    model, t_train, Y_train = main(**args)
 
     if "dropout" in args and args["dropout"] > 0:
         u = torch.linspace(0, 1, 100).reshape(-1, 1)
