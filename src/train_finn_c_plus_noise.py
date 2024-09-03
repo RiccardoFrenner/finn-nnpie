@@ -45,7 +45,7 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
             f.write(f"{command}\n")
 
     # Execute the commands in parallel using GNU Parallel
-    command = f"cat {commands_file} | parallel -j 8 --bar"
+    command = f"cat {commands_file} | parallel -j 6 --bar"
     subprocess.run(command, check=True, shell=True)
 
     # Clean up the temporary file

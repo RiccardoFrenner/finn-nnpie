@@ -1,4 +1,4 @@
-for analytical_ret in "langmuir" "freundlich"; do
+for analytical_ret in "freundlich"; do
 
     base_in_dir="data/FINN_forward_solver/retardation_${analytical_ret}"
     default_c_train="${base_in_dir}/c_train.npy"
