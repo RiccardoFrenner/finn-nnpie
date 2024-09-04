@@ -9,41 +9,20 @@ import numpy as np
 from common import random_fixed_length_seed
 
 def main(ret_type: str, max_epochs: int, step_size: int):
-    data_in_dir = Path("data/FINN_forward_solver/")
-
-    # Directory containing the y_train_path files
-    input_dir = data_in_dir / f"retardation_{ret_type}/sub_intervals_{step_size}"
-
-    # Dataset generation
-    input_dir.mkdir(exist_ok=True, parents=True)
-    c = np.load(data_in_dir / f"retardation_{ret_type}/c_train.npy")
-    for i in range(10**9):
-        start = i * step_size
-        end = start + step_size
-        arr = c[start:end]
-        if len(arr) != step_size:
-            break
-        c_sub_path = input_dir / f"c_{i}.npy"
-        if c_sub_path.exists():
-            continue
-        np.save(input_dir / f"c_{i}.npy", arr)
-
     # Directory for output
     output_base_dir = Path(
         f"data_out/{ret_type}/finn_running_intervals/stepsize_{step_size}"
     )
     output_base_dir.mkdir(exist_ok=True, parents=True)
 
-    # Gather all y_train_path files in the input directory
-    y_train_paths = [input_dir / f"c_{i}.npy" for i in range(12)]
+    y_train_path = Path(f"data/FINN_forward_solver/retardation_{ret_type}/c_train.npy")
 
     # Create a list of commands to be executed in parallel
     commands = []
     for i in range(12):
-        y_train_path = input_dir / f"c_{i}.npy"
         skip = step_size * i
         output_dir = output_base_dir / f"{random_fixed_length_seed()}_finn_running_intervals"
-        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {step_size} --seed 34956765 --max_epochs {max_epochs} --skip {skip}"
+        command = f"python src/train_finn.py {y_train_path} {output_dir} --train_split_idx {skip + step_size} --seed 34956765 --max_epochs {max_epochs} --skip {skip}"
         commands.append(command)
 
     # Write the commands to a temporary file

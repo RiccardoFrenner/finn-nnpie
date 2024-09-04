@@ -195,3 +195,7 @@ Was ich vom Milestone mitgenommen habe:
 - Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
 - Matze Gültig (FINN mit PEFAS), Juni Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
 - Gliederung schreiben
+
+
+----
+

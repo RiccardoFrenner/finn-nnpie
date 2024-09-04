@@ -60,7 +60,7 @@ def main(
         cfg.Nx,
         1,
     ), f"{Y.shape} != {(t.shape[0], num_vars, cfg.Nx, 1)}"
-    assert Y_train.shape[0] == train_split_idx, f"{Y.shape}[0] != {train_split_idx}"
+    assert Y_train.shape[0] == train_split_idx - skip, f"{Y_train.shape[0]} != {train_split_idx-skip}"
 
     u0 = Y_train[0].clone()
     model = ConcentrationPredictor(

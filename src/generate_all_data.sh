@@ -12,39 +12,39 @@ for analytical_ret in "freundlich"; do
     # finn_dir="data_out/${analytical_ret}/default_finn"
     # python src/train_finn.py ${default_c_train} ${finn_dir} -s 51 --max_epochs ${max_epochs} --seed 87364854
 
-    finn_dir="data_out/${analytical_ret}/default_finn_251"
-    python src/train_finn.py ${default_c_train} ${finn_dir} -s 251 --max_epochs ${max_epochs} --seed 97365346
+    # finn_dir="data_out/${analytical_ret}/default_finn_251"
+    # python src/train_finn.py ${default_c_train} ${finn_dir} -s 251 --max_epochs ${max_epochs} --seed 97365346
 
 
     # echo "Generate 3pinn residual training data for C"
     # python src/make_c_residual_data.py --ret_type ${analytical_ret}
 
 
-    echo "Train residual networks"
-    parallel --bar python src/train_residual_net_tf.py --ret_type ${analytical_ret} --mode {1} --c_type {2} ::: pos neg ::: tot diss
+    # echo "Train residual networks"
+    # parallel --bar python src/train_residual_net_tf.py --ret_type ${analytical_ret} --mode {1} --c_type {2} ::: pos neg ::: tot diss
 
 
-    echo "Generate 3pinn std network training data for different quantiles"
-    parallel --bar python src/make_c_PI_datasets.py {} --ret_type ${analytical_ret} ::: 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95
+    # echo "Generate 3pinn std network training data for different quantiles"
+    # parallel --bar python src/make_c_PI_datasets.py {} --ret_type ${analytical_ret} ::: 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95
 
     # train negative and positive c quantiles
-    echo "Train std finns"
-    python src/train_std_finns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
+    # echo "Train std finns"
+    # python src/train_std_finns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
-    # echo "Train finns with different seeds"
-    # python src/train_finn_different_seeds.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
+    echo "Train finns with different seeds"
+    python src/train_finn_different_seeds.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
-    echo "Train finn running intervals"
-    python src/train_finn_running_intervals.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --step_size 30
+    # echo "Train finn running intervals"
+    # python src/train_finn_running_intervals.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --step_size 30
 
     # echo "Train finn increasing time"
     # python src/train_finn_increasing_time.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
-    echo "Train finns with different loss patterns"
-    python src/train_finn_different_loss_patterns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
+    # echo "Train finns with different loss patterns"
+    # python src/train_finn_different_loss_patterns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
-    echo "Train FINN with c plus noise"
-    python src/train_finn_c_plus_noise.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
+    # echo "Train FINN with c plus noise"
+    # python src/train_finn_c_plus_noise.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
     # echo "Train FINN with all UQ factors"
     # python src/train_finn_with_all_UQ_factors.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
