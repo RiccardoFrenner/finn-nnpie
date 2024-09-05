@@ -193,9 +193,45 @@ Was ich vom Milestone mitgenommen habe:
 ## Weiteres Vorgehen
 - [x] Masterarbeit wolfgang 2000? Waterloo, sonst timothy (für noise parameter)
 - [x] Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
-- Matze Gültig (FINN mit PEFAS), Juni Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
 - [x] Gliederung schreiben
+- Matthias Gültig (FINN mit PFAS), Jonathan Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
 
 
 ----
 
+# 05.09.2024
+- Ergebnisse
+- Kurvensampling
+    - Kurve ablaufen und Abstand zu festem ds "optimieren". Und die Punkte kann ich dann sampeln.
+- Uniqueness
+- Bachelorarbeiten
+- Gliederung
+    - Motivation am Anfang von Intro
+    - Was FINN noch alles kann außer R(c) (Stencils, ...)-
+    - Related Work noch in Intro rein (+ Bayes NN von Timothy)
+    - Nach ExperimentalSetup/Code die Parameter vorstellen die ich untersuche (Könnte Experiments heißen). Aber dann eventuell bisheriges "Experiments" dann umbennen. z.B.
+
+    # Data and Setup
+    ...
+    # Experiments
+    ## My pertubed Parameters
+    ## Baselines
+    # Results
+    ## Runtime
+    ## Param1
+    ## Param2
+    ## All Params
+    # Discussion
+    
+    - Einteilung in Data vs Analysis könnte vorher schon notwendig sein zu erklären. Vor allem wegen "All Params" Kapitel
+    - Zu Limitations: Komische Sachen bei 3PINN:
+        - Varianz pro x ist konstant (homoskedastisch, bis auf Streckung). Verteilung ist bis auf Streckung über x immer gleich.
+        - Faktor im Code
+    - Bei Limitations: Keine Methode um sicherzustellen, dass FINN alle Lösungen (wenn daten noisy) findet. Die Lösung ("eindeutige" gegeben Soil) liegt dann nicht unbedingt in unserem UQ-Interval. Aber unsere Analyseunsicherheit ist trotzdem ein gewollter Punkt.
+    - Future Work: "Sowas" wie 3PINN für FINN machen, also direkt in FINN einbauen.
+    - Limitation: FINN muss auch konvergieren und das tut es nicht für alle Daten (siege noise + synthetic experiments)
+    - Statt Parameter umbennen in "Sources of Variation" oder was anderes.
+
+- Wieso konvergiert synth + noise nicht aber experimentell konvergiert (bei Timothy zumindest). TODO: Selber experimentelle ausprobieren
+
+- TODO: Warum war Freundlich für große c schwierig zu treffen?
