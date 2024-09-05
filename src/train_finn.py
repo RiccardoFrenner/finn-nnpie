@@ -10,9 +10,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-import params as cfg
+import params
 from common import ConcentrationPredictor, create_mlp
 
+cfg = params.Parameters()
 
 def main(
     y_train_path: Path,

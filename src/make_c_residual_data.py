@@ -136,11 +136,12 @@ print(np.count_nonzero(~is_res_pos[:, 1, ...]))
 
 # %%
 import params
+cfg = params.Parameters()
 
 # %%
 t_train = np.load(base_dir / "t_train.npy")
 t = t_train
-x = np.linspace(0.0, params.X, params.Nx)
+x = np.linspace(0.0, cfg.X, cfg.Nx)
 
 X_pos = ([], [])
 X_neg = ([], [])

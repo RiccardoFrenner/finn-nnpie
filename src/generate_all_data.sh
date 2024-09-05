@@ -1,4 +1,4 @@
-for analytical_ret in "freundlich"; do
+for analytical_ret in "langmuir" "freundlich"; do
 
     base_in_dir="data/FINN_forward_solver/retardation_${analytical_ret}"
     default_c_train="${base_in_dir}/c_train.npy"
@@ -7,6 +7,10 @@ for analytical_ret in "freundlich"; do
     max_epochs=100
     train_split_idx=51  # TODO: 251 was used paper
 
+
+    echo "Train finn with default parameters 3"
+    finn_dir="data_out/${analytical_ret}/default_finn_paramsclass"
+    python src/train_finn.py ${default_c_train} ${finn_dir} -s 51 --max_epochs ${max_epochs} --seed 87364854
 
     # echo "Train finn with default parameters"
     # finn_dir="data_out/${analytical_ret}/default_finn"
@@ -31,8 +35,8 @@ for analytical_ret in "freundlich"; do
     # echo "Train std finns"
     # python src/train_std_finns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs}
 
-    echo "Train finns with different seeds"
-    python src/train_finn_different_seeds.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
+    # echo "Train finns with different seeds"
+    # python src/train_finn_different_seeds.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
     # echo "Train finn running intervals"
     # python src/train_finn_running_intervals.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --step_size 30
