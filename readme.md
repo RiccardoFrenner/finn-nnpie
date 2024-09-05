@@ -191,10 +191,10 @@ Was ich vom Milestone mitgenommen habe:
 - MSE(c_pred,c_train) für running intervals
 
 ## Weiteres Vorgehen
-- Masterarbeit wolfgang 2000? Waterloo, sonst timothy (für noise parameter)
-- Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
+- [x] Masterarbeit wolfgang 2000? Waterloo, sonst timothy (für noise parameter)
+- [x] Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
 - Matze Gültig (FINN mit PEFAS), Juni Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
-- Gliederung schreiben
+- [x] Gliederung schreiben
 
 
 ----
