@@ -233,5 +233,8 @@ Was ich vom Milestone mitgenommen habe:
     - Statt Parameter umbennen in "Sources of Variation" oder was anderes.
 
 - Wieso konvergiert synth + noise nicht aber experimentell konvergiert (bei Timothy zumindest). TODO: Selber experimentelle ausprobieren
+    - Experimentelle Daten konvergieren auch nicht für die standard parameter.
+    - TODO: Testen ob mit geringerer LR synth + noise konvergiert.
+    - 
 
 - TODO: Warum war Freundlich für große c schwierig zu treffen?
