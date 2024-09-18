@@ -142,3 +142,5 @@ class Parameters:
         ## Set multiplier for the Cauchy boundary condition if necessary
         ## (will be multiplied with D_eff in the flux kernels), otherwise set = 0
         params.cauchy_mult = [params.cauchy_val, params.cauchy_val]
+
+        return params
