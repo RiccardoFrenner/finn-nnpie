@@ -8,9 +8,9 @@ for analytical_ret in "langmuir" "freundlich"; do
     train_split_idx=51  # TODO: 251 was used paper
 
 
-    echo "Train finn with default parameters 3"
-    finn_dir="data_out/${analytical_ret}/default_finn_paramsclass"
-    python src/train_finn.py ${default_c_train} ${finn_dir} -s 51 --max_epochs ${max_epochs} --seed 87364854
+    # echo "Train finn with default parameters 3"
+    # finn_dir="data_out/${analytical_ret}/default_finn_paramsclass"
+    # python src/train_finn.py ${default_c_train} ${finn_dir} -s 51 --max_epochs ${max_epochs} --seed 87364854
 
     # echo "Train finn with default parameters"
     # finn_dir="data_out/${analytical_ret}/default_finn"
@@ -47,8 +47,8 @@ for analytical_ret in "langmuir" "freundlich"; do
     # echo "Train finns with different loss patterns"
     # python src/train_finn_different_loss_patterns.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
-    # echo "Train FINN with c plus noise"
-    # python src/train_finn_c_plus_noise.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
+    echo "Train FINN with c plus noise"
+    python src/train_finn_c_plus_noise.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}
 
     # echo "Train FINN with all UQ factors"
     # python src/train_finn_with_all_UQ_factors.py --ret_type ${analytical_ret} --max_epochs ${max_epochs} --n_timesteps ${train_split_idx}

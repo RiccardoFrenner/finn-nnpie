@@ -24,6 +24,7 @@ def main(
     c_field_seed: int | None = None,
     dropout: int = 0,
     skip: int = 0,
+    lr=0.1,
 ):
     if seed is None:
         seed = int(time.time()) % 10**8
@@ -93,6 +94,7 @@ def main(
         out_dir=output_dir,
         max_epochs=max_epochs,
         c_field_seed=c_field_seed,
+        lr=lr,
     )
 
     model.eval()
@@ -140,6 +142,11 @@ if __name__ == "__main__":
         "--skip",
         type=int,
         help="Number of time steps to skip in the training data.",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        help="Learning rate.",
     )
     args = vars(parser.parse_args())
     model, t_train, Y_train = main(**args)

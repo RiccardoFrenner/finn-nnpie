@@ -385,6 +385,7 @@ class ConcentrationPredictor(nn.Module):
         out_dir: Path,
         max_epochs: int = 100,
         c_field_seed=None,
+        lr=0.1,
     ):
         """Train to predict the concentration from the given full field training data.
 
@@ -395,7 +396,7 @@ class ConcentrationPredictor(nn.Module):
         """
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        optimizer = torch.optim.LBFGS(self.parameters(), lr=0.1)
+        optimizer = torch.optim.LBFGS(self.parameters(), lr=lr)
 
         u_ret = torch.linspace(0.0, 1.0, 100).view(-1, 1)
         ret_linear = AnalyticRetardation.linear(

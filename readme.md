@@ -192,6 +192,8 @@ Was ich vom Milestone mitgenommen habe:
 
 ## Weiteres Vorgehen
 - [x] Masterarbeit wolfgang 2000? Waterloo, sonst timothy (für noise parameter)
+    - sigma = 5% vom absoluten Wert der Konzentration
+    - 
 - [x] Fehlerberechnung bei running intervals inkorrekt (nimmt nur subset).
 - [x] Gliederung schreiben
 - Matthias Gültig (FINN mit PFAS), Jonathan Schnitzler(Bayes NN mit FINN); 2019 Jahrgang haben Bachelorarbeiten drüber gemacht (FINN)
