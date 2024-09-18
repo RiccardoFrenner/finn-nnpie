@@ -27,54 +27,57 @@ def main(ret_type: str, max_epochs: int, n_timesteps: int):
     # Test 3: different sigma for T,Var aka. sigma = sigma(T, Var)
     # Test 4: sigma = sigma(T, Var, X)
     sigma_scaling_factors = [0.5, 1.0, 2.0]  # check half sigma and double sigma to see if better results
-    for s in sigma_scaling_factors:
-        for tmax_idx in [51, None]:
-            # Test 1
-            sigma = s * 0.05 * c_full_abs[:tmax_idx].mean()
-            assert np.shape(sigma) == ()
-            c_noise = c_full + rng.normal(0, sigma, c_full.shape)
-            out_path = input_dir / f"cFullNoise_test1_{tmax_idx}_sigma={sigma}_s={s}.npy"
-            np.save(out_path, c_noise)
+    y_train_paths = []
+    for j in range(1, 4):
+        for s in sigma_scaling_factors:
+            for tmax_idx in [51, None]:
+                # Test 1
+                sigma = s * 0.05 * c_full_abs[:tmax_idx].mean()
+                assert np.shape(sigma) == ()
+                c_noise = c_full + rng.normal(0, sigma, c_full.shape)
+                out_path = input_dir / f"cFullNoise_test1_{tmax_idx}_sigma={sigma:.2e}_s={s}_j={j}.npy"
+                np.save(out_path, c_noise)
+                y_train_paths.append(out_path)
 
-            # Test 2
-            sigma1 = s * 0.05 * c_full_abs[:tmax_idx, 0].mean()
-            sigma2 = s * 0.05 * c_full_abs[:tmax_idx, 1].mean()
-            assert np.shape(sigma1) == ()
-            assert np.shape(sigma2) == ()
+                # Test 2
+                sigma1 = s * 0.05 * c_full_abs[:tmax_idx, 0].mean()
+                sigma2 = s * 0.05 * c_full_abs[:tmax_idx, 1].mean()
+                assert np.shape(sigma1) == ()
+                assert np.shape(sigma2) == ()
+                c_noise = c_full.copy()
+                c_noise[:, 0] += rng.normal(0, sigma1, c_noise[:, 0].shape)
+                c_noise[:, 1] += rng.normal(0, sigma2, c_noise[:, 1].shape)
+                out_path = input_dir / f"cFullNoise_test2_{tmax_idx}_sigma1={sigma1:.2e}_sigma2={sigma2:.2e}_s={s}_j={j}.npy"
+                np.save(out_path, c_noise)
+                y_train_paths.append(out_path)
+
+
+            # Test 3
             c_noise = c_full.copy()
-            c_noise[:, 0] += rng.normal(0, sigma1, c_noise[:, 0].shape)
-            c_noise[:, 1] += rng.normal(0, sigma2, c_noise[:, 1].shape)
-            out_path = input_dir / f"cFullNoise_test2_{tmax_idx}_sigma1={sigma1}_sigma2={sigma2}_s={s}.npy"
+            for i in range(c_full.shape[0]):
+                sigma1 = s * 0.05 * c_full_abs[i, 0].mean()
+                sigma2 = s * 0.05 * c_full_abs[i, 1].mean()
+                assert np.shape(sigma1) == ()
+                assert np.shape(sigma2) == ()
+                c_noise[i, 0] += rng.normal(0, sigma1, c_noise[i, 0].shape)
+                c_noise[i, 1] += rng.normal(0, sigma2, c_noise[i, 1].shape)
+            out_path = input_dir / f"cFullNoise_test3_sigma1={sigma1:.2e}_sigma2={sigma2:.2e}_s={s}_j={j}.npy"
             np.save(out_path, c_noise)
+            y_train_paths.append(out_path)
 
-
-        # Test 3
-        c_noise = c_full.copy()
-        for i in range(c_full.shape[0]):
-            sigma1 = s * 0.05 * c_full_abs[i, 0].mean()
-            sigma2 = s * 0.05 * c_full_abs[i, 1].mean()
-            assert np.shape(sigma1) == ()
-            assert np.shape(sigma2) == ()
-            c_noise[i, 0] += rng.normal(0, sigma1, c_noise[i, 0].shape)
-            c_noise[i, 1] += rng.normal(0, sigma2, c_noise[i, 1].shape)
-        out_path = input_dir / f"cFullNoise_test3_sigma1={sigma1}_sigma2={sigma2}_s={s}.npy"
-        np.save(out_path, c_noise)
-
-        # Test 4
-        sigma = s * 0.05 * c_full_abs.copy()
-        noise = rng.normal(0, sigma)
-        assert np.shape(sigma) == c_full.shape
-        assert np.shape(noise) == c_full.shape
-        c_noise = c_full + noise
-        out_path = input_dir / f"cFullNoise_test4_s={s}.npy"
-        np.save(out_path, c_noise)
+            # Test 4
+            sigma = s * 0.05 * c_full_abs.copy()
+            noise = rng.normal(0, sigma)
+            assert np.shape(sigma) == c_full.shape
+            assert np.shape(noise) == c_full.shape
+            c_noise = c_full + noise
+            out_path = input_dir / f"cFullNoise_test4_s={s}_j={j}.npy"
+            np.save(out_path, c_noise)
+            y_train_paths.append(out_path)
     
     # Directory for output
     output_base_dir = Path(f"data_out/{ret_type}/finn_{exp_name}")
     output_base_dir.mkdir(exist_ok=True, parents=True)
-
-    # Gather all y_train_path files in the input directory
-    y_train_paths = list(input_dir.glob("cFullNoise*.npy"))
 
     # Create a list of commands to be executed in parallel
     commands = []
