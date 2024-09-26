@@ -234,9 +234,32 @@ Was ich vom Milestone mitgenommen habe:
     - Limitation: FINN muss auch konvergieren und das tut es nicht für alle Daten (siege noise + synthetic experiments)
     - Statt Parameter umbennen in "Sources of Variation" oder was anderes.
 
-- Wieso konvergiert synth + noise nicht aber experimentell konvergiert (bei Timothy zumindest). TODO: Selber experimentelle ausprobieren
+- Wieso konvergiert synth + noise nicht aber experimentell konvergiert (bei Timothy zumindest). Selber experimentelle ausprobieren
     - Experimentelle Daten konvergieren auch nicht für die standard parameter.
-    - TODO: Testen ob mit geringerer LR synth + noise konvergiert.
-    - 
+    - Testen ob mit geringerer LR synth + noise konvergiert.
+        - Ja ist besser
 
-- TODO: Warum war Freundlich für große c schwierig zu treffen?
+- Warum war Freundlich für große c schwierig zu treffen?
+    - vermutlich weil weniger daten für c groß (und c klein gleiches Problem)
+
+-------
+
+# 20.09.2024
+- Mit ein paar der neuen Methoden zum Aufaddieren von Noise auf C konvergiert es besser (auch lr=1e-2 statt 1e-1)
+    - TODO: Mehrere Runs
+- Ergebnis mit experimentellen Daten hängt (vergleiche Timothy Paper mit meinem Ergebnis) stark von Parametern ab, trotz ähnlich guter Konvergenz.
+    - Mit nur begrenzten Daten können bei FINN also stark unterschiedliche Ergebnisse rauskommen. Dass die andere Kurve (c(x,t_end)) nicht passt ist, ändert nichts an dieser Aussage.
+- TODO: mal auf c(x,t_end) trainieren
+- TODO: c(x,t_end) als val loss nehmen
+- Hypothese die ich ins paper schreiben könnte: eindeutigkeit testen durch abstand von lösungen und initialien Parametern
+
+# 25.09.2024
+- Ganz komisch mal wieder:
+    - core2b excel hat Nx=30
+    - die darin gespeicherten Daten aber shape 21
+    - in main.py wird aber wiederum mit Nx=30 geplottet und die prediction des Models (was core2 (ohne B) als config mit Nx=20 nimmt) hat irgendwie den richtigen (30) shape.
+- Die Kurven bei vollem synthetischen Datensatz passen übrigens (Also ist nicht so als würde das nie gelernt werden und ich hätte es bisher nur übersehen, weil die c werte für t groß sehr klein sind und es deshalb im MSE nicht auffällt.)
+
+# 27.09.2024
+- Eindeutigkeit von R(c)
+    - Erklärung mit Isolines plot (links: c(x,t), rechts R(c(x,t))=d^2c/dx^2 / dc/dt)
