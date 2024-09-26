@@ -263,7 +263,7 @@ Was ich vom Milestone mitgenommen habe:
 - [x] c(x,t_end) als val loss nehmen
 
 - [x] c adsorb (siehe sorption script eq 9.37)
-- quantifizierung von R PI
+- [] quantifizierung von R PI
 - wie unterschied zwischen meins und MCMC zeigen -> via plot vorerst
 - vorteile von 3pinn auf c vs just noise auf c
 
@@ -274,3 +274,6 @@ TODO:
 - Nx im Training größer machen und für Evaluation
 - Unterschied zu funktionierendem Code herausfinden
 - 3PINN auf exp daten machen (95% und 5%) und vergleichem mit MCMC -> FINN darauf und noch mehr quantile-> Rs davon dann wieder in PDE und diese Kurven mit 3pinn 95 und 5 vergleichen
+
+# 27.09.2024
+- Dass mein Code core2B nicht reproduzieren kann liegt wohl vor allem daran, dass core2b ganz andere parameter (physikalische) hat. X ist länger, sample_radius größer, Q ganz anders, andere solubility, ...
