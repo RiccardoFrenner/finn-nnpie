@@ -249,8 +249,6 @@ Was ich vom Milestone mitgenommen habe:
     - TODO: Mehrere Runs
 - Ergebnis mit experimentellen Daten hängt (vergleiche Timothy Paper mit meinem Ergebnis) stark von Parametern ab, trotz ähnlich guter Konvergenz.
     - Mit nur begrenzten Daten können bei FINN also stark unterschiedliche Ergebnisse rauskommen. Dass die andere Kurve (c(x,t_end)) nicht passt ist, ändert nichts an dieser Aussage.
-- TODO: mal auf c(x,t_end) trainieren
-- TODO: c(x,t_end) als val loss nehmen
 - Hypothese die ich ins paper schreiben könnte: eindeutigkeit testen durch abstand von lösungen und initialien Parametern
 
 # 25.09.2024
@@ -260,6 +258,19 @@ Was ich vom Milestone mitgenommen habe:
     - in main.py wird aber wiederum mit Nx=30 geplottet und die prediction des Models (was core2 (ohne B) als config mit Nx=20 nimmt) hat irgendwie den richtigen (30) shape.
 - Die Kurven bei vollem synthetischen Datensatz passen übrigens (Also ist nicht so als würde das nie gelernt werden und ich hätte es bisher nur übersehen, weil die c werte für t groß sehr klein sind und es deshalb im MSE nicht auffällt.)
 
-# 27.09.2024
+# 26.09.2024
+- [x] mal auf c(x,t_end) trainieren
+- [x] c(x,t_end) als val loss nehmen
+
+- [x] c adsorb (siehe sorption script eq 9.37)
+- quantifizierung von R PI
+- wie unterschied zwischen meins und MCMC zeigen -> via plot vorerst
+- vorteile von 3pinn auf c vs just noise auf c
+
 - Eindeutigkeit von R(c)
     - Erklärung mit Isolines plot (links: c(x,t), rechts R(c(x,t))=d^2c/dx^2 / dc/dt)
+
+TODO:
+- Nx im Training größer machen und für Evaluation
+- Unterschied zu funktionierendem Code herausfinden
+- 3PINN auf exp daten machen (95% und 5%) und vergleichem mit MCMC -> FINN darauf und noch mehr quantile-> Rs davon dann wieder in PDE und diese Kurven mit 3pinn 95 und 5 vergleichen
