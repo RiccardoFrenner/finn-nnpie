@@ -271,9 +271,19 @@ Was ich vom Milestone mitgenommen habe:
     - Erklärung mit Isolines plot (links: c(x,t), rechts R(c(x,t))=d^2c/dx^2 / dc/dt)
 
 TODO:
-- Nx im Training größer machen und für Evaluation
-- Unterschied zu funktionierendem Code herausfinden
-- 3PINN auf exp daten machen (95% und 5%) und vergleichem mit MCMC -> FINN darauf und noch mehr quantile-> Rs davon dann wieder in PDE und diese Kurven mit 3pinn 95 und 5 vergleichen
+- [x] Nx im Training größer machen und für Evaluation
+    - Ist nicht so krass wie gedacht. Schon ab Nx=18 oder so kommen gute Werte raus.
+- [x] Unterschied zu funktionierendem Code herausfinden
+- [x] 3PINN auf exp daten machen (95% und 5%) und vergleichem mit MCMC -> FINN darauf und noch mehr quantile-> Rs davon dann wieder in PDE und diese Kurven mit 3pinn 95 und 5 vergleichen
 
 # 27.09.2024
 - Dass mein Code core2B nicht reproduzieren kann liegt wohl vor allem daran, dass core2b ganz andere parameter (physikalische) hat. X ist länger, sample_radius größer, Q ganz anders, andere solubility, ...
+
+# FIXME:
+- add `assert dt == 5` when synthetic data
+- add `assert dx == 0.04` when synthetic data
+- 
+
+# TODO
+- spline an ret fitten und params ändern für PI
+- normalize ret before computing physical loss

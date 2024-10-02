@@ -1,9 +1,11 @@
+import dataclasses
 import time
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
@@ -433,6 +435,7 @@ class ConcentrationPredictor(nn.Module):
         # it requires multiple function evaluations
         # The closure function returns the loss value
         epoch = 0
+
         def closure():
             self.train()
             optimizer.zero_grad()

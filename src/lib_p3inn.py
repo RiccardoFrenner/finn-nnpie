@@ -36,7 +36,7 @@ def train_network(
         #         val_loss += loss_valid.item()
         # val_loss = val_loss / len(val_loader)
 
-        if epoch % max(1, max_epochs // 10) == 0:
+        if epoch % max(1, max_epochs // 10) == 0 or epoch == 1:
             # print(f"Epoch {epoch}, Validation Loss: {val_loss:.6f}")
             print(f"Epoch {epoch}, Train Loss: {loss_train:.6f}")
 
@@ -384,3 +384,13 @@ class UQ_Net_std(nn.Module):
             torch.square(x) + 1e-8
         )  # TODO: Was 0.2 but not explained why in paper
         return x
+
+def compute_shift_to_median(y, data):
+    """Computes the shift v such that y + v has 50% of data below the curve, assuming y and data have same x values."""
+    diff = data - y
+    return np.median(diff)
+
+
+def shift_to_median(y, data):
+    """Shifts y such that 50% of data lies below the curve, assuming y and data have same x values."""
+    return y + compute_shift_to_median(y, data)

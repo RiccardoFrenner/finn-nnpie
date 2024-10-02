@@ -65,11 +65,6 @@ class Parameters:
         self.is_retardation_a_func = [True, False]
         ## Normalizer for functions that are approximated with a NN
         self.p_exp_flux = [0.0, 0.0]
-        ## Set the variable index to be used when calculating the fluxes
-        self.flux_calc_idx = [0, 0]
-        ## Set the variable indices necessary to calculate the diffusion
-        ## coefficient function
-        self.flux_couple_idx = [0, 0]
         ## Set boundary condition types
         self.dirichlet_bool = [[True, False, False, False], [True, False, False, False]]
         self.neumann_bool = [[False, False, True, True], [False, False, True, True]]
