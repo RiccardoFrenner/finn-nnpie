@@ -547,13 +547,13 @@ def make_mlp():
 
 
 def solve_diffusion_sorption_pde(
-    retardation_fun, p_exp, t, finn_params: FinnParams, c0=None
+    retardation_fun, t, finn_params: FinnParams, c0=None
 ) -> np.ndarray:
     if c0 is None:
         c0 = torch.zeros(2, finn_params.Nx, 1).to(torch.float32)
 
     def coeff_nn_fun(c):
-        return 1 / (retardation_fun(c) * 1)
+        return 1 / retardation_fun(c)
 
     model = Net_Model(c0, finn_params, ret_funs=[coeff_nn_fun, None])
     model.eval()
@@ -572,6 +572,9 @@ class FinnDir:
     @property
     def finn_params_path(self) -> Path:
         return self.path / "finn_params.json"
+
+    def load_finn_params(self) -> dict[str, Any]:
+        return json.loads(self.finn_params_path.read_text())
 
     @property
     def c_train_path(self) -> Path:
@@ -604,7 +607,7 @@ class FinnDir:
 
     def get_cauchy_mult_path(self, epoch: int) -> Path:
         return self.training_vals_dir / f"cauchy_mult_{epoch}.npy"
-    
+
     def get_p_exp_path(self, epoch: int) -> Path:
         return self.training_vals_dir / f"p_exp_{epoch}.npy"
 
@@ -637,7 +640,6 @@ class FinnDir:
             np.load(self.get_pred_ret_path(self.best_epoch)).reshape(-1),
         )
 
-    
     def get_ode_pred_path(self, epoch: int) -> Path:
         return self.retardation_predictions_dir / f"c_pred_{epoch}.npy"
 
@@ -670,11 +672,7 @@ class FinnDir:
         return self.done_marker_path.exists()
 
 
-def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
-    if u_and_ret is None:
-        u_ret, ret = finn_dir.best_ret_points
-    else:
-        u_ret, ret = u_and_ret
+def _construct_ret_func(u_ret: np.ndarray, ret: np.ndarray):
     # TODO: interp1D_torch uses linspace but we cannot be sure that u_ret is linearly spaced
     assert np.allclose(np.diff(u_ret), np.full(len(u_ret) - 1, u_ret[1] - u_ret[0]))
 
@@ -685,15 +683,44 @@ def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
     def ret_fun(c):
         return interp1D_torch(ret_tensor, u_min, u_max, c)
 
+    return ret_fun
+
+
+def compute_core2_btc(
+    u_ret: np.ndarray, ret: np.ndarray, cauchy_mult, D_eff
+) -> np.ndarray:
+    ret_fun = _construct_ret_func(u_ret, ret)
+
+    data_core2 = load_exp_data("Core 2")
+    conf_core2 = load_exp_conf("Core 2")
+
+    t = torch.FloatTensor(data_core2["time"].to_numpy())
+    finn_params = FinnParams.from_dict(is_exp_data=True, **conf_core2)
+    finn_params.p_exp_flux = [0.0, 0.0]
+    c0 = torch.zeros(2, finn_params.Nx, 1).to(torch.float32)
+    c_ode = solve_diffusion_sorption_pde(
+        retardation_fun=ret_fun, t=t, finn_params=finn_params, c0=c0
+    )
+
+    cauchy_mult = cauchy_mult * D_eff
+    pred = ((c_ode[:, 0, -2] - c_ode[:, 0, -1]) * cauchy_mult).squeeze()
+
+    return pred
+
+
+def compute_core2B_profile_simple(u_ret: np.ndarray, ret: np.ndarray) -> np.ndarray:
+    ret_fun = _construct_ret_func(u_ret, ret)
+
     data_core2b = load_exp_data("Core 2B")
     conf_core2b = load_exp_conf("Core 2B")
     time_core2b = torch.linspace(0.0, conf_core2b["T"], 101)
 
     t = torch.FloatTensor(time_core2b)
     finn_params = FinnParams.from_dict(is_exp_data=True, **conf_core2b)
+    finn_params.p_exp_flux = [0.0, 0.0]
     c0 = torch.zeros(2, finn_params.Nx, 1).to(torch.float32)
     c_ode = solve_diffusion_sorption_pde(
-        retardation_fun=ret_fun, p_exp=float(np.load(finn_dir.get_p_exp_path(finn_dir.best_epoch))), t=t, finn_params=finn_params, c0=c0
+        retardation_fun=ret_fun, t=t, finn_params=finn_params, c0=c0
     )
 
     x = data_core2b["x"].to_numpy()
@@ -701,6 +728,14 @@ def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
     profile = np.interp(x, xp, c_ode[-1, 1, :, 0])
 
     return profile
+
+
+def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
+    if u_and_ret is None:
+        u_ret, ret = finn_dir.best_ret_points
+    else:
+        u_ret, ret = u_and_ret
+    return compute_core2B_profile_simple(u_ret, ret)
 
 
 class Training:
@@ -823,8 +858,15 @@ class Training:
         lr_min, lr_max, decay_factor, T_0 = 1e-2, 0.1, 0.8, 10
         num_restarts = 30
 
-        learning_rates = np.concatenate([lr_min + 0.5 * (lr_max * decay_factor**i - lr_min) * 
-                                    (1 + np.cos(np.linspace(0, np.pi, T_0))) for i in range(num_restarts)])
+        learning_rates = np.concatenate(
+            [
+                lr_min
+                + 0.5
+                * (lr_max * decay_factor**i - lr_min)
+                * (1 + np.cos(np.linspace(0, np.pi, T_0)))
+                for i in range(num_restarts)
+            ]
+        )
 
         # Iterate until maximum epoch number is reached
         for epoch in range(self.start_epoch, self.n_epochs):
@@ -855,7 +897,6 @@ class Training:
                 / 10 ** self.model.flux_modules[0].p_exp
             )
 
-
             fig, axs = plt.subplots(ncols=2, figsize=(12, 3))
             axs[0].plot(data.detach().numpy(), "r.", alpha=0.3)
             axs[0].plot(self.latest_pred, "b-")
@@ -872,7 +913,8 @@ class Training:
                 label="I need this",
             )
             axs[1].legend()
-            plt.show()
+            fig.savefig(finn_dir.image_dir / f"learned_data_{epoch}.png")
+            # plt.show()
 
             assert self.latest_ode_pred is not None
             assert self.latest_pred is not None
@@ -883,7 +925,10 @@ class Training:
             np.save(finn_dir.get_ode_pred_path(epoch), self.latest_ode_pred)
             np.save(finn_dir.get_D_eff_path(epoch), self.latest_D_eff)
             np.save(finn_dir.get_cauchy_mult_path(epoch), self.latest_cauchy_mult)
-            np.save(finn_dir.get_p_exp_path(epoch), self.model.flux_modules[0].p_exp.detach().numpy())
+            np.save(
+                finn_dir.get_p_exp_path(epoch),
+                self.model.flux_modules[0].p_exp.detach().numpy(),
+            )
 
             if (epoch + 1) % 5 == 0:
                 self.save_model_to_file(epoch)
@@ -1070,7 +1115,8 @@ def pi3nn_compute_PI_and_mean(
     np.save(p3inn_dir.y_data_path, Y)
 
     plt.plot(X, Y, ".")
-    plt.show()
+    plt.savefig(p3inn_dir.image_dir / "input_data.png")
+    # plt.show()
 
     SEED = int(hash(out_dir)) % 2**31 if seed is None else int(seed)
 
@@ -1107,7 +1153,8 @@ def pi3nn_compute_PI_and_mean(
     plt.plot(xTrain, yTrain, ".")
     plt.plot(xTest, yTest, "x")
     # plt.plot(xValid, yValid, "d")
-    plt.show()
+    plt.savefig(p3inn_dir.image_dir / "transformed_data_split.png")
+    # plt.show()
 
     #########################################################
     ############## End of Data Loading Section ##############
@@ -1236,6 +1283,7 @@ def pi3nn_compute_PI_and_mean(
         )
     ax2.plot(X, Y, ".")
     ax1.legend()
+    fig.savefig(p3inn_dir.image_dir / "learned_data.png")
 
     # Plot residual training results
     data_train_up, data_train_down = create_PI_training_data(
@@ -1254,6 +1302,7 @@ def pi3nn_compute_PI_and_mean(
     ax2.plot(
         xTrain.detach().numpy(), trainer.networks["up"](xTrain).detach().numpy(), "."
     )
+    fig.savefig(p3inn_dir.image_dir / "learned_residual_up.png")
 
     ## down
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
@@ -1267,9 +1316,8 @@ def pi3nn_compute_PI_and_mean(
     ax2.plot(
         xTrain.detach().numpy(), trainer.networks["down"](xTrain).detach().numpy(), "."
     )
-    plt.show()
-
-    plt.show()
+    fig.savefig(p3inn_dir.image_dir / "learned_residual_down.png")
+    # plt.show()
 
     p3inn_dir.done_marker_path.touch()
 
