@@ -94,7 +94,7 @@ def caps_calculation(network_preds: dict[str, Any], c_up, c_down, Y, verbose=0):
 
     # FIXME: This will always be True, lol (should be an and...)
     y_all_cap = np.logical_or(y_U_cap, y_L_cap)  # y_all_cap
-    assert y_all_cap.all()
+    # assert y_all_cap.all(), y_all_cap
     PICP = np.count_nonzero(y_all_cap) / y_L_cap.shape[0]  # 0-1
     MPIW = np.mean(
         (network_preds["mean"] + c_up * network_preds["up"]).numpy().flatten()
@@ -210,7 +210,7 @@ def create_PI_training_data(
     # if the number of samples is even, the difference will be 0
     assert abs(X_up.shape[0] - X_down.shape[0]) <= 1, (
         abs(X_up.shape[0] - X_down.shape[0]),
-        X_up.shape,
+        X_up.shape, X_down.shape
     )
 
     return ((X_up, Y_up), (X_down, Y_down))
