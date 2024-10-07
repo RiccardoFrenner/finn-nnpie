@@ -286,4 +286,13 @@ TODO:
 
 # TODO
 - spline an ret fitten und params ändern für PI
-- normalize ret before computing physical loss
+- [x] normalize ret before computing physical loss
+- logging
+- declarative *Dir class
+- R(c) abhängig von hist(c) variieren
+
+# 04.10.2024
+- Log Likelihood mit Normalverteilung wegen Asymmetrie nicht ideal.
+    - Da ich alle Quantile habe kann ich diese nutzen um Verteilung (Quantile=CDF, PDF=Ableitung dieser) und damit Likelihood zu bestimmen.
+    - Das geht natürlich nicht bei den Kurven von Timothy, da ich da nur zwei Quantile habe.
+    - TODO: Was genau hat P3INN noch mal ausgerechnet?
