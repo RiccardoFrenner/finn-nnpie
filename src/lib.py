@@ -1357,3 +1357,9 @@ def load_exp_data(name: Literal["Core 1", "Core 2", "Core 2B"], physical_model=F
         df.columns = ["time", "c_diss"]
         df["c_diss"] /= 1000.0
     return df
+
+
+def load_exp_data_numpy(
+    name: Literal["Core 1", "Core 2", "Core 2B"], physical_model=False
+):
+    return load_exp_data(name, physical_model).to_numpy().T

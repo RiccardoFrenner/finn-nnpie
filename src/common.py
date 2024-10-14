@@ -1,11 +1,9 @@
-import dataclasses
 import time
 from pathlib import Path
-from typing import Callable, Literal, Optional
+from typing import Callable, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
@@ -687,5 +685,13 @@ def is_above_curve(
     below_curve = points[:, 1] > interpolated_y
     return below_curve
 
+
 def random_fixed_length_seed():
     return np.random.randint(10**8, 10**9 - 1)
+
+
+def is_between_curves(x, y_lower, y_upper, points) -> np.ndarray:
+    is_below_upper = is_below_curve(x, y_upper, points)
+    is_above_lower = is_above_curve(x, y_lower, points)
+    is_between = is_below_upper * is_above_lower
+    return is_between

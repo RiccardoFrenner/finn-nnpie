@@ -296,3 +296,7 @@ TODO:
     - Da ich alle Quantile habe kann ich diese nutzen um Verteilung (Quantile=CDF, PDF=Ableitung dieser) und damit Likelihood zu bestimmen.
     - Das geht natürlich nicht bei den Kurven von Timothy, da ich da nur zwei Quantile habe.
     - TODO: Was genau hat P3INN noch mal ausgerechnet?
+
+# 07.10.2024
+- Nächste 2 Wochen urlaub
+    - 29.10.2024 nächstes Meeting (28.10 auch möglich sonst erst wieder 04.11)
