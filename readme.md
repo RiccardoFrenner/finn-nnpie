@@ -300,3 +300,6 @@ TODO:
 # 07.10.2024
 - Nächste 2 Wochen urlaub
     - 29.10.2024 nächstes Meeting (28.10 auch möglich sonst erst wieder 04.11)
+
+# 15.10.2024
+- Reliability Curves (TODO)

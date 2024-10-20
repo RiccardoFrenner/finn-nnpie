@@ -13,12 +13,16 @@ from sklearn.preprocessing import StandardScaler
 # tanh results in smoother function
 activation_fun_mean = torch.tanh
 activation_fun_std = torch.tanh
-loss_fun = nn.L1Loss
+loss_fun_mean = nn.MSELoss
+loss_fun_std = nn.MSELoss
 
 
 def train_network(
-    model, optimizer, scheduler, criterion, train_loader, val_loader, max_epochs: int
+    model, optimizer, scheduler, criterion, train_loader, val_loader, max_epochs: int, mode: str
 ) -> None:
+    regularization_factor = 0.0 if mode == "mean" else 4*1e-9
+    n_params = sum(1 for _ in model.parameters())
+    assert n_params > 0, n_params
     for epoch in range(1, max_epochs + 1):
         # Training phase
         model.train()
@@ -26,6 +30,8 @@ def train_network(
             optimizer.zero_grad()
             output = model(data)
             loss_train = criterion(output, target)
+            # l1_penalty = sum(torch.mean(torch.square(param)) for param in model.parameters()) / n_params
+            # loss_train += l1_penalty * regularization_factor
             loss_train.backward()
             optimizer.step()
 
@@ -218,6 +224,7 @@ class CL_trainer:
         net_mean,
         net_up,
         net_down,
+        train_mean_net,
         x_train,
         y_train,
         x_valid,
@@ -231,6 +238,7 @@ class CL_trainer:
         """Take all 3 network instance and the trainSteps (CL_UQ_Net_train_steps) instance"""
 
         self.configs = configs
+        self.train_mean_net = train_mean_net
 
         self.networks = {
             "mean": net_mean,
@@ -246,6 +254,7 @@ class CL_trainer:
                 # network.parameters(), lr=1e-3, weight_decay=2e-3  # still a bit too strong for mean, but too little for std
             )
             for network_type, network in self.networks.items()
+            if train_mean_net or network_type != "mean"
         }
 
         self.schedulers = {
@@ -263,16 +272,18 @@ class CL_trainer:
         self.y_test = y_test
 
     def train(self):
-        print("Training MEAN Network")
-        train_network(
-            model=self.networks["mean"],
-            optimizer=self.optimizers["mean"],
-            scheduler=self.schedulers["mean"],
-            criterion=loss_fun(),
-            train_loader=[(self.x_train, self.y_train)],
-            val_loader=[(self.x_valid, self.y_valid)],
-            max_epochs=self.configs["Max_iter"],
-        )
+        if self.train_mean_net:
+            print("Training MEAN Network")
+            train_network(
+                model=self.networks["mean"],
+                optimizer=self.optimizers["mean"],
+                scheduler=self.schedulers["mean"],
+                criterion=loss_fun_mean(),
+                train_loader=[(self.x_train, self.y_train)],
+                val_loader=[(self.x_valid, self.y_valid)],
+                max_epochs=self.configs["Max_iter"],
+                mode="mean",
+            )
 
         data_train_up, data_train_down = create_PI_training_data(
             self.networks["mean"], X=self.x_train, Y=self.y_train
@@ -286,20 +297,22 @@ class CL_trainer:
             model=self.networks["up"],
             optimizer=self.optimizers["up"],
             scheduler=self.schedulers["up"],
-            criterion=loss_fun(),
+            criterion=loss_fun_std(),
             train_loader=[data_train_up],
             val_loader=[data_val_up],
             max_epochs=self.configs["Max_iter"],
+            mode="up",
         )
         print("Training DOWN Network")
         train_network(
             model=self.networks["down"],
             optimizer=self.optimizers["down"],
             scheduler=self.schedulers["down"],
-            criterion=loss_fun(),
+            criterion=loss_fun_std(),
             train_loader=[data_train_down],
             val_loader=[data_val_down],
             max_epochs=self.configs["Max_iter"],
+            mode="down",
         )
 
     def eval_networks(self, x, as_numpy: bool = False) -> dict[str, Any]:
@@ -473,64 +486,104 @@ class P3innDir:
         return self.done_marker_path.exists()
 
 
+class DataPostProcessor:
+    def __init__(self, x, y, test_size: float, seed):
+        self._scalar_x = StandardScaler()
+        self._scalar_y = StandardScaler()
+
+        self.x = self._scalar_x.fit_transform(x)
+        self.y = self._scalar_y.fit_transform(y)
+
+        # random split
+        xTrainValid, self.xTest, yTrainValid, self.yTest = train_test_split(
+            self.x, self.y, test_size=test_size, random_state=seed, shuffle=True
+        )
+        ## Split the validation data
+        self.xTrain, self.xValid, self.yTrain, self.yValid = train_test_split(
+            xTrainValid,
+            yTrainValid,
+            test_size=test_size,
+            random_state=seed,
+            shuffle=True,
+        )
+
+        ### To tensors
+        self.x = torch.FloatTensor(self.x)
+        self.xTrain = torch.FloatTensor(self.xTrain)
+        self.xValid = torch.FloatTensor(self.xValid)
+        self.xTest = torch.FloatTensor(self.xTest)
+        self.y = torch.FloatTensor(self.y)
+        self.yTrain = torch.FloatTensor(self.yTrain)
+        self.yValid = torch.FloatTensor(self.yValid)
+        self.yTest = torch.FloatTensor(self.yTest)
+
+    def get_postprocessed(self):
+        return (
+            self.xTrain,
+            self.yTrain,
+            self.xTest,
+            self.yTest,
+            self.xValid,
+            self.yValid,
+        )
+
+    def transform(self, x, y):
+        return self._scalar_x.transform(x), self._scalar_y.transform(y)
+
+    def inverse_transform(self, x, y):
+        return self._scalar_x.inverse_transform(x), self._scalar_y.inverse_transform(y)
+
+
 def pi3nn_compute_PI_and_mean(
-    out_dir, quantiles: list[float], x_data_path=None, y_data_path=None, seed=None, visualize=True
+    out_dir,
+    quantiles: list[float],
+    x_data_path=None,
+    y_data_path=None,
+    seed=None,
+    visualize=False,
+    net_mean_=None,
+    max_iter=50000,
 ):
     p3inn_dir = P3innDir(Path(out_dir))
     if p3inn_dir.is_done:
         return
+
+    train_mean_net = True if net_mean_ is None else False
 
     if x_data_path is None:
         x_data_path = p3inn_dir.x_data_path
     if y_data_path is None:
         y_data_path = p3inn_dir.y_data_path
 
-    X = np.load(x_data_path)
-    Y = np.load(y_data_path)
-    np.save(p3inn_dir.x_data_path, X)
-    np.save(p3inn_dir.y_data_path, Y)
+    X_ = np.load(x_data_path)
+    Y_ = np.load(y_data_path)
+    np.save(p3inn_dir.x_data_path, X_)
+    np.save(p3inn_dir.y_data_path, Y_)
 
-    plt.plot(X, Y, ".")
+    plt.plot(X_, Y_, ".")
     plt.savefig(p3inn_dir.image_dir / "input_data.png")
     if not visualize:
         plt.close()
 
     SEED = int(hash(out_dir)) % 2**31 if seed is None else int(seed)
 
-    # random split
-    xTrainValid, xTest, yTrainValid, yTest = train_test_split(
-        X, Y, test_size=0.1, random_state=SEED, shuffle=True
-    )
-    ## Split the validation data
-    xTrain, xValid, yTrain, yValid = train_test_split(
-        xTrainValid, yTrainValid, test_size=0.1, random_state=SEED, shuffle=True
-    )
-
-    ### Data normalization
-    scalar_x = StandardScaler()
-    scalar_y = StandardScaler()
-
-    xTrain = scalar_x.fit_transform(xTrain)
-    xValid = scalar_x.transform(xValid)
-    xTest = scalar_x.transform(xTest)
-
-    yTrain = scalar_y.fit_transform(yTrain)
-    yValid = scalar_y.transform(yValid)
-    yTest = scalar_y.transform(yTest)
-
-    ### To tensors
-    xTrain = torch.Tensor(xTrain)
-    xValid = torch.Tensor(xValid)
-    xTest = torch.Tensor(xTest)
-
-    yTrain = torch.Tensor(yTrain)
-    yValid = torch.Tensor(yValid)
-    yTest = torch.Tensor(yTest)
+    data_processor = DataPostProcessor(X_, Y_, test_size=0.1, seed=SEED)
+    xTrain, yTrain, xTest, yTest, xValid, yValid = data_processor.get_postprocessed()
 
     plt.figure()
-    plt.plot(xTrain, yTrain, ".")
-    plt.plot(xTest, yTest, "x")
-    plt.plot(xValid, yValid, "d")
+    if net_mean_ is not None:
+        # the mean function passed does not know about any scaling. So it wants unscaled x values.
+        # However, below I only want to deal with scaled values which is why this code here exists.
+        def net_mean(x):
+            y = net_mean_(data_processor._scalar_x.inverse_transform(x))
+            y_trafo = data_processor._scalar_y.transform(y)
+            return torch.from_numpy(y_trafo).to(torch.float32)
+
+        x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
+        plt.plot(x_tmp, net_mean(x_tmp), "k-", label="Given Mean", zorder=100, lw=3)
+    plt.plot(xTrain, yTrain, ".", alpha=0.5)
+    plt.plot(xTest, yTest, "x", alpha=0.5)
+    plt.plot(xValid, yValid, "d", alpha=0.5)
     plt.savefig(p3inn_dir.image_dir / "transformed_data_split.png")
     if not visualize:
         plt.close()
@@ -546,7 +599,7 @@ def pi3nn_compute_PI_and_mean(
         "num_neurons_mean": [64],
         "num_neurons_up": [64],
         "num_neurons_down": [64],
-        "Max_iter": 50000,
+        "Max_iter": max_iter,
     }
     import random
 
@@ -558,7 +611,9 @@ def pi3nn_compute_PI_and_mean(
     torch.manual_seed(configs["seed"])
 
     """ Create network instances"""
-    net_mean = UQ_Net_mean(configs, num_inputs, num_outputs)
+    net_mean = (
+        UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean is None else net_mean
+    )
     net_up = UQ_Net_std(configs, num_inputs, num_outputs, net="up")
     net_down = UQ_Net_std(configs, num_inputs, num_outputs, net="down")
 
@@ -568,6 +623,7 @@ def pi3nn_compute_PI_and_mean(
         net_mean,
         net_up,
         net_down,
+        train_mean_net=train_mean_net,
         x_train=xTrain,
         y_train=yTrain,
         x_valid=xValid,
@@ -580,24 +636,29 @@ def pi3nn_compute_PI_and_mean(
     )
     trainer.train()  # training for 3 networks
 
-    full_preds = trainer.eval_networks(
-        torch.from_numpy(scalar_x.transform(X)).to(torch.float32)
+    preds_full = trainer.eval_networks(data_processor.x, as_numpy=True)
+    preds_full["median"] = shift_to_median(preds_full["mean"], data_processor.y)
+    median_shift = compute_shift_to_median(preds_full["mean"], data_processor.y)
+
+    print(f"{median_shift=}")
+    print((preds_full["median"] - data_processor.y.numpy() > 0).sum())
+    print((preds_full["median"] - data_processor.y.numpy() < 0).sum())
+
+    x_eval = np.linspace(data_processor.x.min(), data_processor.x.max(), 100).reshape(
+        -1, 1
     )
-    y_mean_full = scalar_y.inverse_transform(full_preds["mean"])
-    y_median_full = shift_to_median(y_mean_full, Y)
+    preds_eval = trainer.eval_networks(
+        torch.from_numpy(x_eval).to(torch.float32), as_numpy=True
+    )
+    assert (preds_eval["up"] > 0).all()
+    assert (preds_eval["down"] > 0).all()
+    preds_eval["median"] = preds_eval["mean"] + median_shift
 
-    median_shift = compute_shift_to_median(y_mean_full, Y)
+    def inv_traf_x(x):
+        return data_processor._scalar_x.inverse_transform(x)
 
-    print(median_shift)
-    print((y_median_full - Y > 0).sum())
-    print((y_median_full - Y < 0).sum())
-
-    x_curve = torch.linspace(X.min(), X.max(), 100, dtype=torch.float32).reshape(-1, 1)
-    x_curve = torch.from_numpy(scalar_x.transform(x_curve)).to(torch.float32)
-    pred_curves = trainer.eval_networks(x_curve)
-    pred_curves["median"] = pred_curves["mean"] + median_shift
-    x_curve = x_curve.detach().numpy()
-    x_curve = scalar_x.inverse_transform(x_curve)
+    def inv_traf_y(y):
+        return data_processor._scalar_y.inverse_transform(y)
 
     for quantile in quantiles:
         c_up, c_down = compute_boundary_factors(
@@ -608,99 +669,61 @@ def pi3nn_compute_PI_and_mean(
         )
 
         assert c_up > 0 and c_down > 0
-        y_U_PI_array_train = (pred_curves["median"] + c_up * pred_curves["up"]).numpy()
-        y_L_PI_array_train = (
-            pred_curves["median"] - c_down * pred_curves["down"]
-        ).numpy()
-        y_mean = pred_curves["mean"].numpy()
-        y_median = pred_curves["median"].numpy()
+        upper_PI = preds_eval["median"] + c_up * preds_eval["up"]
+        lower_PI = preds_eval["median"] - c_down * preds_eval["down"]
 
-        y_mean = scalar_y.inverse_transform(y_mean)
-        y_median = scalar_y.inverse_transform(y_median)
-        y_U_PI_array_train = scalar_y.inverse_transform(y_U_PI_array_train)
-        y_L_PI_array_train = scalar_y.inverse_transform(y_L_PI_array_train)
-
-        assert torch.all(pred_curves["up"] > 0)
-        assert torch.all(pred_curves["down"] > 0)
-
-        # since c > 0 and std network prediction > 0, the median should always be between the upper and lower prediction intervals and not cross them
-        assert np.all(y_median > y_L_PI_array_train)
-        assert np.all(y_median < y_U_PI_array_train)
-
-        # Scatter plot of the original data points
-        np.save(p3inn_dir.x_eval_path, x_curve)
-        np.save(p3inn_dir.pred_mean_path, y_mean)
-        np.save(p3inn_dir.pred_median_path, y_median)
-        np.save(p3inn_dir.get_pred_bound_path(quantile, "up"), y_U_PI_array_train)
-        np.save(p3inn_dir.get_pred_bound_path(quantile, "down"), y_L_PI_array_train)
+        # save PIs
+        np.save(p3inn_dir.x_eval_path, inv_traf_x(x_eval))
+        np.save(p3inn_dir.pred_mean_path, inv_traf_y(preds_eval["mean"]))
+        np.save(p3inn_dir.pred_median_path, inv_traf_y(preds_eval["median"]))
+        np.save(p3inn_dir.get_pred_bound_path(quantile, "up"), inv_traf_y(upper_PI))
+        np.save(p3inn_dir.get_pred_bound_path(quantile, "down"), inv_traf_y(lower_PI))
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6))
 
-    # Scatter plot of the original data points
-    ax1.plot(X, Y, ".", alpha=0.2)
-
-    # Plot the mean curve
-    # ax1.plot(x_curve, y_mean, "b-", label="Mean Prediction")
-    ax1.plot(x_curve, y_median, "b-", label="Median Prediction")
-
-    # Fill the area between the upper and lower prediction intervals with transparency
+    # data points + mean and median predictions + one PI
+    ax1.plot(data_processor.x, data_processor.y, ".", alpha=0.2)
+    ax1.plot(x_eval.flat, preds_eval["mean"], "r-", label="Mean Prediction")
+    ax1.plot(x_eval.flat, preds_eval["median"], "b--", label="Median Prediction")
     ax1.fill_between(
-        x_curve.flatten(),
-        y_L_PI_array_train.flatten(),
-        y_U_PI_array_train.flatten(),
+        x_eval.flat,
+        lower_PI.flat,
+        upper_PI.flat,
         color="grey",
         alpha=0.3,
-        label="Prediction Interval",
+        label=f"Prediction Interval {quantile:%}",
     )
+    ax1.legend()
+
+    # median + all PIs
+    ax2.plot(x_eval.flat, preds_eval["mean"], "r-", label="Mean Prediction")
+    ax2.plot(x_eval.flat, preds_eval["median"], "b--", label="Median Prediction")
     for i, (q, bound_up, bound_down) in enumerate(p3inn_dir.iter_pred_PIs()):
         ax2.fill_between(
-            x=x_curve.flat,
-            y1=bound_down.flat,
-            y2=bound_up.flat,
+            x=x_eval.flat,
+            y1=data_processor._scalar_y.transform(bound_down).flat,
+            y2=data_processor._scalar_y.transform(bound_up).flat,
             color=f"C{0}",
             alpha=0.2,
         )
-    ax2.plot(X, Y, ".")
-    ax1.legend()
+
     fig.savefig(p3inn_dir.image_dir / "learned_data.png")
     if not visualize:
         plt.close(fig)
-
 
     # Plot residual training results
     data_train_up, data_train_down = create_PI_training_data(
         trainer.networks["mean"], X=trainer.x_train, Y=trainer.y_train
     )
 
-    ## up
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
-    ax1.plot(*data_train_up, ".")
-    ax1.plot(
-        xTrain.detach().numpy(),
-        trainer.networks["up"](xTrain).detach().numpy(),
-        "x",
-        alpha=0.2,
-    )
-    ax2.plot(
-        xTrain.detach().numpy(), trainer.networks["up"](xTrain).detach().numpy(), "."
-    )
-    fig.savefig(p3inn_dir.image_dir / "learned_residual_up.png")
-    if not visualize:
-        plt.close(fig)
-
-    ## down
-    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
-    ax1.plot(*data_train_down, ".")
-    ax1.plot(
-        xTrain.detach().numpy(),
-        trainer.networks["down"](xTrain).detach().numpy(),
-        "x",
-        alpha=0.2,
-    )
-    ax2.plot(
-        xTrain.detach().numpy(), trainer.networks["down"](xTrain).detach().numpy(), "."
-    )
-    fig.savefig(p3inn_dir.image_dir / "learned_residual_down.png")
+    ax1.set_title("Residuals Up")
+    ax1.plot(*data_train_up, ".", alpha=0.3)
+    ax1.plot(x_eval, preds_eval["up"], "-", lw=3)
+    ax2.set_title("Residuals Down")
+    ax2.plot(*data_train_down, ".", alpha=0.3)
+    ax2.plot(x_eval, preds_eval["down"], "-", lw=3)
+    fig.savefig(p3inn_dir.image_dir / "learned_residuals.png")
     if not visualize:
         plt.close(fig)
 
