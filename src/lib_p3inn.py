@@ -560,6 +560,7 @@ def pi3nn_compute_PI_and_mean(
     np.save(p3inn_dir.x_data_path, X_)
     np.save(p3inn_dir.y_data_path, Y_)
 
+    plt.figure()
     plt.plot(X_, Y_, ".")
     plt.savefig(p3inn_dir.image_dir / "input_data.png")
     if not visualize:
@@ -572,7 +573,7 @@ def pi3nn_compute_PI_and_mean(
 
     plt.figure()
     if net_mean_ is not None:
-        # the mean function passed does not know about any scaling. So it wants unscaled x values.
+        # the passed mean function does not know about any scaling. So it wants unscaled x values.
         # However, below I only want to deal with scaled values which is why this code here exists.
         def net_mean(x):
             y = net_mean_(data_processor._scalar_x.inverse_transform(x))
@@ -612,7 +613,7 @@ def pi3nn_compute_PI_and_mean(
 
     """ Create network instances"""
     net_mean = (
-        UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean is None else net_mean
+        UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean_ is None else net_mean_
     )
     net_up = UQ_Net_std(configs, num_inputs, num_outputs, net="up")
     net_down = UQ_Net_std(configs, num_inputs, num_outputs, net="down")

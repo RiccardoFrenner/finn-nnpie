@@ -583,6 +583,10 @@ class FinnDir:
         return self.path / "ckpt.pt"
 
     @property
+    def core2b_profile(self) -> Path:
+        return self.path / "core2b_profile.npy"
+
+    @property
     def training_vals_dir(self) -> Path:
         p = self.path / "training_vals/"
         p.mkdir(exist_ok=True, parents=True)
@@ -721,11 +725,19 @@ def compute_core2B_profile_simple(u_ret: np.ndarray, ret: np.ndarray) -> np.ndar
 
 
 def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
+    write_to_file = False
     if u_and_ret is None:
         u_ret, ret = finn_dir.best_ret_points
+        if finn_dir.core2b_profile.exists():
+            return np.load(finn_dir.core2b_profile)
+        else:
+            write_to_file = True
     else:
         u_ret, ret = u_and_ret
-    return compute_core2B_profile_simple(u_ret, ret)
+    profile = compute_core2B_profile_simple(u_ret, ret)
+    if write_to_file:
+        np.save(finn_dir.core2b_profile, profile)
+    return profile
 
 
 class Training:
