@@ -273,8 +273,8 @@ class CL_trainer:
         self.x_test = x_test
         self.y_test = y_test
 
-    def train(self):
-        if self.train_mean_net:
+    def train(self, train_mean=True, train_stds=True):
+        if train_mean:
             print("Training MEAN Network")
             train_network(
                 model=self.networks["mean"],
@@ -294,28 +294,29 @@ class CL_trainer:
             self.networks["mean"], X=self.x_valid, Y=self.y_valid
         )
 
-        print("Training UP Network")
-        train_network(
-            model=self.networks["up"],
-            optimizer=self.optimizers["up"],
-            scheduler=self.schedulers["up"],
-            criterion=loss_fun_std(),
-            train_loader=[data_train_up],
-            val_loader=[data_val_up],
-            max_epochs=self.configs["Max_iter"],
-            mode="up",
-        )
-        print("Training DOWN Network")
-        train_network(
-            model=self.networks["down"],
-            optimizer=self.optimizers["down"],
-            scheduler=self.schedulers["down"],
-            criterion=loss_fun_std(),
-            train_loader=[data_train_down],
-            val_loader=[data_val_down],
-            max_epochs=self.configs["Max_iter"],
-            mode="down",
-        )
+        if train_stds:
+            print("Training UP Network")
+            train_network(
+                model=self.networks["up"],
+                optimizer=self.optimizers["up"],
+                scheduler=self.schedulers["up"],
+                criterion=loss_fun_std(),
+                train_loader=[data_train_up],
+                val_loader=[data_val_up],
+                max_epochs=self.configs["Max_iter"],
+                mode="up",
+            )
+            print("Training DOWN Network")
+            train_network(
+                model=self.networks["down"],
+                optimizer=self.optimizers["down"],
+                scheduler=self.schedulers["down"],
+                criterion=loss_fun_std(),
+                train_loader=[data_train_down],
+                val_loader=[data_val_down],
+                max_epochs=self.configs["Max_iter"],
+                mode="down",
+            )
 
     def eval_networks(self, x, as_numpy: bool = False) -> dict[str, Any]:
         with torch.no_grad():
@@ -543,14 +544,15 @@ def pi3nn_compute_PI_and_mean(
     y_data_path=None,
     seed=None,
     visualize=False,
-    net_mean_=None,
+    passed_net_mean=None,
     max_iter=50000,
+    load_from_dir: bool=True,
 ):
     p3inn_dir = P3innDir(Path(out_dir))
-    if p3inn_dir.is_done:
+    if p3inn_dir.is_done and not load_from_dir:
         return
 
-    train_mean_net = True if net_mean_ is None else False
+    train_mean_net = True if passed_net_mean is None else False
 
     if x_data_path is None:
         x_data_path = p3inn_dir.x_data_path
@@ -573,17 +575,35 @@ def pi3nn_compute_PI_and_mean(
     data_processor = DataPostProcessor(X_, Y_, test_size=0.1, seed=SEED)
     xTrain, yTrain, xTest, yTest, xValid, yValid = data_processor.get_postprocessed()
 
+    x_eval = np.linspace(data_processor.x.min(), data_processor.x.max(), 100).reshape(
+        -1, 1
+    )
+
+    net_mean=None
+    net_up=None
+    net_down=None
+
     plt.figure()
-    if net_mean_ is not None:
+    if passed_net_mean is not None:
         # the passed mean function does not know about any scaling. So it wants unscaled x values.
         # However, below I only want to deal with scaled values which is why this code here exists.
         def net_mean(x):
-            y = net_mean_(data_processor._scalar_x.inverse_transform(x))
+            y = passed_net_mean(data_processor._scalar_x.inverse_transform(x))
             y_trafo = data_processor._scalar_y.transform(y)
             return torch.from_numpy(y_trafo).to(torch.float32)
 
         x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
         plt.plot(x_tmp, net_mean(x_tmp), "k-", label="Given Mean", zorder=100, lw=3)
+    elif load_from_dir:
+        if p3inn_dir.pred_mean_path.exists():
+            train_mean_net = False
+            def net_mean(x):
+                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), np.load(p3inn_dir.pred_mean_path))
+                y_trafo = data_processor._scalar_y.transform(y)
+                return torch.from_numpy(y_trafo).to(torch.float32)
+
+            x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
+            plt.plot(x_tmp, net_mean(x_tmp), "k-", label="Loaded Mean", zorder=100, lw=3)
     plt.plot(xTrain, yTrain, ".", alpha=0.5)
     plt.plot(xTest, yTest, "x", alpha=0.5)
     plt.plot(xValid, yValid, "d", alpha=0.5)
@@ -615,10 +635,24 @@ def pi3nn_compute_PI_and_mean(
 
     """ Create network instances"""
     net_mean = (
-        UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean_ is None else net_mean_
+        UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean is None else net_mean
     )
-    net_up = UQ_Net_std(configs, num_inputs, num_outputs, net="up")
-    net_down = UQ_Net_std(configs, num_inputs, num_outputs, net="down")
+    train_stds=True
+    if load_from_dir and len(list(p3inn_dir.pred_PIs_dir.iterdir())) > 0:
+        for q, bound_up, bound_down in p3inn_dir.iter_pred_PIs():
+            def net_up(x):
+                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), bound_up - data_processor._scalar_y.transform(net_mean(data_processor._scalar_x.inverse_transform(x_eval))))
+                y_trafo = data_processor._scalar_y.transform(y)
+                return torch.from_numpy(y_trafo).to(torch.float32)
+            def net_down(x):
+                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), bound_down - data_processor._scalar_y.transform(net_mean(data_processor._scalar_x.inverse_transform(x_eval))))
+                y_trafo = data_processor._scalar_y.transform(y)
+                return torch.from_numpy(y_trafo).to(torch.float32)
+            train_stds = False
+            break
+            
+    net_up = UQ_Net_std(configs, num_inputs, num_outputs, net="up") if net_up is None else net_up
+    net_down = UQ_Net_std(configs, num_inputs, num_outputs, net="down") if net_down is None else net_down
 
     # Initialize trainer and conduct training/optimizations
     trainer = CL_trainer(
@@ -637,7 +671,7 @@ def pi3nn_compute_PI_and_mean(
         decay_rate=DECAY_RATE,  # Pass decay rate to trainer
         decay_steps=DECAY_STEPS,  # Pass decay steps to trainer
     )
-    trainer.train()  # training for 3 networks
+    trainer.train(train_mean=train_mean_net, train_stds=train_stds)  # training for 3 networks
 
     preds_full = trainer.eval_networks(data_processor.x, as_numpy=True)
     preds_full["median"] = shift_to_median(preds_full["mean"], data_processor.y)
@@ -647,9 +681,6 @@ def pi3nn_compute_PI_and_mean(
     print((preds_full["median"] - data_processor.y.numpy() > 0).sum())
     print((preds_full["median"] - data_processor.y.numpy() < 0).sum())
 
-    x_eval = np.linspace(data_processor.x.min(), data_processor.x.max(), 100).reshape(
-        -1, 1
-    )
     preds_eval = trainer.eval_networks(
         torch.from_numpy(x_eval).to(torch.float32), as_numpy=True
     )

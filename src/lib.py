@@ -29,7 +29,7 @@ class ExperimentalSamples:
             core1=np.load(p / "y_core1_samples.npy"),
             core2=np.load(p / "y_core2_samples.npy"),
             core2B=np.load(p / "y_core2B_samples.npy"),
-            ret_x=np.load(p / "x_ret_samples.npy"),
+            ret_x=np.load(p / "x_ret_samples.npy").squeeze(),
             ret_y=np.load(p / "y_ret_samples.npy"),
         )
     
@@ -663,6 +663,10 @@ class FinnDir:
     @property
     def ckpt_path(self) -> Path:
         return self.path / "ckpt.pt"
+
+    @property
+    def core1_btc(self) -> Path:
+        return self.path / "core1_btc.npy"
 
     @property
     def core2b_profile(self) -> Path:
