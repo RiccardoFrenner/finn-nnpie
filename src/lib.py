@@ -32,12 +32,21 @@ class ExperimentalSamples:
             ret_x=np.load(p / "x_ret_samples.npy"),
             ret_y=np.load(p / "y_ret_samples.npy"),
         )
+    
+    def to_dir(self, p):
+        p = Path(p).resolve()
+        np.save(p / "y_core1_samples.npy", self.core1)
+        np.save(p / "y_core2_samples.npy", self.core2)
+        np.save(p / "y_core2B_samples.npy", self.core2B)
+        np.save(p / "x_ret_samples.npy", self.ret_x)
+        np.save(p / "y_ret_samples.npy", self.ret_y)
 
     def plot(
         self,
         axs: Optional[list[plt.Axes]] = None,
         set_titles: bool = True,
         line_kwargs=None,
+        only_outlines: bool = False,
     ):
         if axs is None:
             fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 6))
@@ -66,10 +75,23 @@ class ExperimentalSamples:
         line_kwargs.setdefault("color", "black")
         line_kwargs.setdefault("linestyle", "-")
 
-        axs[0].plot(core1_x, self.core1.T, **line_kwargs)
-        axs[1].plot(core2_x, self.core2.T, **line_kwargs)
-        axs[2].plot(core2B_x, self.core2B.T, **line_kwargs)
-        axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
+        def compute_outlines(arr):
+            return np.array([
+                np.min(arr, axis=0),
+                np.max(arr, axis=0),
+            ])
+
+        if only_outlines:
+            line_kwargs["alpha"] = 0.5
+            axs[0].fill_between(core1_x, *compute_outlines(self.core1), **line_kwargs)
+            axs[1].fill_between(core2_x, *compute_outlines(self.core2), **line_kwargs)
+            axs[2].fill_between(core2B_x, *compute_outlines(self.core2B), **line_kwargs)
+            axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
+        else:
+            axs[0].plot(core1_x, self.core1.T, **line_kwargs)
+            axs[1].plot(core2_x, self.core2.T, **line_kwargs)
+            axs[2].plot(core2B_x, self.core2B.T, **line_kwargs)
+            axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
 
         return fig, axs
 
