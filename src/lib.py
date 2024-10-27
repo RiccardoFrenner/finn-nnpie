@@ -2,7 +2,7 @@ import dataclasses
 import json
 import time
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +12,66 @@ import torch.nn as nn
 from torchdiffeq import odeint
 
 from lib_p3inn import pi3nn_compute_PI_and_mean, P3innDir
+
+
+@dataclasses.dataclass
+class ExperimentalSamples:
+    core1: np.ndarray
+    core2: np.ndarray
+    core2B: np.ndarray
+    ret_x: np.ndarray
+    ret_y: np.ndarray
+
+    @classmethod
+    def from_dir(cls, p):
+        p = Path(p).resolve()
+        return cls(
+            core1=np.load(p / "y_core1_samples.npy"),
+            core2=np.load(p / "y_core2_samples.npy"),
+            core2B=np.load(p / "y_core2B_samples.npy"),
+            ret_x=np.load(p / "x_ret_samples.npy"),
+            ret_y=np.load(p / "y_ret_samples.npy"),
+        )
+
+    def plot(
+        self,
+        axs: Optional[list[plt.Axes]] = None,
+        set_titles: bool = True,
+        line_kwargs=None,
+    ):
+        if axs is None:
+            fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 6))
+            axs = axs.flatten().tolist()
+        else:
+            fig = plt.gcf()
+        assert axs is not None
+        line_kwargs = line_kwargs or dict()
+
+        if set_titles:
+            axs[0].set_title("Core 1")
+            axs[1].set_title("Core 2")
+            axs[2].set_title("Core 2B")
+            axs[3].set_title("Retardation")
+
+        core1_x = load_exp_data_numpy("Core 1")[0]
+        core2_x = load_exp_data_numpy("Core 2")[0]
+        core2B_conf = load_exp_conf("Core 2B")
+        if self.core2B.shape[1] == int(core2B_conf["Nx"]):
+            core2B_x = np.linspace(0, core2B_conf["X"], int(core2B_conf["Nx"]))
+        else:
+            core2B_x = load_exp_data_numpy("Core 2B")[0]
+
+        ALPHA = min(1.0, 6 / self.ret_y.shape[0])
+        line_kwargs["alpha"] = ALPHA
+        line_kwargs.setdefault("color", "black")
+        line_kwargs.setdefault("linestyle", "-")
+
+        axs[0].plot(core1_x, self.core1.T, **line_kwargs)
+        axs[1].plot(core2_x, self.core2.T, **line_kwargs)
+        axs[2].plot(core2B_x, self.core2B.T, **line_kwargs)
+        axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
+
+        return fig, axs
 
 
 class FinnParams:
@@ -680,26 +740,54 @@ def _construct_ret_func(u_ret: np.ndarray, ret: np.ndarray):
     return ret_fun
 
 
-def compute_core2_btc(
-    u_ret: np.ndarray, ret: np.ndarray, cauchy_mult, D_eff
+def compute_btc(
+    u_ret: np.ndarray,
+    ret: np.ndarray,
+    cauchy_mult,
+    D_eff,
+    core_type: Literal["Core 1", "Core 2"],
 ) -> np.ndarray:
     ret_fun = _construct_ret_func(u_ret, ret)
 
-    data_core2 = load_exp_data("Core 2")
-    conf_core2 = load_exp_conf("Core 2")
+    data = load_exp_data(core_type)
+    conf = load_exp_conf(core_type)
 
-    t = torch.FloatTensor(data_core2["time"].to_numpy())
-    finn_params = FinnParams.from_dict(is_exp_data=True, **conf_core2)
+    t = torch.FloatTensor(data["time"].to_numpy())
+    finn_params = FinnParams.from_dict(is_exp_data=True, **conf)
     finn_params.p_exp_flux = [0.0, 0.0]
     c0 = torch.zeros(2, finn_params.Nx, 1).to(torch.float32)
     c_ode = solve_diffusion_sorption_pde(
         retardation_fun=ret_fun, t=t, finn_params=finn_params, c0=c0
     )
 
-    cauchy_mult = cauchy_mult * D_eff
+    if core_type == "Core 1":
+        cauchy_mult = 0.0836712021582612
+    else:
+        cauchy_mult = cauchy_mult * D_eff
+
     pred = ((c_ode[:, 0, -2] - c_ode[:, 0, -1]) * cauchy_mult).squeeze()
 
     return pred
+
+
+def compute_core1_btc(u_ret: np.ndarray, ret: np.ndarray) -> np.ndarray:
+    finn_dir = FinnDir(Path("../data_out/finn/core2").resolve())
+    finn_params = finn_dir.load_finn_params()
+    cauchy_mult = finn_params["cauchy_mult"][0]
+    D_eff = finn_params["D_eff"][0]
+    return compute_btc(u_ret, ret, cauchy_mult, D_eff, "Core 1")
+
+
+def compute_core2_btc(
+    u_ret: np.ndarray, ret: np.ndarray, cauchy_mult=None, D_eff=None
+) -> np.ndarray:
+    finn_dir = FinnDir(Path("../data_out/finn/core2").resolve())
+    finn_params = finn_dir.load_finn_params()
+    if cauchy_mult is None:
+        cauchy_mult = finn_params["cauchy_mult"][0]
+    if D_eff is None:
+        D_eff = finn_params["D_eff"][0]
+    return compute_btc(u_ret, ret, cauchy_mult, D_eff, "Core 2")
 
 
 def compute_core2B_profile_simple(u_ret: np.ndarray, ret: np.ndarray) -> np.ndarray:
@@ -1014,6 +1102,7 @@ def finn_fit_retardation(
     trainer.model_train(u0=c0, t=t_train, data=c_train)
 
     finn_dir.done_marker_path.touch()
+
 
 def _load_exp_df(name: Literal["Core 1", "Core 2", "Core 2B"], sheet) -> pd.DataFrame:
     p = Path(f"../data/experimental_data/data_{name.replace(' ', '').lower()}.xlsx")
