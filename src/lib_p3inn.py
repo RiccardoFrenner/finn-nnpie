@@ -92,9 +92,11 @@ def caps_calculation(network_preds: dict[str, Any], c_up, c_down, Y, verbose=0):
     y_U_cap = bound_up > Y  # y_U_cap
     y_L_cap = bound_down < Y  # y_L_cap
 
-    # FIXME: This will always be True, lol (should be an and...)
     y_all_cap = np.logical_and(y_U_cap, y_L_cap)  # y_all_cap
+    
+    # FIXED: This will always be True, lol (should be an and...)
     # assert y_all_cap.all(), y_all_cap
+    
     PICP = np.count_nonzero(y_all_cap) / y_L_cap.shape[0]  # 0-1
     MPIW = np.mean(
         (network_preds["mean"] + c_up * network_preds["up"]).numpy().flatten()

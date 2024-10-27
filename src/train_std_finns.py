@@ -1,6 +1,6 @@
 """Train +/- FINN models for multiple quantiles with same seed."""
 
-# FIXME: Rename this file to: train_finn_stds
+# TODO: Rename this file to: train_finn_stds
 import subprocess
 import argparse
 from pathlib import Path

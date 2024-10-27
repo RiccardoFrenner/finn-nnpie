@@ -1,8 +1,11 @@
 # TODOs
 
-- [] What if I use mean for the loss in FINN?
-- [] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
+- [x] What if I use mean for the loss in FINN?
+    - It's good.
+- [x] Was wenn ich statt nen mean zu learnen bei 3pinn den FINN mean einfach nehme und mit ihm aufsplitte?
     - Das würde aber nicht dem Datensatz den ich gesampelt habe entsprechen. Die FINN Kurve kann ganz schön anders als der Datensatz aussehen.
+    - Ist glaub bei R nicht wichtig/sinnvoll, aber bei c schon.
+        - Bei R gibt es ja abhängig von der Methode keinen wirklichen mean. Was ist der mean, wenn ich den seed variiere? Wenn ich die Daten variiere, ist ein sinnvoller mean vermutlich der, der alle Daten hat. Aber geht halt bei den anderen variationsmethoden nicht.
 
 -----
 
@@ -112,8 +115,7 @@ FINN, 51 timesteps, 100 epochs, 26 spatial steps, randomly masked c field for lo
 # Interesting Observation for Running Intervals
 - It seems like only the first interval even converges (MSE < 1e-2)
 
-TODO
-- [] Compare Rs for running intervals epochs=100 and epochs=1000
+- [x] Compare Rs for running intervals epochs=100 and epochs=1000
 
 ----
 # 20.08.24
@@ -279,10 +281,6 @@ TODO:
 # 27.09.2024
 - Dass mein Code core2B nicht reproduzieren kann liegt wohl vor allem daran, dass core2b ganz andere parameter (physikalische) hat. X ist länger, sample_radius größer, Q ganz anders, andere solubility, ...
 
-# FIXME:
-- add `assert dt == 5` when synthetic data
-- add `assert dx == 0.04` when synthetic data
-- 
 
 # TODO
 - spline an ret fitten und params ändern für PI
@@ -295,7 +293,9 @@ TODO:
 - Log Likelihood mit Normalverteilung wegen Asymmetrie nicht ideal.
     - Da ich alle Quantile habe kann ich diese nutzen um Verteilung (Quantile=CDF, PDF=Ableitung dieser) und damit Likelihood zu bestimmen.
     - Das geht natürlich nicht bei den Kurven von Timothy, da ich da nur zwei Quantile habe.
-    - TODO: Was genau hat P3INN noch mal ausgerechnet?
+    - Was genau hat P3INN noch mal ausgerechnet?
+        - PICP: PI coverage percentage?
+        - MPIW: Mean PI width
 
 # 07.10.2024
 - Nächste 2 Wochen urlaub
