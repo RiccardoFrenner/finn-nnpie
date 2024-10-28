@@ -11,8 +11,6 @@ import torch
 import torch.nn as nn
 from torchdiffeq import odeint
 
-from lib_p3inn import pi3nn_compute_PI_and_mean, P3innDir
-
 
 @dataclasses.dataclass
 class ExperimentalSamples:

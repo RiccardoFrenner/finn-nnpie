@@ -18,9 +18,16 @@ loss_fun_std = nn.MSELoss
 
 
 def train_network(
-    model, optimizer, scheduler, criterion, train_loader, val_loader, max_epochs: int, mode: str
+    model,
+    optimizer,
+    scheduler,
+    criterion,
+    train_loader,
+    val_loader,
+    max_epochs: int,
+    mode: str,
 ) -> None:
-    regularization_factor = 0.0 if mode == "mean" else 4*1e-9
+    regularization_factor = 0.0 if mode == "mean" else 4 * 1e-9
     n_params = sum(1 for _ in model.parameters())
     assert n_params > 0, n_params
     for epoch in range(1, max_epochs + 1):
@@ -93,10 +100,10 @@ def caps_calculation(network_preds: dict[str, Any], c_up, c_down, Y, verbose=0):
     y_L_cap = bound_down < Y  # y_L_cap
 
     y_all_cap = np.logical_and(y_U_cap, y_L_cap)  # y_all_cap
-    
+
     # FIXED: This will always be True, lol (should be an and...)
     # assert y_all_cap.all(), y_all_cap
-    
+
     PICP = np.count_nonzero(y_all_cap) / y_L_cap.shape[0]  # 0-1
     MPIW = np.mean(
         (network_preds["mean"] + c_up * network_preds["up"]).numpy().flatten()
@@ -226,21 +233,21 @@ class CL_trainer:
         net_mean,
         net_up,
         net_down,
-        train_mean_net,
         x_train,
         y_train,
         x_valid,
         y_valid,
-        x_test=None,
-        y_test=None,
+        x_scaler,
+        y_scaler,
         lr=1e-2,
         decay_rate=0.96,
         decay_steps=1000,
     ):
         """Take all 3 network instance and the trainSteps (CL_UQ_Net_train_steps) instance"""
 
+        # lrs = [lr, lr*2*1e10, lr*2*1e10]
+        lrs = [lr, lr, lr]
         self.configs = configs
-        self.train_mean_net = train_mean_net
 
         self.networks = {
             "mean": net_mean,
@@ -250,13 +257,13 @@ class CL_trainer:
         self.optimizers = {
             network_type: torch.optim.SGD(
                 network.parameters(),
-                lr=lr,
+                lr=llr,
                 # network.parameters(), lr=1e-3, weight_decay=0  # good for mean, bad for stds
                 # network.parameters(), lr=1e-3, weight_decay=2e-2  # too strong weight_decay
                 # network.parameters(), lr=1e-3, weight_decay=2e-3  # still a bit too strong for mean, but too little for std
             )
-            for network_type, network in self.networks.items()
-            if train_mean_net or network_type != "mean"
+            for llr, (network_type, network) in zip(lrs, self.networks.items())
+            if hasattr(network, "parameters")
         }
 
         self.schedulers = {
@@ -266,45 +273,97 @@ class CL_trainer:
             for network_type, optimizer in self.optimizers.items()
         }
 
-        self.x_train = x_train
-        self.y_train = y_train
-        self.x_valid = x_valid
-        self.y_valid = y_valid
-        self.x_test = x_test
-        self.y_test = y_test
+        self._x_scaler = x_scaler
+        self._y_scaler = y_scaler
+        self._x_train_unscaled = x_train
+        self._x_valid_unscaled = x_valid
+        self._y_train_unscaled = y_train
+        self._y_valid_unscaled = y_valid
+        assert isinstance(x_train, torch.Tensor), type(x_train)
 
     def train(self, train_mean=True, train_stds=True):
+        def make_non_transformed_fun(fun, x_scaler, y_scaler):
+            def non_trafo_f(x_non_scaled):
+                x_scaled = torch.FloatTensor(x_scaler.transform(x_non_scaled))
+                y_scaled = fun(x_scaled)
+                y_unscaled = y_scaler.inverse_transform(y_scaled)
+                return torch.FloatTensor(y_unscaled)
+
+            return non_trafo_f
+
         if train_mean:
+
+            def scale_mean_tuple(x, y):
+                return (
+                    torch.FloatTensor(self._x_scaler.transform(x)),
+                    torch.FloatTensor(self._y_scaler.transform(y)),
+                )
+
             print("Training MEAN Network")
             train_network(
                 model=self.networks["mean"],
                 optimizer=self.optimizers["mean"],
                 scheduler=self.schedulers["mean"],
                 criterion=loss_fun_mean(),
-                train_loader=[(self.x_train, self.y_train)],
-                val_loader=[(self.x_valid, self.y_valid)],
+                train_loader=[
+                    scale_mean_tuple(self._x_train_unscaled, self._y_train_unscaled)
+                ],
+                val_loader=[
+                    scale_mean_tuple(self._x_valid_unscaled, self._y_valid_unscaled)
+                ],
                 max_epochs=self.configs["Max_iter"],
                 mode="mean",
             )
-
-        data_train_up, data_train_down = create_PI_training_data(
-            self.networks["mean"], X=self.x_train, Y=self.y_train
-        )
-        data_val_up, data_val_down = create_PI_training_data(
-            self.networks["mean"], X=self.x_valid, Y=self.y_valid
-        )
+            self.networks["mean"].eval()
+            self.networks["mean"] = make_non_transformed_fun(
+                self.networks["mean"],
+                self._x_scaler,
+                self._y_scaler,
+            )
 
         if train_stds:
+            data_train_up, data_train_down = create_PI_training_data(
+                self.networks["mean"],
+                X=self._x_train_unscaled,
+                Y=self._y_train_unscaled,
+            )
+            x_up_scaler = StandardScaler().fit(data_train_up[0])
+            y_up_scaler = StandardScaler().fit(data_train_up[1])
+            x_down_scaler = StandardScaler().fit(data_train_down[0])
+            y_down_scaler = StandardScaler().fit(data_train_down[1])
+
+            data_val_up, data_val_down = create_PI_training_data(
+                self.networks["mean"],
+                X=self._x_valid_unscaled,
+                Y=self._y_valid_unscaled,
+            )
+
+            def scale_up_tuple(x, y):
+                return (
+                    torch.FloatTensor(x_up_scaler.transform(x)),
+                    torch.FloatTensor(y_up_scaler.transform(y)),
+                )
+
+            def scale_down_tuple(x, y):
+                return (
+                    torch.FloatTensor(x_down_scaler.transform(x)),
+                    torch.FloatTensor(y_down_scaler.transform(y)),
+                )
+
             print("Training UP Network")
             train_network(
                 model=self.networks["up"],
                 optimizer=self.optimizers["up"],
                 scheduler=self.schedulers["up"],
                 criterion=loss_fun_std(),
-                train_loader=[data_train_up],
-                val_loader=[data_val_up],
+                train_loader=[scale_up_tuple(*data_train_up)],
+                val_loader=[scale_up_tuple(*data_val_up)],
                 max_epochs=self.configs["Max_iter"],
                 mode="up",
+            )
+            self.networks["up"].eval()
+            self.networks["up"] = make_non_transformed_fun(
+                self.networks["up"], x_up_scaler, y_up_scaler
             )
             print("Training DOWN Network")
             train_network(
@@ -312,23 +371,59 @@ class CL_trainer:
                 optimizer=self.optimizers["down"],
                 scheduler=self.schedulers["down"],
                 criterion=loss_fun_std(),
-                train_loader=[data_train_down],
-                val_loader=[data_val_down],
+                train_loader=[scale_down_tuple(*data_train_down)],
+                val_loader=[scale_down_tuple(*data_val_down)],
                 max_epochs=self.configs["Max_iter"],
                 mode="down",
             )
+            self.networks["down"].eval()
+            self.networks["down"] = make_non_transformed_fun(
+                self.networks["down"], x_down_scaler, y_down_scaler
+            )
+            print("Training Done!")
 
-    def eval_networks(self, x, as_numpy: bool = False) -> dict[str, Any]:
-        with torch.no_grad():
-            d = {k: network(x) for k, network in self.networks.items()}
-        if as_numpy:
-            d = {k: v.numpy() for k, v in d.items()}
-        return d
+            fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
+            x_up = np.linspace(
+                data_train_up[0].detach().numpy().min(),
+                data_train_up[0].detach().numpy().max(),
+                100,
+            ).reshape(-1, 1)
+            x_down = np.linspace(
+                data_train_down[0].detach().numpy().min(),
+                data_train_down[0].detach().numpy().max(),
+                100,
+            ).reshape(-1, 1)
+            axs[0].semilogy(
+                data_train_up[0].detach().numpy(),
+                data_train_up[1].detach().numpy(),
+                ".",
+            )
+            print("Before network call")
+            self.networks["up"](x_up)
+            print("---")
+            axs[0].semilogy(
+                x_up, self.networks["up"](x_up).detach().numpy(), "-"
+            )
+            print("After network call")
+            axs[1].semilogy(
+                data_train_down[0].detach().numpy(),
+                data_train_down[1].detach().numpy(),
+                ".",
+            )
+            axs[1].semilogy(
+                x_down,
+                self.networks["down"](x_down).detach().numpy(),
+                "-",
+            )
+            plt.show(block=False)
+            plt.close()
+            print("Plotting Done!")
 
 
 class UQ_Net_mean(nn.Module):
     def __init__(self, configs, num_inputs, num_outputs):
         super(UQ_Net_mean, self).__init__()
+        print("Defining mean NN")
         self.configs = configs
         self.num_nodes_list = self.configs["num_neurons_mean"]
 
@@ -357,6 +452,7 @@ class UQ_Net_mean(nn.Module):
 class UQ_Net_std(nn.Module):
     def __init__(self, configs, num_inputs, num_outputs, net=None, bias=None):
         super(UQ_Net_std, self).__init__()
+        print("Defining std NN")
         self.configs = configs
         if net == "up":
             self.num_nodes_list = self.configs["num_neurons_up"]
@@ -390,7 +486,7 @@ class UQ_Net_std(nn.Module):
         x = self.outputLayer(x)
         x = x + self.custom_bias
         x = torch.sqrt(
-            torch.square(x) + 1e-8
+            torch.square(x) + 1e-10
         )  # TODO: Was 0.2 but not explained why in paper
         return x
 
@@ -491,17 +587,13 @@ class P3innDir:
 
 class DataPostProcessor:
     def __init__(self, x, y, test_size: float, seed):
-        self._scalar_x = StandardScaler()
-        self._scalar_y = StandardScaler()
+        self.x = x
+        self.y = y
 
-        self.x = self._scalar_x.fit_transform(x)
-        self.y = self._scalar_y.fit_transform(y)
-
-        # random split
+        # Train/Test/Valid split
         xTrainValid, self.xTest, yTrainValid, self.yTest = train_test_split(
             self.x, self.y, test_size=test_size, random_state=seed, shuffle=True
         )
-        ## Split the validation data
         self.xTrain, self.xValid, self.yTrain, self.yValid = train_test_split(
             xTrainValid,
             yTrainValid,
@@ -510,7 +602,7 @@ class DataPostProcessor:
             shuffle=True,
         )
 
-        ### To tensors
+        # convert to tensors
         self.x = torch.FloatTensor(self.x)
         self.xTrain = torch.FloatTensor(self.xTrain)
         self.xValid = torch.FloatTensor(self.xValid)
@@ -519,6 +611,15 @@ class DataPostProcessor:
         self.yTrain = torch.FloatTensor(self.yTrain)
         self.yValid = torch.FloatTensor(self.yValid)
         self.yTest = torch.FloatTensor(self.yTest)
+
+        self.scalar_x = StandardScaler().fit(x)
+        self.scalar_y = StandardScaler().fit(y)
+        # self.scalar_x = StandardScaler().fit([[0.0]])
+        # self.scalar_y = StandardScaler().fit([[0.0]])
+        # self.scalar_x.transform = lambda x: x
+        # self.scalar_y.transform = lambda x: x
+        # self.scalar_x.inverse_transform = lambda x: x
+        # self.scalar_y.inverse_transform = lambda x: x
 
     def get_postprocessed(self):
         return (
@@ -530,12 +631,6 @@ class DataPostProcessor:
             self.yValid,
         )
 
-    def transform(self, x, y):
-        return self._scalar_x.transform(x), self._scalar_y.transform(y)
-
-    def inverse_transform(self, x, y):
-        return self._scalar_x.inverse_transform(x), self._scalar_y.inverse_transform(y)
-
 
 def pi3nn_compute_PI_and_mean(
     out_dir,
@@ -546,13 +641,9 @@ def pi3nn_compute_PI_and_mean(
     visualize=False,
     passed_net_mean=None,
     max_iter=50000,
-    load_from_dir: bool=True,
+    load_from_dir: bool = True,
 ):
     p3inn_dir = P3innDir(Path(out_dir))
-    if p3inn_dir.is_done and not load_from_dir:
-        return
-
-    train_mean_net = True if passed_net_mean is None else False
 
     if x_data_path is None:
         x_data_path = p3inn_dir.x_data_path
@@ -569,6 +660,8 @@ def pi3nn_compute_PI_and_mean(
     plt.savefig(p3inn_dir.image_dir / "input_data.png")
     if not visualize:
         plt.close()
+    else:
+        plt.show(block=False)
 
     SEED = int(hash(out_dir)) % 2**31 if seed is None else int(seed)
 
@@ -579,37 +672,46 @@ def pi3nn_compute_PI_and_mean(
         -1, 1
     )
 
-    net_mean=None
-    net_up=None
-    net_down=None
+    net_mean = None
+    net_up = None
+    net_down = None
 
     plt.figure()
     if passed_net_mean is not None:
-        # the passed mean function does not know about any scaling. So it wants unscaled x values.
-        # However, below I only want to deal with scaled values which is why this code here exists.
+        print("Defining mean fun from passed function")
+        train_mean_net = False
+
         def net_mean(x):
-            y = passed_net_mean(data_processor._scalar_x.inverse_transform(x))
-            y_trafo = data_processor._scalar_y.transform(y)
-            return torch.from_numpy(y_trafo).to(torch.float32)
+            y = passed_net_mean(x)
+            return torch.from_numpy(y).to(torch.float32)
 
         x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
         plt.plot(x_tmp, net_mean(x_tmp), "k-", label="Given Mean", zorder=100, lw=3)
     elif load_from_dir:
         if p3inn_dir.pred_mean_path.exists():
+            print("Defining mean fun from checkpoint")
             train_mean_net = False
+
             def net_mean(x):
-                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), np.load(p3inn_dir.pred_mean_path))
-                y_trafo = data_processor._scalar_y.transform(y)
-                return torch.from_numpy(y_trafo).to(torch.float32)
+                y = np.interp(
+                    x.squeeze(),
+                    x_eval.squeeze(),
+                    np.load(p3inn_dir.pred_mean_path).squeeze(),
+                )
+                return torch.from_numpy(y).to(torch.float32).reshape(-1, 1)
 
             x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
-            plt.plot(x_tmp, net_mean(x_tmp), "k-", label="Loaded Mean", zorder=100, lw=3)
+            plt.plot(
+                x_tmp, net_mean(x_tmp), "k-", label="Loaded Mean", zorder=100, lw=3
+            )
     plt.plot(xTrain, yTrain, ".", alpha=0.5)
     plt.plot(xTest, yTest, "x", alpha=0.5)
     plt.plot(xValid, yValid, "d", alpha=0.5)
     plt.savefig(p3inn_dir.image_dir / "transformed_data_split.png")
     if not visualize:
         plt.close()
+    else:
+        plt.show(block=False)
 
     #########################################################
     ############## End of Data Loading Section ##############
@@ -637,43 +739,92 @@ def pi3nn_compute_PI_and_mean(
     net_mean = (
         UQ_Net_mean(configs, num_inputs, num_outputs) if net_mean is None else net_mean
     )
-    train_stds=True
+    train_stds = True
     if load_from_dir and len(list(p3inn_dir.pred_PIs_dir.iterdir())) > 0:
+        assert not train_mean_net
+        median_eval = shift_to_median(
+            net_mean(x_eval).detach().numpy().squeeze(), data_processor.y
+        )
         for q, bound_up, bound_down in p3inn_dir.iter_pred_PIs():
+            if q < 0.8:
+                continue
+            bound_up = bound_up.squeeze()
+            bound_down = bound_down.squeeze()
+            print("Defining std funs from checkpoint", q)
+
             def net_up(x):
-                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), bound_up - data_processor._scalar_y.transform(net_mean(data_processor._scalar_x.inverse_transform(x_eval))))
-                y_trafo = data_processor._scalar_y.transform(y)
-                return torch.from_numpy(y_trafo).to(torch.float32)
+                y = np.interp(x.squeeze(), x_eval.squeeze(), bound_up - median_eval)
+                return torch.from_numpy(y).to(torch.float32).reshape(-1, 1)
+
             def net_down(x):
-                y = np.interp(data_processor._scalar_x.inverse_transform(x), data_processor._scalar_x.inverse_transform(x_eval), bound_down - data_processor._scalar_y.transform(net_mean(data_processor._scalar_x.inverse_transform(x_eval))))
-                y_trafo = data_processor._scalar_y.transform(y)
-                return torch.from_numpy(y_trafo).to(torch.float32)
+                y = np.interp(x.squeeze(), x_eval.squeeze(), median_eval - bound_down)
+                return torch.from_numpy(y).to(torch.float32).reshape(-1, 1)
+
             train_stds = False
             break
-            
-    net_up = UQ_Net_std(configs, num_inputs, num_outputs, net="up") if net_up is None else net_up
-    net_down = UQ_Net_std(configs, num_inputs, num_outputs, net="down") if net_down is None else net_down
+
+        _, axs = plt.subplots(ncols=2, figsize=(12, 6))
+        x_tmp = np.linspace(xTrain.min(), xTrain.max()).reshape(-1, 1)
+        axs[0].plot(x_eval, bound_up, "g-", zorder=100, lw=3)
+        axs[0].plot(x_eval, bound_down, "r-", zorder=100, lw=3)
+        axs[0].plot(x_eval, median_eval, "k-", zorder=100, lw=3)
+        axs[0].plot(data_processor.x, data_processor.y, ".", alpha=0.5)
+
+        axs[1].plot(x_tmp, net_up(x_tmp), "g-", zorder=100, lw=3)
+        axs[1].plot(x_tmp, -net_down(x_tmp), "r-", zorder=100, lw=3)
+        axs[1].hlines(0, x_tmp.min(), x_tmp.max())
+        axs[1].plot(
+            data_processor.x,
+            data_processor.y - net_mean(data_processor.x),
+            ".",
+            alpha=0.5,
+        )
+        plt.savefig(p3inn_dir.image_dir / "loaded_std_funs_as_bounds.png")
+        if not visualize:
+            plt.close()
+        else:
+            plt.show(block=False)
+
+    net_up = (
+        UQ_Net_std(configs, num_inputs, num_outputs, net="up")
+        if net_up is None
+        else net_up
+    )
+    net_down = (
+        UQ_Net_std(configs, num_inputs, num_outputs, net="down")
+        if net_down is None
+        else net_down
+    )
 
     # Initialize trainer and conduct training/optimizations
     trainer = CL_trainer(
-        configs,
-        net_mean,
-        net_up,
-        net_down,
-        train_mean_net=train_mean_net,
+        configs=configs,
+        net_mean=net_mean,
+        net_up=net_up,
+        net_down=net_down,
         x_train=xTrain,
         y_train=yTrain,
         x_valid=xValid,
         y_valid=yValid,
-        x_test=xTest,
-        y_test=yTest,
+        x_scaler=data_processor.scalar_x,
+        y_scaler=data_processor.scalar_y,
         lr=LR,
-        decay_rate=DECAY_RATE,  # Pass decay rate to trainer
-        decay_steps=DECAY_STEPS,  # Pass decay steps to trainer
+        decay_rate=DECAY_RATE,
+        decay_steps=DECAY_STEPS,
     )
-    trainer.train(train_mean=train_mean_net, train_stds=train_stds)  # training for 3 networks
+    trainer.train(train_mean=train_mean_net, train_stds=train_stds)
 
-    preds_full = trainer.eval_networks(data_processor.x, as_numpy=True)
+    networks = trainer.networks
+
+    def evalnetworks(x, as_numpy: bool = False) -> dict[str, Any]:
+        assert isinstance(x, torch.Tensor), type(x)
+        with torch.no_grad():
+            d = {k: network(x) for k, network in networks.items()}
+        if as_numpy:
+            d = {k: v.numpy() for k, v in d.items()}
+        return d
+
+    preds_full = evalnetworks(data_processor.x, as_numpy=True)
     preds_full["median"] = shift_to_median(preds_full["mean"], data_processor.y)
     median_shift = compute_shift_to_median(preds_full["mean"], data_processor.y)
 
@@ -681,23 +832,19 @@ def pi3nn_compute_PI_and_mean(
     print((preds_full["median"] - data_processor.y.numpy() > 0).sum())
     print((preds_full["median"] - data_processor.y.numpy() < 0).sum())
 
-    preds_eval = trainer.eval_networks(
-        torch.from_numpy(x_eval).to(torch.float32), as_numpy=True
-    )
-    assert (preds_eval["up"] > 0).all()
-    assert (preds_eval["down"] > 0).all()
+    preds_eval = evalnetworks(torch.from_numpy(x_eval).to(torch.float32), as_numpy=True)
+    assert (
+        preds_eval["up"] > 0
+    ).all(), f'{preds_eval["up"].min(), preds_eval["up"].max()}'
+    assert (
+        preds_eval["down"] > 0
+    ).all(), f'{preds_eval["down"].min(), preds_eval["down"].max()}'
     preds_eval["median"] = preds_eval["mean"] + median_shift
-
-    def inv_traf_x(x):
-        return data_processor._scalar_x.inverse_transform(x)
-
-    def inv_traf_y(y):
-        return data_processor._scalar_y.inverse_transform(y)
 
     for quantile in quantiles:
         c_up, c_down = compute_boundary_factors(
             y_train=yTrain.numpy(),
-            network_preds=trainer.eval_networks(xTrain, as_numpy=True),
+            network_preds=evalnetworks(xTrain, as_numpy=True),
             quantile=quantile,
             verbose=1,
         )
@@ -707,11 +854,11 @@ def pi3nn_compute_PI_and_mean(
         lower_PI = preds_eval["median"] - c_down * preds_eval["down"]
 
         # save PIs
-        np.save(p3inn_dir.x_eval_path, inv_traf_x(x_eval))
-        np.save(p3inn_dir.pred_mean_path, inv_traf_y(preds_eval["mean"]))
-        np.save(p3inn_dir.pred_median_path, inv_traf_y(preds_eval["median"]))
-        np.save(p3inn_dir.get_pred_bound_path(quantile, "up"), inv_traf_y(upper_PI))
-        np.save(p3inn_dir.get_pred_bound_path(quantile, "down"), inv_traf_y(lower_PI))
+        np.save(p3inn_dir.x_eval_path, x_eval)
+        np.save(p3inn_dir.pred_mean_path, preds_eval["mean"])
+        np.save(p3inn_dir.pred_median_path, preds_eval["median"])
+        np.save(p3inn_dir.get_pred_bound_path(quantile, "up"), upper_PI)
+        np.save(p3inn_dir.get_pred_bound_path(quantile, "down"), lower_PI)
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6))
 
@@ -735,8 +882,8 @@ def pi3nn_compute_PI_and_mean(
     for i, (q, bound_up, bound_down) in enumerate(p3inn_dir.iter_pred_PIs()):
         ax2.fill_between(
             x=x_eval.flat,
-            y1=data_processor._scalar_y.transform(bound_down).flat,
-            y2=data_processor._scalar_y.transform(bound_up).flat,
+            y1=bound_down.flat,
+            y2=bound_up.flat,
             color=f"C{0}",
             alpha=0.2,
         )
@@ -744,21 +891,25 @@ def pi3nn_compute_PI_and_mean(
     fig.savefig(p3inn_dir.image_dir / "learned_data.png")
     if not visualize:
         plt.close(fig)
+    else:
+        plt.show(block=False)
 
     # Plot residual training results
     data_train_up, data_train_down = create_PI_training_data(
-        trainer.networks["mean"], X=trainer.x_train, Y=trainer.y_train
+        net_mean, X=data_processor.xTrain, Y=data_processor.yTrain
     )
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(12, 6), sharey=True)
     ax1.set_title("Residuals Up")
-    ax1.plot(*data_train_up, ".", alpha=0.3)
-    ax1.plot(x_eval, preds_eval["up"], "-", lw=3)
+    ax1.semilogy(*data_train_up, ".", alpha=0.3)
+    ax1.semilogy(x_eval, preds_eval["up"], "-", lw=3)
     ax2.set_title("Residuals Down")
-    ax2.plot(*data_train_down, ".", alpha=0.3)
-    ax2.plot(x_eval, preds_eval["down"], "-", lw=3)
+    ax2.semilogy(*data_train_down, ".", alpha=0.3)
+    ax2.semilogy(x_eval, preds_eval["down"], "-", lw=3)
     fig.savefig(p3inn_dir.image_dir / "learned_residuals.png")
     if not visualize:
         plt.close(fig)
+    else:
+        plt.show(block=False)
 
     p3inn_dir.done_marker_path.touch()
