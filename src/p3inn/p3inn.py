@@ -3,19 +3,43 @@
 import dataclasses as dc
 import time
 from pathlib import Path
-from typing import Literal, Optional, TypeVar, Callable
+from typing import Literal, Optional, TypeVar
 
 import keras
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 import utils
 import utils.commandline
-from utils.files import MySmartFile, MySmartFolder, MyDir, load_json, save_json
+from utils.files import MyDir, MySmartFile
 
 BLOCK = True
 T = TypeVar("T")
+
+
+class ScaledTrainingModel(keras.Model):
+    def __init__(
+        self, model: keras.Model, x_scaler: MinMaxScaler, y_scaler: StandardScaler
+    ):
+        super().__init__()
+        self.model = model
+        self.x_scaler = x_scaler
+        self.y_scaler = y_scaler
+
+    def fit(self, x, y, *args, **kwargs):
+        x = self.x_scaler.transform(x)
+        y = self.y_scaler.transform(y)
+        return super().fit(x, y, *args, **kwargs)
+
+    def call(self, x, *args, **kwargs):
+        return self.model.call(x, *args, **kwargs)
+
+    def predict(self, x):
+        x_scaled = self.x_scaler.transform(x)
+        y_scaled = self.model.predict(x_scaled)
+        return self.y_scaler.inverse_transform(y_scaled)
 
 
 @dc.dataclass
@@ -30,34 +54,11 @@ class TrainingParams:
     optimizer: str = "adam"
     validation_fraction: float = 0.2
     learning_rate_schedule: str = "constant"
-    n_neurons_per_layer: list[int] = dc.field(default_factory=lambda: [64, 64])
+    n_neurons_per_layer: list[int] = dc.field(default_factory=lambda: [32])
     activation_mean: str = "tanh"
     activation_std: str = "relu"  # relu works better but is not so smooth
     positivity_method: str = "sqrt_sqr"
 
-    def get_initial_learning_rate(self, model_type: str) -> float:
-        if model_type == "mean":
-            return self.initial_learning_rate_mean
-        if model_type == "std":
-            return self.initial_learning_rate_std
-        else:
-            raise ValueError(f"Invalid model type '{model_type}'")
-
-    def get_loss(self, model_type: str) -> str:
-        if model_type == "mean":
-            return self.loss_mean
-        if model_type == "std":
-            return self.loss_std
-        else:
-            raise ValueError(f"Invalid model type '{model_type}'")
-
-    def get_activation(self, model_type: str) -> str:
-        if model_type == "mean":
-            return self.activation_mean
-        if model_type == "std":
-            return self.activation_std
-        else:
-            raise ValueError(f"Invalid model type '{model_type}'")
 
 
 @dc.dataclass
@@ -101,7 +102,9 @@ def preprocess_data(arr: np.ndarray) -> np.ndarray:
     return arr
 
 
-def make_model(layer_sizes: list[int], activation, positivity_method=None):
+def make_model(
+    x_train, y_train, layer_sizes: list[int], activation, positivity_method=None
+):
     model = keras.Sequential(
         [
             keras.Input(shape=(layer_sizes[0],)),
@@ -124,6 +127,12 @@ def make_model(layer_sizes: list[int], activation, positivity_method=None):
         )()
         model = keras.Model(model.input, x)
 
+    model = ScaledTrainingModel(
+        model,
+        x_scaler=MinMaxScaler().fit(x_train),
+        y_scaler=StandardScaler().fit(y_train),
+    )
+
     return model
 
 
@@ -135,6 +144,8 @@ class TrainingResult:
     x_eval: np.ndarray
     y_eval_pred: np.ndarray
     y_train_pred: np.ndarray
+    loss_train: np.ndarray
+    learning_rates: np.ndarray
 
     @property
     def can_plot(self):
@@ -155,22 +166,22 @@ def train_model(
     x_train,
     y_train,
     x_eval,
-    training_params,
-    experiment_params,
+    training_params: TrainingParams,
+    experiment_params: ExperimentParams,
     model_type: Literal["mean", "std"],
 ) -> TrainingResult:
     if isinstance(model, keras.Model):
-        reduce_lr = keras.callbacks.ReduceLROnPlateau(
-            monitor="val_loss",
-            factor=0.2,
-            patience=20,
-            min_lr=training_params.initial_learning_rate / 100,
-        )
+        # reduce_lr = keras.callbacks.ReduceLROnPlateau(
+        #     monitor="val_loss",
+        #     factor=0.2,
+        #     patience=20,
+        #     min_lr=training_params.initial_learning_rate / 100,
+        # )
 
         if experiment_params.debug:
             print("Warning: Running eagerly is slow!")
         model.compile(
-            loss=training_params.loss,
+            loss=training_params.loss_fun,
             optimizer=keras.optimizers.get(
                 {
                     "class_name": training_params.optimizer,  # type: ignore
@@ -184,24 +195,36 @@ def train_model(
             run_eagerly=experiment_params.debug,
         )
 
-        model.fit(
-            x_train,
-            y_train,
-            epochs=training_params.max_epochs,
-            batch_size=training_params.batch_size or x_train.shape[0],
-            validation_split=training_params.validation_fraction,
-            callbacks=[
+        lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.1,
+            decay_rate=0.98,
+            decay_steps=10,
+            staircase=False,
+        )
+        lr_scheduler = keras.callbacks.LearningRateScheduler(
+            lambda s: float(lr_schedule(s))  # type: ignore
+        )
+
+        callbacks = [lr_scheduler]
+        if training_params.stop_early:
+            callbacks.append(
                 keras.callbacks.EarlyStopping(
                     monitor="val_loss",
                     patience=50,
                     restore_best_weights=True,
                     min_delta=1e-3,  # type: ignore
-                ),
-                reduce_lr,
-            ]
-            if training_params.stop_early
-            else None,
-            verbose=experiment_params.verbose,
+                )
+            )
+
+        history = model.fit(
+            x_train,
+            y_train,
+            shuffle=True,
+            epochs=training_params.max_epochs,
+            batch_size=training_params.batch_size or x_train.shape[0],
+            validation_split=training_params.validation_fraction,
+            callbacks=callbacks,
+            verbose=experiment_params.verbose,  # type: ignore
         )
 
     y_eval_pred = model.predict(x_eval)
@@ -214,6 +237,10 @@ def train_model(
         x_eval=x_eval,
         y_eval_pred=y_eval_pred,
         y_train_pred=y_train_pred,
+        loss_train=np.array(history.history["loss"]),
+        learning_rates=np.array(
+            [lr_schedule(s) for s in range(training_params.max_epochs)]
+        ),  # type: ignore
     )
 
 
@@ -230,7 +257,7 @@ class P3innDir(MyDir):
         self.loss = MySmartFile(path / "p3inn_loss.txt")
 
         # self.pred_PIs_dir = MySmartFolder(path / "pred_PIs", "ts1data_{}.npy")
-    
+
     @property
     def pred_PIs_dir(self) -> Path:
         p = self.path / "pred_PIs/"
@@ -253,7 +280,7 @@ class P3innDir(MyDir):
 
         for q, u, d in quantile_and_PI_paths:
             yield q, np.load(u), np.load(d)
-    
+
     @property
     def processed_data_dir(self) -> Path:
         p = self.path / "processed_data/"
@@ -303,18 +330,23 @@ def pi3nn_compute_PI_and_mean(
         passed_net_mean=passed_net_mean,
     )
 
+
 def to_keras_model_proxy(fun):
     class Proxy:
         def __call__(self, x):
             return fun(x)
+
         def predict(self, x):
             return fun(x)
+
     return Proxy
 
+
 def main(
-        training_params: TrainingParams, experiment_params: ExperimentParams,
-        passed_net_mean=None
-        ) -> None:
+    training_params: TrainingParams,
+    experiment_params: ExperimentParams,
+    passed_net_mean=None,
+) -> None:
     print(training_params, experiment_params)
 
     rng = np.random.default_rng(experiment_params.seed)
@@ -354,10 +386,15 @@ def main(
         if experiment_params.load_checkpoint and p3inn_dir.pred_mean.path.exists():
             # load checkpoint
             def mean_model(x):
-                return np.interp(x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_mean.load().squeeze())
+                return np.interp(
+                    x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_mean.load().squeeze()
+                )
+
             mean_model = to_keras_model_proxy(mean_model)  # type: ignore
         else:
-            mean_model = make_model(layer_sizes, activation=training_params.activation_mean)
+            mean_model = make_model(
+                layer_sizes, activation=training_params.activation_mean
+            )
             mean_model.summary()  # type: ignore
     else:
         mean_model = to_keras_model_proxy(passed_net_mean)  # type: ignore
@@ -401,7 +438,10 @@ def main(
     ), f"Residuals are not evenly split: {abs(n_below - n_above)}"
 
     std_models = {}
-    if experiment_params.load_checkpoint and len(list(p3inn_dir.pred_PIs_dir.iterdir())) > 0:
+    if (
+        experiment_params.load_checkpoint
+        and len(list(p3inn_dir.pred_PIs_dir.iterdir())) > 0
+    ):
         median_eval = mean_result.y_eval_pred
         for q, bound_up, bound_down in p3inn_dir.iter_pred_PIs():
             if q < 0.8:
@@ -417,7 +457,7 @@ def main(
             def net_down(x):
                 y = np.interp(x.squeeze(), x_eval.squeeze(), median_eval - bound_down)
                 return y.reshape(-1, 1)
-            
+
             std_models["up"] = to_keras_model_proxy(net_up)
             std_models["down"] = to_keras_model_proxy(net_down)
             break
@@ -446,7 +486,13 @@ def main(
             model = std_models[model_type]
 
         residual_results[model_type] = train_model(
-            model, x_data_res, y_data_res, x_eval, training_params, experiment_params, "std"
+            model,
+            x_data_res,
+            y_data_res,
+            x_eval,
+            training_params,
+            experiment_params,
+            "std",
         )
         residual_results[model_type].plot(f"Residual Model {model_type}")
 
