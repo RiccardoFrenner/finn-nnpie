@@ -695,3 +695,72 @@ def is_between_curves(x, y_lower, y_upper, points) -> np.ndarray:
     is_above_lower = is_above_curve(x, y_lower, points)
     is_between = is_below_upper * is_above_lower
     return is_between
+
+
+def load_mcmc_paper_curves(t_eval=None, u_eval=None):
+    import pandas as pd
+    from scipy.interpolate import UnivariateSpline
+
+
+    mean_ret_core2_df = (
+        pd.read_csv("../data/digitized/mean_ret_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+    upper_ret_core2_df = (
+        pd.read_csv("../data/digitized/upper_mcmc_90PI_ret_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+    lower_ret_core2_df = (
+        pd.read_csv("../data/digitized/lower_mcmc_90PI_ret_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+
+    mean_core2_df = (
+        pd.read_csv("../data/digitized/mean_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+    mean_core2_df["y"] /= 1000
+    upper_mcmc_PI_core2_df = (
+        pd.read_csv("../data/digitized/upper_mcmc_PI_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+    upper_mcmc_PI_core2_df["y"] /= 1000
+    lower_mcmc_PI_core2_df = (
+        pd.read_csv("../data/digitized/lower_mcmc_PI_core2.csv")
+        .sort_values("x")
+        .reset_index(drop=True)
+    )
+    lower_mcmc_PI_core2_df["y"] /= 1000
+
+
+    if u_eval is None:
+        u_eval = np.linspace(0, mean_ret_core2_df["x"].max(), 100)
+    if t_eval is None:
+        t_eval = np.linspace(0, mean_core2_df["x"].max(), 100)
+
+    mean_ret_core2_paper = UnivariateSpline(mean_ret_core2_df["x"], mean_ret_core2_df["y"], s=0.0)(
+    u_eval
+    )
+    upper_ret_mcmc_PI_core2_paper = UnivariateSpline(
+        upper_ret_core2_df["x"], upper_ret_core2_df["y"], s=0.0
+    )(u_eval)
+    lower_ret_mcmc_PI_core2_paper = UnivariateSpline(
+        lower_ret_core2_df["x"], lower_ret_core2_df["y"], s=0.0
+    )(u_eval)
+
+    mean_core2_paper = UnivariateSpline(mean_core2_df["x"], mean_core2_df["y"], s=0.0)(
+    t_eval
+    )
+    upper_mcmc_PI_core2 = UnivariateSpline(
+        upper_mcmc_PI_core2_df["x"], upper_mcmc_PI_core2_df["y"], s=0.0
+    )(t_eval)
+    lower_mcmc_PI_core2 = UnivariateSpline(
+        lower_mcmc_PI_core2_df["x"], lower_mcmc_PI_core2_df["y"], s=0.0
+    )(t_eval)
+
+    return t_eval, mean_core2_paper, upper_mcmc_PI_core2, lower_mcmc_PI_core2, u_eval, mean_ret_core2_paper, upper_ret_mcmc_PI_core2_paper, lower_ret_mcmc_PI_core2_paper
