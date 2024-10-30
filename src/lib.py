@@ -16,7 +16,7 @@ from torchdiffeq import odeint
 class ExperimentalSamples:
     core1: np.ndarray
     core2: np.ndarray
-    core2B: np.ndarray
+    core2b: np.ndarray
     ret_x: np.ndarray
     ret_y: np.ndarray
 
@@ -26,7 +26,7 @@ class ExperimentalSamples:
         return cls(
             core1=np.load(p / "y_core1_samples.npy"),
             core2=np.load(p / "y_core2_samples.npy"),
-            core2B=np.load(p / "y_core2B_samples.npy"),
+            core2b=np.load(p / "y_core2B_samples.npy"),
             ret_x=np.load(p / "x_ret_samples.npy").squeeze(),
             ret_y=np.load(p / "y_ret_samples.npy"),
         )
@@ -35,7 +35,7 @@ class ExperimentalSamples:
         p = Path(p).resolve()
         np.save(p / "y_core1_samples.npy", self.core1)
         np.save(p / "y_core2_samples.npy", self.core2)
-        np.save(p / "y_core2B_samples.npy", self.core2B)
+        np.save(p / "y_core2B_samples.npy", self.core2b)
         np.save(p / "x_ret_samples.npy", self.ret_x)
         np.save(p / "y_ret_samples.npy", self.ret_y)
 
@@ -63,13 +63,11 @@ class ExperimentalSamples:
         core1_x = load_exp_data_numpy("Core 1")[0]
         core2_x = load_exp_data_numpy("Core 2")[0]
         core2B_conf = load_exp_conf("Core 2B")
-        if self.core2B.shape[1] == int(core2B_conf["Nx"]):
-            core2B_x = np.linspace(0, core2B_conf["X"], int(core2B_conf["Nx"]))
+        if self.core2b.shape[1] == int(core2B_conf["Nx"]):
+            core2b_x = np.linspace(0, core2B_conf["X"], int(core2B_conf["Nx"]))
         else:
-            core2B_x = load_exp_data_numpy("Core 2B")[0]
+            core2b_x = load_exp_data_numpy("Core 2B")[0]
 
-        ALPHA = min(1.0, 6 / self.ret_y.shape[0])
-        line_kwargs["alpha"] = ALPHA
         line_kwargs.setdefault("color", "black")
         line_kwargs.setdefault("linestyle", "-")
 
@@ -80,15 +78,16 @@ class ExperimentalSamples:
             ])
 
         if only_outlines:
-            line_kwargs["alpha"] = 0.5
+            line_kwargs.setdefault("alpha", 0.5)
             axs[0].fill_between(core1_x, *compute_outlines(self.core1), **line_kwargs)
             axs[1].fill_between(core2_x, *compute_outlines(self.core2), **line_kwargs)
-            axs[2].fill_between(core2B_x, *compute_outlines(self.core2B), **line_kwargs)
+            axs[2].fill_between(core2b_x, *compute_outlines(self.core2b), **line_kwargs)
             axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
         else:
+            line_kwargs["alpha"] = min(1.0, 6 / self.ret_y.shape[0])
             axs[0].plot(core1_x, self.core1.T, **line_kwargs)
             axs[1].plot(core2_x, self.core2.T, **line_kwargs)
-            axs[2].plot(core2B_x, self.core2B.T, **line_kwargs)
+            axs[2].plot(core2b_x, self.core2b.T, **line_kwargs)
             axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
 
         return fig, axs
