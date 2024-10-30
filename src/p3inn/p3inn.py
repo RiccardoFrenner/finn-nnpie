@@ -308,6 +308,7 @@ def train_model(
 class P3innDir(MyDir):
     def __init__(self, path):
         super().__init__(path)
+        path = Path(path)
 
         self.config = MySmartFile(path / "p3inn_params.json")
         self.x_data = MySmartFile(path / "x_data.npy")
@@ -315,6 +316,8 @@ class P3innDir(MyDir):
         self.x_eval = MySmartFile(path / "x_eval.npy")
         self.pred_mean = MySmartFile(path / "pred_mean.npy")
         self.pred_median = MySmartFile(path / "pred_median.npy")
+        self.pred_res_upper = MySmartFile(path / "pred_res_upper.npy")
+        self.pred_res_lower = MySmartFile(path / "pred_res_lower.npy")
         self.loss = MySmartFile(path / "p3inn_loss.txt")
 
         # self.pred_PIs_dir = MySmartFolder(path / "pred_PIs", "ts1data_{}.npy")
@@ -447,13 +450,16 @@ def pi3nn_compute_PI_and_mean(
 
 def to_keras_model_proxy(fun):
     class Proxy:
+        def __init__(self, fun):
+            self.fun = fun
+
         def __call__(self, x):
-            return fun(x)
+            return self.fun(x)
 
         def predict(self, x):
-            return fun(x)
+            return self.fun(x)
 
-    return Proxy
+    return Proxy(fun)
 
 # %%
 def main(training_params_mean: TrainingParams, training_params_std: TrainingParams, experiment_params: ExperimentParams, passed_net_mean=None):
@@ -552,7 +558,7 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     plt.gca().xaxis.set_major_locator(ticker.MaxNLocator(5))
     plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(3))
     plt.tight_layout()
-    plt.savefig(p3inn_dir.image_dir / "transformed_data_split.png")
+    plt.savefig(p3inn_dir.image_dir / "learned_mean.png")
     if not experiment_params.visualize:
         plt.close()
     else:
@@ -617,7 +623,7 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(3))
     plt.tight_layout()
     plt.legend()
-    plt.savefig(p3inn_dir.image_dir / "learned_mean.png")
+    plt.savefig(p3inn_dir.image_dir / "learned_median.png")
     if not experiment_params.visualize:
         plt.close()
     else:
@@ -629,30 +635,19 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     ), f"Residuals are not evenly split: {abs(n_below - n_above)}"
 
     std_models = {}
-    if (
-        experiment_params.load_checkpoint
-        and len(list(p3inn_dir.pred_PIs_dir.iterdir())) > 0
-    ):
-        for q, bound_up, bound_down in p3inn_dir.iter_pred_PIs():
-            if q < 0.8:
-                continue
-            bound_up = bound_up.squeeze()
-            bound_down = bound_down.squeeze()
-            print("Defining std funs from checkpoint", q)
-
+    if experiment_params.load_checkpoint:
+        if p3inn_dir.pred_res_upper.path.exists():
             def net_up(x):
-                y = np.interp(x.squeeze(), x_eval.squeeze(), bound_up - y_eval_pred_median)
+                y = np.interp(x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_res_upper.load().squeeze())
                 return y.reshape(-1, 1)
-
-            def net_down(x):
-                y = np.interp(
-                    x.squeeze(), x_eval.squeeze(), y_eval_pred_median - bound_down
-                )
-                return y.reshape(-1, 1)
-
             std_models["up"] = to_keras_model_proxy(net_up)
+
+        if p3inn_dir.pred_res_upper.path.exists():
+            def net_down(x):
+                y = np.interp(x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_res_lower.load().squeeze())
+                return y.reshape(-1, 1)
             std_models["down"] = to_keras_model_proxy(net_down)
-            break
+
 
     # %%
     # Train residual models
@@ -691,6 +686,11 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
                 [training_params_std.initial_learning_rate, 1e-7],
             ),
         )
+        if model_type == "up":
+            p3inn_dir.pred_res_upper.save(res_result.y_eval_pred)
+        else:
+            p3inn_dir.pred_res_lower.save(res_result.y_eval_pred)
+
         if len(res_result.loss_train) > 0:
             fig, axs = plt.subplots(ncols=2, figsize=(8, 3))
             axs[0].semilogy(res_result.loss_train)
@@ -754,6 +754,7 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
             y_eval_pred_median - c_down * residual_results["down"].y_eval_pred
         ).squeeze()
 
+        print("Saving quantiles...")
         p3inn_dir.get_pred_bound_file(quantile, "up").save(upper_bound)
         p3inn_dir.get_pred_bound_file(quantile, "down").save(lower_bound)
 
