@@ -765,15 +765,14 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
         print(f"    PI contains {n_inside / x_data.shape[0]:.1%}")
         print()
 
-        for i, (q, bound_up, bound_down) in enumerate(p3inn_dir.iter_pred_PIs()):
-            ax.fill_between(
-                x=x_eval,
-                y1=upper_bound,
-                y2=lower_bound,
-                color=f"C{0}",
-                edgecolor="k",
-                alpha=min(1, 0.35 / len(experiment_params.quantiles)),
-            )
+        ax.fill_between(
+            x=x_eval,
+            y1=upper_bound,
+            y2=lower_bound,
+            color=f"C{0}",
+            edgecolor="k",
+            alpha=min(1, 1 / len(experiment_params.quantiles)),
+        )
 
     ax.legend()
     plt.tight_layout()
