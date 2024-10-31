@@ -1,4 +1,4 @@
-"""Train mean FINN models with all UQ factors."""
+"""Train mean FINN models with all UQ factors (C Noise, Loss Pattern, Seed)."""
 
 import argparse
 import subprocess

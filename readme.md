@@ -305,8 +305,45 @@ TODO:
 
 # 31.10.2024
 Redepunkte:
+- PI3NN on Rets: Nur wegen Glattheit?
+    - 
 - Data-SPAN + SPAN
+    - SPAN noch mal auf Data-SPAN Daten ist besser als das was unten steht
     - Wie kann ich kombinieren? Sind zwei verschiedene Verteilungen. Außerdem bei Data-SPAN keine ganze Verteilung sondern nur von 10%-90% percentile.
         - Allgemein muss ich wohl noch etwas unter 10% und etwas über 90% sampeln bei Data-SPAN (TODO)
         - P3INN
             - Dann much ich Anzahl Punkte bei beiden gleich setzen
+
+
+likelihood = p( D | PDF)
+
+Quantile -> inverse CDF -> CDF -> ableiten -> PDF
+
+------
+
+## SPAN
+### C
+C train -> C FINN
+ xxxx   -> [0, 100]
+
+### Retardation
+np.quantiles
+
+
+## Data-Span
+C train -> C FINN
+10, 90  -> a, b
+[0, 100]  -> [0 , 100] (muss sein)
+
+
+### Retardation
+np.quantiles
+
+
+- Learning: Bei exp. Daten kann man nicht Daten und löserunsicherheit getrennt betrachten. (bei synth schon)
+    - Sondern: Wie lösen sich unsichere Daten auf Löserunsicherheit aus
+
+
+# 06.11.2024
+- 15:00
+- TODO: Quantile gewichten?

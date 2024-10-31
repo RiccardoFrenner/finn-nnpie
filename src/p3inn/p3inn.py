@@ -604,10 +604,6 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     pos_mask = median_residuals > 0
     neg_mask = median_residuals < 0
 
-    assert (
-        abs(np.count_nonzero(pos_mask) - np.count_nonzero(neg_mask)) <= 1
-    ), "Residuals are not evenly split"
-
     n_below = np.count_nonzero(
         y_data < np.interp(x_data, mean_result.x_eval.flat, y_eval_pred_median.flat)
     )
@@ -617,8 +613,8 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
 
     plt.figure()
     plt.scatter(x_data, y_data, alpha=0.5)
-    plt.plot(mean_result.x_eval, mean_result.y_eval_pred, "-", label="Mean")
-    plt.plot(mean_result.x_eval, y_eval_pred_median, "--", label="Median")
+    plt.plot(mean_result.x_eval, mean_result.y_eval_pred, "k-", label="Mean")
+    plt.plot(mean_result.x_eval, y_eval_pred_median, "--", color="C1", label="Median")
     plt.gca().xaxis.set_major_locator(ticker.MaxNLocator(5))
     plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(3))
     plt.tight_layout()
@@ -628,11 +624,16 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
         plt.close()
     else:
         plt.show(block=BLOCK)
+    
+
+    assert (
+        abs(np.count_nonzero(pos_mask) - np.count_nonzero(neg_mask)) <= 1
+    ), f"Residuals are not evenly split (mask): {(np.count_nonzero(pos_mask), np.count_nonzero(neg_mask))}"
 
     # %%
     assert (
         abs(n_below - n_above) <= 1
-    ), f"Residuals are not evenly split: {abs(n_below - n_above)}"
+    ), f"Residuals are not evenly split (curve): {(n_below, n_above)}"
 
     std_models = {}
     if experiment_params.load_checkpoint:
