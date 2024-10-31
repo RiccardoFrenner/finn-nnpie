@@ -236,6 +236,8 @@ Was ich vom Milestone mitgenommen habe:
     - Limitation: FINN muss auch konvergieren und das tut es nicht für alle Daten (siege noise + synthetic experiments)
     - Statt Parameter umbennen in "Sources of Variation" oder was anderes.
 
+---------
+
 - Wieso konvergiert synth + noise nicht aber experimentell konvergiert (bei Timothy zumindest). Selber experimentelle ausprobieren
     - Experimentelle Daten konvergieren auch nicht für die standard parameter.
     - Testen ob mit geringerer LR synth + noise konvergiert.
@@ -299,7 +301,12 @@ TODO:
 
 # 07.10.2024
 - Nächste 2 Wochen urlaub
-    - 29.10.2024 nächstes Meeting (28.10 auch möglich sonst erst wieder 04.11)
 
-# 15.10.2024
-- Reliability Curves (TODO)
+
+# 31.10.2024
+Redepunkte:
+- Data-SPAN + SPAN
+    - Wie kann ich kombinieren? Sind zwei verschiedene Verteilungen. Außerdem bei Data-SPAN keine ganze Verteilung sondern nur von 10%-90% percentile.
+        - Allgemein muss ich wohl noch etwas unter 10% und etwas über 90% sampeln bei Data-SPAN (TODO)
+        - P3INN
+            - Dann much ich Anzahl Punkte bei beiden gleich setzen
