@@ -22,13 +22,18 @@ class ExperimentalSamples:
 
     @classmethod
     def from_dir(cls, p):
+        def try_load(p):
+            try:
+                return np.load(p)
+            except FileNotFoundError:
+                return np.array([[]])
         p = Path(p).resolve()
         return cls(
-            core1=np.load(p / "y_core1_samples.npy"),
-            core2=np.load(p / "y_core2_samples.npy"),
-            core2b=np.load(p / "y_core2B_samples.npy"),
-            ret_x=np.load(p / "x_ret_samples.npy").squeeze(),
-            ret_y=np.load(p / "y_ret_samples.npy"),
+            core1=try_load(p / "y_core1_samples.npy"),
+            core2=try_load(p / "y_core2_samples.npy"),
+            core2b=try_load(p / "y_core2B_samples.npy"),
+            ret_x=try_load(p / "x_ret_samples.npy").squeeze(),
+            ret_y=try_load(p / "y_ret_samples.npy"),
         )
     
     def to_dir(self, p):
@@ -79,10 +84,14 @@ class ExperimentalSamples:
 
         if only_outlines:
             line_kwargs.setdefault("alpha", 0.5)
-            axs[0].fill_between(core1_x, *compute_outlines(self.core1), **line_kwargs)
-            axs[1].fill_between(core2_x, *compute_outlines(self.core2), **line_kwargs)
-            axs[2].fill_between(core2b_x, *compute_outlines(self.core2b), **line_kwargs)
-            axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
+            if self.core1.size > 0:
+                axs[0].fill_between(core1_x, *compute_outlines(self.core1), **line_kwargs)
+            if self.core2.size > 0:
+                axs[1].fill_between(core2_x, *compute_outlines(self.core2), **line_kwargs)
+            if self.core2b.size > 0:
+                axs[2].fill_between(core2b_x, *compute_outlines(self.core2b), **line_kwargs)
+            if self.ret_x.size > 0:
+                axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
         else:
             line_kwargs["alpha"] = min(1.0, 6 / self.ret_y.shape[0])
             axs[0].plot(core1_x, self.core1.T, **line_kwargs)

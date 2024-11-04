@@ -358,6 +358,41 @@ class P3innDir(MyDir):
         return p
 
 
+def _c_for_100_quantile(
+    *,
+    mode: str,
+    y_train: np.ndarray,
+    pred_median: np.ndarray,
+    pred_std: np.ndarray,
+    verbose: int = 0,
+) -> float:
+    if mode == "up":
+        sign = 1
+    else:
+        sign = -1
+
+    def bound(c: float):
+        return pred_median + sign * c * pred_std
+
+    c1 = 0.0
+    dists = sign * (bound(c1) - y_train)
+    i = np.argmin(dists)
+    assert (
+        dists[i] <= 0.0
+    ), f"{dists[i], i}"  # extremely rare cases (datasets) where this is not true.
+    c2 = float(c1 - dists[i] / pred_std[i])
+    assert c2 >= 0.0, f"{c2=}"
+
+    if verbose > 0:
+        print(f"{type(c2)=}")
+
+    # TODO: Yeah I know... But why does optimize_bound not work?
+    while not np.all(sign * (bound(c2) - y_train) >= 0):
+        c2 += 1e-6
+
+    return c2
+
+
 def optimize_bound(
     *,
     mode: str,
@@ -370,6 +405,15 @@ def optimize_bound(
     maxiter: int = 1000,
     verbose=0,
 ):
+    if quantile == 1.0:
+        return _c_for_100_quantile(
+            mode=mode,
+            y_train=y_train,
+            pred_median=pred_median,
+            pred_std=pred_std,
+            verbose=verbose,
+        )
+
     n_train = len(y_train)
     num_outliers = int(n_train * (1 - quantile) / 2)
     if verbose > 0:
@@ -461,13 +505,17 @@ def to_keras_model_proxy(fun):
 
     return Proxy(fun)
 
-# %%
-def main(training_params_mean: TrainingParams, training_params_std: TrainingParams, experiment_params: ExperimentParams, passed_net_mean=None):
 
+# %%
+def main(
+    training_params_mean: TrainingParams,
+    training_params_std: TrainingParams,
+    experiment_params: ExperimentParams,
+    passed_net_mean=None,
+):
     # %%
     out_dir = Path("../data_out/tmp123/p3inn_core2")
     out_dir.resolve()
-
 
     # %%
     print(training_params_mean, training_params_std, experiment_params)
@@ -481,17 +529,17 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     p3inn_dir.x_data.save(x_data)
     p3inn_dir.y_data.save(y_data)
 
-
     if x_data.shape[1] == 1:
         x_eval = np.linspace(x_data.min(), x_data.max(), 1000).reshape(-1, 1)
     else:
         x_eval = x_data.copy()  # TODO: Should be a grid
     p3inn_dir.x_eval.save(x_eval)
 
-
     plt.figure()
     plt.scatter(x_data, y_data, alpha=0.5)
-    plt.gca().xaxis.set_major_locator(ticker.MaxNLocator(5))  # TODO: Use this in the other places
+    plt.gca().xaxis.set_major_locator(
+        ticker.MaxNLocator(5)
+    )  # TODO: Use this in the other places
     plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(3))
     plt.tight_layout()
     plt.savefig(p3inn_dir.image_dir / "input_data.png")
@@ -523,7 +571,6 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
             # mean_model.summary()  # type: ignore
     else:
         mean_model = to_keras_model_proxy(passed_net_mean)  # type: ignore
-
 
     plt.figure()
     plt.scatter(x_data, y_data, alpha=0.5)
@@ -624,7 +671,6 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
         plt.close()
     else:
         plt.show(block=BLOCK)
-    
 
     assert (
         abs(np.count_nonzero(pos_mask) - np.count_nonzero(neg_mask)) <= 1
@@ -638,17 +684,28 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     std_models = {}
     if experiment_params.load_checkpoint:
         if p3inn_dir.pred_res_upper.path.exists():
+
             def net_up(x):
-                y = np.interp(x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_res_upper.load().squeeze())
+                y = np.interp(
+                    x.squeeze(),
+                    x_eval.squeeze(),
+                    p3inn_dir.pred_res_upper.load().squeeze(),
+                )
                 return y.reshape(-1, 1)
+
             std_models["up"] = to_keras_model_proxy(net_up)
 
         if p3inn_dir.pred_res_upper.path.exists():
-            def net_down(x):
-                y = np.interp(x.squeeze(), x_eval.squeeze(), p3inn_dir.pred_res_lower.load().squeeze())
-                return y.reshape(-1, 1)
-            std_models["down"] = to_keras_model_proxy(net_down)
 
+            def net_down(x):
+                y = np.interp(
+                    x.squeeze(),
+                    x_eval.squeeze(),
+                    p3inn_dir.pred_res_lower.load().squeeze(),
+                )
+                return y.reshape(-1, 1)
+
+            std_models["down"] = to_keras_model_proxy(net_down)
 
     # %%
     # Train residual models
@@ -724,10 +781,8 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
     y_train_pred_median = mean_result.y_train_pred + median_shift
     x_eval = mean_result.x_eval.squeeze()
 
-
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.plot(x_eval, y_eval_pred_median, "k-", label="Median Prediction")
-
 
     quantile_cs: dict[float, tuple[float, float]] = {}
     for quantile in sorted(experiment_params.quantiles):
@@ -738,6 +793,7 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
                 pred_std=residual_results[mode].model.predict(mean_result.x_train),
                 mode=mode,
                 quantile=quantile,
+                verbose=1,
             )
             for mode in ["up", "down"]
         ]
@@ -760,8 +816,8 @@ def main(training_params_mean: TrainingParams, training_params_std: TrainingPara
         p3inn_dir.get_pred_bound_file(quantile, "down").save(lower_bound)
 
         n_inside = np.count_nonzero(
-            (y_data < np.interp(x_data, x_eval, upper_bound))
-            & (y_data > np.interp(x_data, x_eval, lower_bound))
+            (y_data <= np.interp(x_data, x_eval, upper_bound))
+            & (y_data >= np.interp(x_data, x_eval, lower_bound))
         )
         print(f"    PI contains {n_inside / x_data.shape[0]:.1%}")
         print()
