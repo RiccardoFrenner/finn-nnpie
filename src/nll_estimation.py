@@ -143,13 +143,28 @@ def weighted_percentile(samples, weights, percentile):
     idx = np.searchsorted(cumulative_weights, percentile, side='left')
     return sorted_samples[idx]
 
-# def compute_PI(samples: np.ndarray, q: float, weights: np.ndarray):
-#     dens, bin_edges = np.histogram(samples, bins="auto", density=True, weights=weights)
-#     mean = np.mean(samples * weights)
-#     print("Unweighted mean:", np.mean(samples))
-#     print("  Weighted mean:", mean)
-#     assert mean < bin_edges[-1]
-#     assert mean > bin_edges[0]
+def compute_PI(samples: np.ndarray, weights: np.ndarray, percentile: float):
+    dens, bin_edges = np.histogram(samples, bins=30, density=True, weights=weights)
+    # mean = np.mean(samples * weights)
+    # print("Unweighted mean:", np.mean(samples))
+    # print("  Weighted mean:", mean)
+    # assert mean < bin_edges[-1]
+    # assert mean > bin_edges[0]
+    i = 0
+    area = 0.0
+    while area < percentile:
+        area += dens[i]*(bin_edges[i+1] - bin_edges[i])
+        i += 1
+    return bin_edges[i]
+
+
+def _compute_loss_pattern_weights(N_data: int, N_b: int, alpha: float) -> float:
+    """
+    Assumption: Training on $D_b$ which is obtained by removing a (x,y) with prob. $\alpha$
+    N_b = size(D_B)
+    \omega_b = p(D_b | D) = (1-\alpha)^{N_b} \alpha^{N - N_b}
+    """
+    return (1-alpha)**N_b * alpha**(N_data - N_b)
 
 
 def _compute_importance_weight(y_data: np.ndarray, y_pred: np.ndarray, sigma: float) -> float:
