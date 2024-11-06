@@ -115,7 +115,7 @@ def nll_kde_fit(samples, data):
     return -np.log(pdf_values).mean()
 
 
-def nll_hist(samples, data, method=None):
+def nll_hist(samples, data, method=None, **hist_kwargs):
     # best default (empirically tested)
     if method is None:
         method = "extra_bin" if len(data) > len(samples) else "data_scaled"
@@ -132,3 +132,57 @@ def nll_hist(samples, data, method=None):
     pdf_values = _fix_pdf_estimates(pdf_values)
 
     return -np.log(pdf_values).mean()
+
+def weighted_percentile(samples, weights, percentile):
+    """Calculates a weighted percentile."""
+    sorted_indices = np.argsort(samples)
+    sorted_samples = samples[sorted_indices]
+    sorted_weights = weights[sorted_indices]
+    normalized_weights = sorted_weights / np.sum(sorted_weights)
+    cumulative_weights = np.cumsum(normalized_weights)
+    idx = np.searchsorted(cumulative_weights, percentile, side='left')
+    return sorted_samples[idx]
+
+# def compute_PI(samples: np.ndarray, q: float, weights: np.ndarray):
+#     dens, bin_edges = np.histogram(samples, bins="auto", density=True, weights=weights)
+#     mean = np.mean(samples * weights)
+#     print("Unweighted mean:", np.mean(samples))
+#     print("  Weighted mean:", mean)
+#     assert mean < bin_edges[-1]
+#     assert mean > bin_edges[0]
+
+
+def _compute_importance_weight(y_data: np.ndarray, y_pred: np.ndarray, sigma: float) -> float:
+    """Computes the importance weight for a given hyperparameter setting."""
+    log_likelihood = 0
+    for prediction, y_i in zip(y_pred, y_data):
+        log_likelihood += -0.5 * ((y_i - prediction) / sigma)**2 - np.log(np.sqrt(2 * np.pi) * sigma)
+    return np.exp(log_likelihood)
+
+
+def compute_hist_weights(y_data: np.ndarray, y_prior_predictive_samples: np.ndarray, sigma: float):
+    """
+    Approximates the posterior predictive distribution p(y | x, D) using importance sampling.
+
+    Args:
+        y_data: Training data: ys of (x_i, y_i), i=1..N
+        y_prior_predictive_samples: [[model(x_1, h_1), ..., model(x_N, h_1)], ... [model(x_1, h_M), ..., model(x_N, h_M)]]
+        solver: Function to compute weights given hyperparameters and data: w = solver(h, D).
+        model: The neural network model: y = model(x, w).
+        sigma: Standard deviation of the Gaussian noise.
+
+    Returns:
+        bin_edges: Edges of the histogram bins.
+        posterior_probabilities: Normalized probabilities for each bin.
+    """
+
+    num_samples = y_prior_predictive_samples.shape[0]
+    assert y_prior_predictive_samples.shape == (num_samples, y_data.shape[0]), f"{y_prior_predictive_samples.shape} != {(num_samples, y_data.shape[0])}"
+    importance_weights = np.zeros(num_samples)
+
+    for m in range(num_samples):
+        importance_weights[m] = _compute_importance_weight(y_data, y_prior_predictive_samples[m], sigma)
+
+    importance_weights /= np.sum(importance_weights)
+
+    return importance_weights

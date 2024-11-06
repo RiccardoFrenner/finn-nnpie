@@ -347,3 +347,5 @@ np.quantiles
 # 06.11.2024
 - 15:00
 - TODO: Quantile gewichten?
+
+- Bei meiner Methode approximiere ich jetzt p(h|D). Müsste ich eine ähnliche Approximation auch bei MCMC machen, um es fair vergleichen zu können?
