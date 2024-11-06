@@ -345,7 +345,11 @@ np.quantiles
 
 
 # 06.11.2024
-- 15:00
-- TODO: Quantile gewichten?
-
-- Bei meiner Methode approximiere ich jetzt p(h|D). Müsste ich eine ähnliche Approximation auch bei MCMC machen, um es fair vergleichen zu können?
+- TODO:
+    - [] Bei meiner Methode approximiere ich jetzt p(h|D). Müsste ich eine ähnliche Approximation auch bei MCMC machen, um es fair vergleichen zu können?
+    - [] MCMC mit "richtigem" sigma_data machen
+    - [] rausfinden warum/ob sigma_data 0.05 bei MCMC ist
+    - [] {p(D | h), p(D | \hat{D})} mit
+        - D = f + eps(sigma=np.std(residuals))
+        - D = f + eps(sigma=0.05)
+        - P3INN statt D = f + eps
