@@ -160,68 +160,6 @@ def compute_PI(samples: np.ndarray, weights: np.ndarray, percentile: float):
     return bin_edges[i]
 
 
-def compute_loss_pattern_weights(N_data: int, N_b: int, alpha: float) -> float:
-    """
-    Assumption: Training on $D_b$ which is obtained by removing a (x,y) with prob. $\alpha$
-    N_b = size(D_B)
-    \omega_b = p(D_b | D) = (1-\alpha)^{N_b} \alpha^{N - N_b}
-    """
-    # TODO: Should be almost the same weight for all because N is so large and alpha was 0.5 I think
-    return (1 - alpha) ** N_b * alpha ** (N_data - N_b)
-
-
-def compute_dataspan_weights2() -> dict[float, float]:
-    """
-    Assumption: Training on synthetic $\hat{D}$
-    weight = p(\hat{D} | D) TODO: check this with written notes
-    p(\hat{D} | D) =
-    Option 1:
-        PI3NN on data -> distr
-        p(\hat{D} | D) = distr.pdf(\hat{D})
-    Option 2:
-        Data = f + normal noise assumption
-    """
-    import p3inn
-
-    p3inn_dir = p3inn.P3innDir("../data_out/p3inn/core2/")
-    x_eval = p3inn_dir.x_eval.load().squeeze()
-
-    probs = []
-    quantiles = []
-    for q, u, d in p3inn_dir.iter_pred_PIs():
-        q_u = (1 - q) / 2 + q
-        q_d = (1 - q) / 2
-        probs.append(q_u)
-        probs.append(q_d)
-        quantiles.append(u.squeeze())
-        quantiles.append(d.squeeze())
-    sort_ids = np.argsort(probs)
-    probs = np.array(probs)[sort_ids]
-    quantiles = np.array(quantiles)[sort_ids]
-
-
-    nll_for_each_quantile_for_each_x: dict[float, list[float]] = dict()
-    for q, datapoints in zip(probs, quantiles):
-        for x, datapoint in zip(x_eval, datapoints):
-            if q not in nll_for_each_quantile_for_each_x:
-                nll_for_each_quantile_for_each_x[q] = []
-            
-            nll_for_each_quantile_for_each_x[q].append(
-                _nll_from_quantiles(
-                    probs=probs,
-                    quantiles=quantiles,
-                    data_point=datapoint,
-                )
-            )
-
-    result = {k: float(np.mean(v)) for k, v in nll_for_each_quantile_for_each_x.items()}
-    result = {k: np.exp(-v) for k, v in result.items()}
-    normalizer = sum(result.values())
-    result = {k: v/normalizer for k, v in result.items()}
-
-    return result
-
-
 def _compute_importance_weight(
     y_data: np.ndarray, y_pred: np.ndarray, sigma: float
 ) -> float:
