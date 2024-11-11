@@ -53,21 +53,40 @@ def _hist_bin_selection(samples, data, method: str):
     return bin_edges
 
 
-def _nll_from_quantiles(probs, quantiles, data_point) -> float:
+def _likelihood_from_quantiles(probs, quantiles, data_point) -> float:
     bin_idx = np.searchsorted(quantiles, data_point) - 1
-    if bin_idx < 0 or bin_idx + 1 >= len(probs):
-        return 0.0
-    return (probs[bin_idx + 1] - probs[bin_idx]) / (
-        quantiles[bin_idx + 1] - quantiles[bin_idx]
-    )
+    likelihood = None
+    
+    if bin_idx < 0:
+        assert quantiles[0] > data_point
+        likelihood = (probs[0] - 0) / (quantiles[0] - data_point)
+
+    if bin_idx + 1 >= len(probs):
+        assert quantiles[-1] < data_point
+        likelihood = (1 - probs[-1]) / (data_point - quantiles[-1])
+
+    if likelihood is None:
+        likelihood = (probs[bin_idx + 1] - probs[bin_idx]) / (
+            quantiles[bin_idx + 1] - quantiles[bin_idx]
+        )
+
+    if likelihood <= 0.0:
+        print(probs.tolist())
+        print(quantiles.tolist())
+        print(data_point, bin_idx, len(probs))
+
+    assert likelihood > 0.0, likelihood
+
+    return likelihood
 
 
 def nll_baseline(samples, data):
-    qs = np.linspace(0, 1, 100)
-    quantiles = np.quantile(samples, qs)
-    pdf_values = np.array([_nll_from_quantiles(qs, quantiles, p) for p in data])
-    pdf_values = _fix_pdf_estimates(pdf_values)
-    return -np.log(pdf_values).mean()
+    probs = np.linspace(0, 1, 100, endpoint=True)[1:-1]
+    quantiles = np.quantile(samples, probs)
+    pdf_values = np.array(
+        [_likelihood_from_quantiles(probs, quantiles, p) for p in data]
+    )
+    return -np.log(pdf_values).sum()
 
 
 def nll_baseline2(samples, data):
@@ -79,13 +98,14 @@ def nll_baseline2(samples, data):
 
     hist_vals = np.diff(probs) / np.diff(quantiles)
 
-    is computed in _nll_from_quantiles
+    is computed in _likelihood_from_quantiles
     """
-    probs = np.arange(1, len(samples) + 1) / len(samples)
+    probs = np.arange(1, len(samples) + 1) / (len(samples) + 1)
     quantiles = np.quantile(samples, probs, method="inverted_cdf")
-    pdf_values = np.array([_nll_from_quantiles(probs, quantiles, p) for p in data])
-    pdf_values = _fix_pdf_estimates(pdf_values)
-    return -np.log(pdf_values).mean()
+    pdf_values = np.array(
+        [_likelihood_from_quantiles(probs, quantiles, p) for p in data]
+    )
+    return -np.log(pdf_values).sum()
 
 
 def nll_cdf_fit(samples, data):
@@ -94,7 +114,7 @@ def nll_cdf_fit(samples, data):
     cdf = UnivariateSpline(sorted_samples, cdf_empirical, s=0.01)
     pdf = cdf.derivative(1)
     pdf_values = _fix_pdf_estimates(pdf(data))
-    return -np.log(pdf_values).mean()
+    return -np.log(pdf_values).sum()
 
 
 def nll_cdf_fit_monotone(samples, data):
@@ -105,17 +125,17 @@ def nll_cdf_fit_monotone(samples, data):
     cdf = PchipInterpolator(x_eval, pre_cdf(x_eval))
     pdf = cdf.derivative(1)
     pdf_values = _fix_pdf_estimates(pdf(data))
-    return -np.log(pdf_values).mean()
+    return -np.log(pdf_values).sum()
 
 
 def nll_kde_fit(samples, data):
     kde = stats.gaussian_kde(samples)
     pdf_values = kde.evaluate(data)
     pdf_values = _fix_pdf_estimates(pdf_values)
-    return -np.log(pdf_values).mean()
+    return -np.log(pdf_values).sum()
 
 
-def nll_hist(samples, data, method=None, **hist_kwargs):
+def _old_nll_hist(samples, data, method=None, **hist_kwargs):
     # best default (empirically tested)
     if method is None:
         method = "extra_bin" if len(data) > len(samples) else "data_scaled"
@@ -131,7 +151,59 @@ def nll_hist(samples, data, method=None, **hist_kwargs):
     pdf_values = dens[data_bin_indices]
     pdf_values = _fix_pdf_estimates(pdf_values)
 
-    return -np.log(pdf_values).mean()
+    return -np.log(pdf_values).sum()
+
+
+def nll_hist(samples, data):
+    dens, bins = np.histogram(samples, density=True, bins="auto")
+    dens[dens <= 0.0] = np.mean(dens) * 1e-8
+    
+    eps = np.abs(data).max() * 1e-6
+
+    def dens_fun(x):
+        if data.min() < bins[0]:
+            bins = [data.min() - eps] + bins.tolist()
+            bins = np.array(bins)
+        if data.max() > bins[-1]:
+            bins = bins.tolist() + [data.max() + eps]
+            bins = np.array(bins)
+        
+
+def nll_hist2(samples, data):
+    dens, bins = np.histogram(samples, density=True, bins="auto")
+    dens[dens <= 0.0] = np.mean(dens) * 1e-8
+    assert np.all(dens > 0), dens
+
+    bin_indices = np.digitize(data, bins) - 1
+    inside_indices = (bin_indices >= 0) & (bin_indices < len(dens))
+    inside_pdfs = dens[bin_indices[inside_indices]]
+    
+    eps = np.abs(data).max() * 1e-6
+
+    def left_extension(x):
+        val = np.interp(x, [data.min() - eps, bins[0]], [0, dens[0]])
+        if np.any(val <= 0.0):
+            print("left:", x, [data.min() - eps, bins[0]], [0, dens[0]])
+        return val
+
+    def right_extension(x):
+        val = np.interp(x, [bins[-1], data.max() + eps], [dens[-1], 0])
+        if np.any(val <= 0.0):
+            print("right:", x, [bins[-1], data.max() + eps], [dens[-1], 0])
+        return val
+
+    left_data = data[bin_indices < 0]
+    right_data = data[bin_indices >= len(dens)]
+    outside_pdfs = []
+    if data.min() <= samples.min():
+        outside_pdfs.extend(left_extension(left_data))
+    if data.max() >= samples.max():
+        outside_pdfs.extend(right_extension(right_data))
+
+    pdf_vals = np.array(inside_pdfs.tolist() + outside_pdfs)
+    assert np.all(pdf_vals > 0), (inside_pdfs, outside_pdfs)
+
+    return -np.log(pdf_vals).sum()
 
 
 def weighted_percentile(samples, weights, percentile):
@@ -147,11 +219,6 @@ def weighted_percentile(samples, weights, percentile):
 
 def compute_PI(samples: np.ndarray, weights: np.ndarray, percentile: float):
     dens, bin_edges = np.histogram(samples, bins=30, density=True, weights=weights)
-    # mean = np.mean(samples * weights)
-    # print("Unweighted mean:", np.mean(samples))
-    # print("  Weighted mean:", mean)
-    # assert mean < bin_edges[-1]
-    # assert mean > bin_edges[0]
     i = 0
     area = 0.0
     while area < percentile:
