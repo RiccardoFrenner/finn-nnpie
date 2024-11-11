@@ -53,7 +53,7 @@ def _hist_bin_selection(samples, data, method: str):
     return bin_edges
 
 
-def _nll_from_quantiles(probs, quantiles, data_point):
+def _nll_from_quantiles(probs, quantiles, data_point) -> float:
     bin_idx = np.searchsorted(quantiles, data_point) - 1
     if bin_idx < 0 or bin_idx + 1 >= len(probs):
         return 0.0
@@ -133,6 +133,7 @@ def nll_hist(samples, data, method=None, **hist_kwargs):
 
     return -np.log(pdf_values).mean()
 
+
 def weighted_percentile(samples, weights, percentile):
     """Calculates a weighted percentile."""
     sorted_indices = np.argsort(samples)
@@ -140,8 +141,9 @@ def weighted_percentile(samples, weights, percentile):
     sorted_weights = weights[sorted_indices]
     normalized_weights = sorted_weights / np.sum(sorted_weights)
     cumulative_weights = np.cumsum(normalized_weights)
-    idx = np.searchsorted(cumulative_weights, percentile, side='left')
+    idx = np.searchsorted(cumulative_weights, percentile, side="left")
     return sorted_samples[idx]
+
 
 def compute_PI(samples: np.ndarray, weights: np.ndarray, percentile: float):
     dens, bin_edges = np.histogram(samples, bins=30, density=True, weights=weights)
@@ -153,29 +155,88 @@ def compute_PI(samples: np.ndarray, weights: np.ndarray, percentile: float):
     i = 0
     area = 0.0
     while area < percentile:
-        area += dens[i]*(bin_edges[i+1] - bin_edges[i])
+        area += dens[i] * (bin_edges[i + 1] - bin_edges[i])
         i += 1
     return bin_edges[i]
 
 
-def _compute_loss_pattern_weights(N_data: int, N_b: int, alpha: float) -> float:
+def compute_loss_pattern_weights(N_data: int, N_b: int, alpha: float) -> float:
     """
     Assumption: Training on $D_b$ which is obtained by removing a (x,y) with prob. $\alpha$
     N_b = size(D_B)
     \omega_b = p(D_b | D) = (1-\alpha)^{N_b} \alpha^{N - N_b}
     """
-    return (1-alpha)**N_b * alpha**(N_data - N_b)
+    # TODO: Should be almost the same weight for all because N is so large and alpha was 0.5 I think
+    return (1 - alpha) ** N_b * alpha ** (N_data - N_b)
 
 
-def _compute_importance_weight(y_data: np.ndarray, y_pred: np.ndarray, sigma: float) -> float:
+def compute_dataspan_weights2() -> dict[float, float]:
+    """
+    Assumption: Training on synthetic $\hat{D}$
+    weight = p(\hat{D} | D) TODO: check this with written notes
+    p(\hat{D} | D) =
+    Option 1:
+        PI3NN on data -> distr
+        p(\hat{D} | D) = distr.pdf(\hat{D})
+    Option 2:
+        Data = f + normal noise assumption
+    """
+    import p3inn
+
+    p3inn_dir = p3inn.P3innDir("../data_out/p3inn/core2/")
+    x_eval = p3inn_dir.x_eval.load().squeeze()
+
+    probs = []
+    quantiles = []
+    for q, u, d in p3inn_dir.iter_pred_PIs():
+        q_u = (1 - q) / 2 + q
+        q_d = (1 - q) / 2
+        probs.append(q_u)
+        probs.append(q_d)
+        quantiles.append(u.squeeze())
+        quantiles.append(d.squeeze())
+    sort_ids = np.argsort(probs)
+    probs = np.array(probs)[sort_ids]
+    quantiles = np.array(quantiles)[sort_ids]
+
+
+    nll_for_each_quantile_for_each_x: dict[float, list[float]] = dict()
+    for q, datapoints in zip(probs, quantiles):
+        for x, datapoint in zip(x_eval, datapoints):
+            if q not in nll_for_each_quantile_for_each_x:
+                nll_for_each_quantile_for_each_x[q] = []
+            
+            nll_for_each_quantile_for_each_x[q].append(
+                _nll_from_quantiles(
+                    probs=probs,
+                    quantiles=quantiles,
+                    data_point=datapoint,
+                )
+            )
+
+    result = {k: float(np.mean(v)) for k, v in nll_for_each_quantile_for_each_x.items()}
+    result = {k: np.exp(-v) for k, v in result.items()}
+    normalizer = sum(result.values())
+    result = {k: v/normalizer for k, v in result.items()}
+
+    return result
+
+
+def _compute_importance_weight(
+    y_data: np.ndarray, y_pred: np.ndarray, sigma: float
+) -> float:
     """Computes the importance weight for a given hyperparameter setting."""
     log_likelihood = 0
     for prediction, y_i in zip(y_pred, y_data):
-        log_likelihood += -0.5 * ((y_i - prediction) / sigma)**2 - np.log(np.sqrt(2 * np.pi) * sigma)
+        log_likelihood += -0.5 * ((y_i - prediction) / sigma) ** 2 - np.log(
+            np.sqrt(2 * np.pi) * sigma
+        )
     return np.exp(log_likelihood)
 
 
-def compute_hist_weights(y_data: np.ndarray, y_prior_predictive_samples: np.ndarray, sigma: float):
+def compute_hist_weights(
+    y_data: np.ndarray, y_prior_predictive_samples: np.ndarray, sigma: float
+):
     """
     Approximates the posterior predictive distribution p(y | x, D) using importance sampling.
 
@@ -192,11 +253,16 @@ def compute_hist_weights(y_data: np.ndarray, y_prior_predictive_samples: np.ndar
     """
 
     num_samples = y_prior_predictive_samples.shape[0]
-    assert y_prior_predictive_samples.shape == (num_samples, y_data.shape[0]), f"{y_prior_predictive_samples.shape} != {(num_samples, y_data.shape[0])}"
+    assert y_prior_predictive_samples.shape == (
+        num_samples,
+        y_data.shape[0],
+    ), f"{y_prior_predictive_samples.shape} != {(num_samples, y_data.shape[0])}"
     importance_weights = np.zeros(num_samples)
 
     for m in range(num_samples):
-        importance_weights[m] = _compute_importance_weight(y_data, y_prior_predictive_samples[m], sigma)
+        importance_weights[m] = _compute_importance_weight(
+            y_data, y_prior_predictive_samples[m], sigma
+        )
 
     importance_weights /= np.sum(importance_weights)
 

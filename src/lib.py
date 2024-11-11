@@ -93,11 +93,15 @@ class ExperimentalSamples:
             if self.ret_x.size > 0:
                 axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
         else:
-            line_kwargs["alpha"] = min(1.0, 6 / self.ret_y.shape[0])
-            axs[0].plot(core1_x, self.core1.T, **line_kwargs)
-            axs[1].plot(core2_x, self.core2.T, **line_kwargs)
-            axs[2].plot(core2b_x, self.core2b.T, **line_kwargs)
-            axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
+            line_kwargs["alpha"] = max(1e-2, min(1.0, 6 / self.core2.shape[0]))
+            if self.core1.size > 0:
+                axs[0].plot(core1_x, self.core1.T, **line_kwargs)
+            if self.core2.size > 0:
+                axs[1].plot(core2_x, self.core2.T, **line_kwargs)
+            if self.core2b.size > 0:
+                axs[2].plot(core2b_x, self.core2b.T, **line_kwargs)
+            if self.ret_x.size > 0:
+                axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
 
         return fig, axs
 
