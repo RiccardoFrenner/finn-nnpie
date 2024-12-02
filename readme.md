@@ -353,3 +353,13 @@ np.quantiles
         - D = f + eps(sigma=np.std(residuals))
         - D = f + eps(sigma=0.05)
         - P3INN statt D = f + eps
+
+
+
+# 02.12.2024
+% Regexes:
+% \[(\d+(?:,\s*\d+)*)\]
+% \[[0-9]+ *- *[0-9]+\]
+
+% TODOs:
+% - check that it's PI3NN and not P3INN (also in plots)
