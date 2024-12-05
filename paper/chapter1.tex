@@ -1,36 +1,3 @@
-% TODOs
-% - explain the hyperparameters in more detail
-% - consistency with retardation (factor/function) naming scheme
-
-\documentclass{article}
-
-\usepackage[backend=biber,style=numeric]{biblatex}
-\addbibresource{main.bib}
-
-% \geometry{
-%   left=20mm,     % Left margin
-%   right=20mm,    % Right margin
-%   top=10mm,      % Top margin
-%   bottom=10mm,   % Bottom margin
-% }
-
-\newcommand{\ind}[1]{\mathbb{1}_{\{#1\}}}
-
-
-\title{Neural Network Prediction Interval Estimation in a Finite Volume Neural Network}
-\author{TODO}
-\date{\today}
-
-\begin{document}
-
-\maketitle
-
-\begin{abstract}
-This study investigates uncertainty quantification (UQ) for learning constitutive relations in contaminant transport modeling using the Finite Volume Neural Network (FINN). In the considered application case accurate retardation factor estimation is crucial for predicting contaminant fate and transport, but traditional methods rely on simplified isotherms that are inaccurate. FINN offers a data-driven alternative by learning complex retardation behavior from concentration data. However, existing UQ methods for FINN, such as Bayesian approaches, can be computationally demanding. We propose two novel, more efficient UQ methods: Stochastic Perturbation Analysis of Networks (SPAN) and Data-SPAN. SPAN explores uncertainty by training FINN with randomly sampled hyperparameters, while Data-SPAN utilizes randomly generated datasets using PI3NN. We empirically demonstrate the near-uniqueness of the retardation factor inverse problem, justifying our focus on solver and data uncertainties. Applying our methods to synthetic and experimental datasets, we construct prediction intervals for the retardation factor and analyze the sensitivity of FINN to variations of a selected set of hyperparameters. We compare our methods with a Markov Chain Monte Carlo (MCMC) baseline, finding that while SPAN and Data-SPAN are computationally more expensive per sample, they offer comparable prediction interval quality and provide a more comprehensive exploration of the uncertainty landscape. Data-SPAN, in particular, shows promising results in terms of reliability. Our findings contribute to more efficient and robust UQ for physics-aware machine learned geophysical processes.
-\end{abstract}
-
-\tableofcontents
-
 \section{Introduction}
 
 \subsection{Motivation}
@@ -43,7 +10,7 @@ However, uncertainty quantification (UQ) for FINN, and machine learning models i
 The transport of contaminants in groundwater is a complex process that involves various physical and chemical interactions. One crucial aspect is diffusion-sorption, where contaminants dissolved in groundwater can interact with the solid phase of the porous medium, such as clay, leading to sorption and desorption processes. This interaction significantly affects the migration and fate of contaminants.
 The retardation factor ($R$) is a key parameter in diffusion-sorption models, quantifying the delay in contaminant transport caused by sorption. It represents the ratio of the contaminant's velocity in the absence of sorption to its actual velocity in the presence of sorption.
 
-Mathematically, the diffusion-sorption process is often described by a partial differential equation (PDE) that incorporates the retardation factor. For example, Equation \eqref{eq:diff-sorpt-pde} presents a one-dimensional diffusion-sorption equation for dissolved contaminant concentration ($c$), where the retardation factor ($R$) is a function of $c$:
+Mathematically, the diffusion-sorption process is often described by a partial differential equation (PDE) that incorporates the retardation factor. For example, Equation ~\vref{eq:diff-sorpt-pde} presents a one-dimensional diffusion-sorption equation for dissolved contaminant concentration ($c$), where the retardation factor ($R$) is a function of $c$:
 
 \begin{equation}
     \frac{\partial c}{\partial t} = \frac{D}{R(c)} \frac{\partial^2 c}{\partial x^2}
@@ -52,7 +19,7 @@ Mathematically, the diffusion-sorption process is often described by a partial d
 
 Here, $D$ represents the effective diffusion coefficient, $t$ is time, and $x$ is the distance along the flow path.
 
-Determining the retardation factor from concentration data is an inverse problem. Instead of directly solving the PDE with known parameters, the goal is to infer the unknown retardation factor function ($R(c)$) from observed concentration data. This inverse problem is challenging due to the limited availability and potential noise in the data, as well as the complexity of the underlying sorption processes. Even without noise, uniqueness is not guaranteed for implicit equations. Therefore, we empirically investigate the uniqueness of the retardation factor function given the diffusion-sorption PDE and boundary conditions in section \ref{sec:uniqueness}.
+Determining the retardation factor from concentration data is an inverse problem. Instead of directly solving the PDE with known parameters, the goal is to infer the unknown retardation factor function ($R(c)$) from observed concentration data. This inverse problem is challenging due to the limited availability and potential noise in the data, as well as the complexity of the underlying sorption processes. Even without noise, uniqueness is not guaranteed for implicit equations. Therefore, we empirically investigate the uniqueness of the retardation factor function given the diffusion-sorption PDE and boundary conditions in section ~\vref{sec:uniqueness}.
 
 Uncertainty quantification (UQ) for ANNs is essential for providing reliable predictions and assessing the confidence in learned models. Given that neural networks learn from data, uncertainties in the data, model parameters, and model structure can propagate to the predictions.
 Traditional UQ methods for neural networks, such as Bayes Neural Networks, involve treating the network weights as random variables and estimating their posterior distribution. However, these methods can be computationally expensive, especially for complex models. Our approach of considering random hyperparameters offers a potentially more efficient alternative for estimating uncertainty in the learned retardation factor.
@@ -80,7 +47,7 @@ This work is structured as follows: Section 2 empirically investigates the uniqu
 \section{Basics}
 
 \subsection{Problem Statement}
-The diffusion-sorption process, governed by a PDE, describes contaminant transport in groundwater. Experimentally, data can be obtained from a soil cylinder, including breakthrough curves (BTCs) at a fixed location ($x=L$) over time ($t \in [0, T_{\text{end}}]$), and a concentration profile at a specific time ($t=T_{\text{end}}$) across the cylinder's length ($x \in [0,L]$). While a complete concentration field ($c(x,t)$, see Figure \ref{fig:c_diss_field_full}) would be ideal, it's practically unobtainable as measurements at all $x$ values require destructive sampling. Solving the PDE requires knowing the retardation factor, $R(c)$, which quantifies sorption and is dependent on soil properties. Since $R(c)$ is typically unknown, FINN is employed to learn it from the available data. However, uncertainties arise from measurement errors in the data and non-uniqueness of the solver solution, leading to uncertainty in the learned retardation factor. Therefore, the goal is to estimate a prediction interval (PI) around the learned $R(c)$ to quantify this uncertainty.
+The diffusion-sorption process, governed by a PDE, describes contaminant transport in groundwater. Experimentally, data can be obtained from a soil cylinder, including breakthrough curves (BTCs) at a fixed location ($x=L$) over time ($t \in [0, T_{\text{end}}]$), and a concentration profile at a specific time ($t=T_{\text{end}}$) across the cylinder's length ($x \in [0,L]$). While a complete concentration field ($c(x,t)$, see Figure ~\vref{fig:c_diss_field_full}) would be ideal, it's practically unobtainable as measurements at all $x$ values require destructive sampling. Solving the PDE requires knowing the retardation factor, $R(c)$, which quantifies sorption and is dependent on soil properties. Since $R(c)$ is typically unknown, FINN is employed to learn it from the available data. However, uncertainties arise from measurement errors in the data and non-uniqueness of the solver solution, leading to uncertainty in the learned retardation factor. Therefore, the goal is to estimate a prediction interval (PI) around the learned $R(c)$ to quantify this uncertainty.
 
 \begin{figure}
     \centering
@@ -90,7 +57,7 @@ The diffusion-sorption process, governed by a PDE, describes contaminant transpo
 \end{figure}
 
 
-The diffusion-sorption equation \eqref{eq:diff-sorpt-pde} reads:
+The diffusion-sorption equation ~\vref{eq:diff-sorpt-pde} reads:
 
 \begin{equation}
     \frac{\partial c}{\partial t} = \frac{D}{R(c)} \frac{\partial^2 c}{\partial x^2}
@@ -126,7 +93,7 @@ There are two main aspects of uncertainty quantification (UQ) in this context:
     \item UQ for the predicted retardation factor: $p(\hat{R}(c) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor.
 \end{enumerate}
 
-But there are also two types of uncertainty that have to be differentiated \parencite{depeweg2018decomposition, gawlikowski2023survey}:
+But there are also two types of uncertainty that have to be differentiated \cite{depeweg2018decomposition, gawlikowski2023survey}:
 
 \begin{enumerate}
     \item Aleatoric uncertainty: This arises from inherent randomness in the data and the physical system. It is irreducible and is caused by factors such as measurement noise and variability in the system parameters.
@@ -151,12 +118,12 @@ Furthermore, FINN employs "state kernels" $S_i$ that take the local concentratio
 
 \subsection{Uniqueness of Inverse Problem}
 \label{sec:uniqueness}
-Inverse problems are not necessarily unique. Consider the simple equation $x^2 = 4$. This equation has two solutions, $x=2$ and $x=-2$. Thus, knowing the output (4) does not uniquely determine the input ($x$). This illustrates the concept of non-uniqueness in inverse problems. Instead of rigorously analyzing the problem mathematically, we perform an empirical uniqueness analysis. We achieve this by rearranging the PDE \eqref{eq:diff-sorpt-pde} to solve for $R(c)$
+Inverse problems are not necessarily unique. Consider the simple equation $x^2 = 4$. This equation has two solutions, $x=2$ and $x=-2$. Thus, knowing the output (4) does not uniquely determine the input ($x$). This illustrates the concept of non-uniqueness in inverse problems. Instead of rigorously analyzing the problem mathematically, we perform an empirical uniqueness analysis. We achieve this by rearranging the PDE ~\vref{eq:diff-sorpt-pde} to solve for $R(c)$
 \begin{equation*}
     R(c) = D \frac{\partial^2 c}{\partial x^2} \frac{1}{\frac{\partial c}{\partial t}}
 \end{equation*}
 
-and substituting the synthetic data. The results, shown in Figure \ref{fig:ret_uniqueness}, suggest a unique solution for this data, except for minor numerical inaccuracies.
+and substituting the synthetic data. The results, shown in Figure ~\vref{fig:ret_uniqueness}, suggest a unique solution for this data, except for minor numerical inaccuracies.
 
 This allows us to attribute potential discrepancies in solutions to two primary factors: aleatoric uncertainty and epistemic uncertainty. We will first examine these separately and then combine them to obtain a final uncertainty quantification.
 
@@ -202,7 +169,7 @@ Bayes' theorem provides the posterior distribution of the NN parameters given th
 p(\theta | \mathcal{D}) \propto p(\mathcal{D} | \theta) p(\theta)
 \end{equation*}
 
-\textcite{finn} compare several methods to obtain samples from this distribution, including the Metropolis-Hastings algorithm, the MALA algorithm, and the Barker method. The accepted samples $\{\theta_i\}$ from the used algorithm are then treated as draws from the posterior distribution $p(\theta | \mathcal{D})$.
+\cite{finn} compare several methods to obtain samples from this distribution, including the Metropolis-Hastings algorithm, the MALA algorithm, and the Barker method. The accepted samples $\{\theta_i\}$ from the used algorithm are then treated as draws from the posterior distribution $p(\theta | \mathcal{D})$.
 
 \paragraph{Posterior of Retardation Function:}
 
@@ -214,7 +181,7 @@ Finally, the posterior distribution of the retardation factor $\hat{R}(c)$ is ob
 
 This set of retardation factor samples provides a probabilistic description of the retardation behavior, incorporating the uncertainty arising from the limited and noisy data.
 
-Since \textcite{finn} obtain the best results with the Barker method and no burn-in period by starting from the pre-trained model, we follow their approach to have a fair comparison.
+Since \cite{finn} obtain the best results with the Barker method and no burn-in period by starting from the pre-trained model, we follow their approach to have a fair comparison.
 
 
 
@@ -226,7 +193,7 @@ The method's theoretical foundation lies in approximating the ground-truth PI bo
 Once trained, PI3NN constructs the PI bounds as linear combinations of the three networks' outputs. The coefficients of these linear combinations ($\alpha$ and $\beta$) are determined through a root-finding algorithm that ensures the desired PICP (Prediction Interval Coverage Probability) for a given confidence level $q$ ($\gamma$ in \cite{pi3nn}). This process allows for calculating PIs for multiple confidence levels without retraining the networks, offering significant computational advantages.
 
 
-Figure \ref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI3NN process:
+Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI3NN process:
 \begin{enumerate}
     \item \textbf{Learn the mean:} Train a neural network to approximate the mean of the target data.
     \item \textbf{Estimate the median:} Calculate the median by shifting the learned mean.
@@ -283,7 +250,7 @@ As $p(\mathcal{D})$ is a constant, it can be omitted, and the weights can be nor
 
 
 \paragraph{Likelihood Computation:}
-We use the same assumption about our data that the Bayesian baseline uses which results in an easy computation of the likelihood by just substituting $\theta$ with $S(h, \mathcal{D})$ in equation \eqref{eq:likelihood}:
+We use the same assumption about our data that the Bayesian baseline uses which results in an easy computation of the likelihood by just substituting $\theta$ with $S(h, \mathcal{D})$ in equation ~\vref{eq:likelihood}:
 
 \begin{equation*}
 p(\mathcal{D} | h) = \prod_{x_i, t_i, c_i \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - c_{model}(x_i, t_i; S(h, \mathcal{D})))^2}{2\sigma^2} \right)
@@ -310,7 +277,7 @@ The exact same derivation can be applied when we assume a random dataset $\tilde
 \label{sec:random_dataset_sampling}
 To generate random datasets, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset $\mathcal{D}$. Let $\hat{c}(t; \theta_{\mathcal{D}})$ be the mean concentration curve predicted by FINN trained on the full dataset $\mathcal{D}$, with $\theta_{\mathcal{D}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
-PI3NN then learns the residuals, effectively modeling the distribution of $c$ given $t$. Let $F^{-1}(q | t)$ denote the quantile function predicted by PI3NN, where $q \in [0, 1]$ is the quantile level and $t$ is the time point. This function provides the concentration value at time $t$ corresponding to the $q$-th quantile of the learned distribution, see \ref{fig:btc_dataspan_quantiles}.
+PI3NN then learns the residuals, effectively modeling the distribution of $c$ given $t$. Let $F^{-1}(q | t)$ denote the quantile function predicted by PI3NN, where $q \in [0, 1]$ is the quantile level and $t$ is the time point. This function provides the concentration value at time $t$ corresponding to the $q$-th quantile of the learned distribution, see ~\vref{fig:btc_dataspan_quantiles}.
 
 To create a random dataset sample $\tilde{\mathcal{D}}(q)$, we sample a quantile level $q$ from a uniform distribution $\mathcal{U}(0, 1)$. Then, the random dataset sample is constructed as:
 
@@ -320,7 +287,7 @@ $$
 
 This process is repeated $M$ times to obtain a collection of random datasets $\{\tilde{\mathcal{D}}_j\}_{j=1}^M$. Each $\tilde{\mathcal{D}}_j$ is then used to train a separate instance of FINN, effectively providing a set of retardation factor samples, analogous to the samples obtained from the hyperparameter perturbation approach.
 
-To improve the approximative likelihood computation in \ref{sec:likelihood}, we artificially insert the quantile levels $0$ and $1$ into the random samples. This improves the distribution fit on the histogram of samples.
+To improve the approximative likelihood computation in ~\vref{sec:likelihood}, we artificially insert the quantile levels $0$ and $1$ into the random samples. This improves the distribution fit on the histogram of samples.
 
 \begin{figure}
     \centering
@@ -334,10 +301,10 @@ To improve the approximative likelihood computation in \ref{sec:likelihood}, we 
 \section{Data and Setup}
 
 \subsection{Experimental Setup}
-The experiments were conducted using Python 3.11.3. Modified versions of the FINN code from \textcite{finn} and the PI3NN code from \textcite{pi3nn} were used. The code and specific library versions are available on GitHub. GNU parallel \cite{tange_2023_10199085} was used for parallel execution of experiments. % TODO: insert github link
+The experiments were conducted using Python 3.11.3. Modified versions of the FINN code from \cite{finn} and the PI3NN code from \cite{pi3nn} were used. The code and specific library versions are available on GitHub. GNU parallel \cite{tange_2023_10199085} was used for parallel execution of experiments. % TODO: insert github link
 
 \subsection{Data Acquisition}
-The BTC data was obtained from the work by \textcite{finn}, originally sourced from \textcite{nowak2016entropy}. Synthetic data was generated using the same solver employed by FINN, ensuring consistency in the experimental setup.
+The BTC data was obtained from the work by \cite{finn}, originally sourced from \cite{nowak2016entropy}. Synthetic data was generated using the same solver employed by FINN, ensuring consistency in the experimental setup.
 
 \subsection{Training Details}
 Early stopping was implemented to halt training when the loss plateaued. Training runs for FINN were discarded if the normalized mean squared error (NMSE) exceeded $10^{-5}$ (measured on BTC), ensuring a minimum level of accuracy in the learned retardation factor.
@@ -362,7 +329,7 @@ The hyperparameters that were used differ for the synthetic data case and the ex
         \midrule
         Weight Initialization & \small{Seed for initial values for model weights} & \textcolor{green}{\checkmark} & \textcolor{green}{\checkmark} \\
         \midrule
-        Training Data Mask (see \ref{fig:training_data_mask}) & \small{Seed for mask applied to training data} & \textcolor{red}{\ding{55}} & \textcolor{green}{\checkmark} \\
+        Training Data Mask (see ~\vref{fig:training_data_mask}) & \small{Seed for mask applied to training data} & \textcolor{red}{\ding{55}} & \textcolor{green}{\checkmark} \\
         \midrule
         Training Data Noise & \small{Seed for noise added to training data} & \textcolor{red}{\ding{55}} & \textcolor{green}{\checkmark} \\
         \midrule
@@ -377,7 +344,7 @@ The hyperparameters that were used differ for the synthetic data case and the ex
     \label{tab:hparams}
 \end{table}
 
-In the experimental setting, $780$ samples were generated using the specified hyperparameters. For the synthetic experiments, the number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. The experimental results are shown in \ref{fig:span_samples}.
+In the experimental setting, $780$ samples were generated using the specified hyperparameters. For the synthetic experiments, the number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. The experimental results are shown in ~\vref{fig:span_samples}.
 % TODO: synthetic results
 
 \begin{figure}
@@ -391,23 +358,23 @@ In the experimental setting, $780$ samples were generated using the specified hy
 \subsection{Data-SPAN}
 This approach was applied only to the experimental data because the synthetic training data lacks noise, leading to extremely small residuals and a very narrow distribution that does not impact sampling.
 
-For the experimental data, we sampled $70$ quantiles as detailed in \ref{sec:random_dataset_sampling}. The results are shown in \ref{fig:dataspan_samples}.
+For the experimental data, we sampled $70$ quantiles as detailed in ~\vref{sec:random_dataset_sampling}. The results are shown in ~\vref{fig:dataspan_samples}.
 
 
 
 \subsection{Full-SPAN}
-This approach is equivalent to Data-SPAN but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in \ref{fig:fullspan_samples}.
+This approach is equivalent to Data-SPAN but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in ~\vref{fig:fullspan_samples}.
 
 
 \subsection{Baselines (Bayes NN via MCMC)}
-We computed $10$k samples using the same parameters as \textcite{finn}; the samples are visualized in \ref{fig:mcmc_samples}.
+We computed $10$k samples using the same parameters as \cite{finn}; the samples are visualized in ~\vref{fig:mcmc_samples}.
 % TODO: Why 10k? This is very important to know for arguing about efficiency.
 
 % This is not a result (of me) thus it is here and not in the results section
 \begin{figure}
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_mcmc_samples.png}
-    \caption{Retardation curves generated by MCMC sampling as detailed in \ref{sec:bayes_nn}.}
+    \caption{Retardation curves generated by MCMC sampling as detailed in ~\vref{sec:bayes_nn}.}
     \label{fig:mcmc_samples}
 \end{figure}
 
@@ -420,7 +387,7 @@ We computed $10$k samples using the same parameters as \textcite{finn}; the samp
 \subsubsection{Synthetic Data}
 
 \paragraph{SPAN}
-When the hyperparameters are randomly sampled to learn different retardations, the uncertainty in $R(c)$ is very small as can be seen in Figure \ref{fig:synthetic_SPAN_factors_PIs}, even when all hyperparameters are combined in "All UQ".
+When the hyperparameters are randomly sampled to learn different retardations, the uncertainty in $R(c)$ is very small as can be seen in Figure ~\vref{fig:synthetic_SPAN_factors_PIs}, even when all hyperparameters are combined in "All UQ".
 
 % TODO: Get rid of upper right triangle
 \begin{figure}
@@ -431,7 +398,7 @@ When the hyperparameters are randomly sampled to learn different retardations, t
 \end{figure}
 
 \paragraph{Data-SPAN}
-When applying gaussian noise of the same strength as the experimental data has due to measurement error \cite{nowak2016entropy}, the uncertainty in $R(c)$ becomes much larger compared to SPAN as can be seen in Figure \ref{fig:synthetic_langmuir_c_noise}.
+When applying gaussian noise of the same strength as the experimental data has due to measurement error \cite{nowak2016entropy}, the uncertainty in $R(c)$ becomes much larger compared to SPAN as can be seen in Figure ~\vref{fig:synthetic_langmuir_c_noise}.
 
 \begin{figure}
     \centering
@@ -444,7 +411,7 @@ When applying gaussian noise of the same strength as the experimental data has d
 
 \subsubsection{Experimental Data}
 
-Figure \ref{fig:mcmc_vs_fullspan} illustrates that the 90\% prediction intervals (PIs) for both the Markov Chain Monte Carlo (MCMC) and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
+Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% prediction intervals (PIs) for both the Markov Chain Monte Carlo (MCMC) and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
 
 
 \begin{figure}
@@ -508,11 +475,11 @@ To evaluate the predictive quality of our method, we use its samples to estimate
 This yields a NLL of $-7.50$, which is the lowest value. % TODO: Interpretation
 
 \subsection{Reliability Curve}
-Another quantification done by \textcite{finn} is the average calibration of the PI. This can be visualized using the reliability curve.
+Another quantification done by \cite{finn} is the average calibration of the PI. This can be visualized using the reliability curve.
 
 The reliability curve assesses the calibration of predicted confidence intervals. It plots the observed frequency of the true value falling within a given confidence interval against the predicted confidence level. To compute it, the prediction range is divided into bins (e.g., by confidence levels). For each bin, the proportion of predictions where the true value falls within the corresponding PI is calculated. Ideally, the curve should follow the diagonal line (perfect calibration). A curve above the diagonal indicates underconfidence (the true value falls within the PI more often than predicted), while a curve below the diagonal indicates overconfidence.
 
-The results, shown in Figure \ref{fig:reliability_curves}, suggest that Data-SPAN provides the best calibrated PI. Overall, all methods are generally overconfident, SPAN the strongest. Only Data-SPAN is a little underconfident for very small $c$ values.
+The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Data-SPAN provides the best calibrated PI. Overall, all methods are generally overconfident, SPAN the strongest. Only Data-SPAN is a little underconfident for very small $c$ values.
 
 \begin{figure}
     \centering
@@ -534,7 +501,7 @@ We average the importance for $R(c)$ over a set of $c$ values and obtain $0.033$
 
 This indicates that \textbf{Max Epochs} and \textbf{MSE Loss Factor} have the largest impact on $R(c)$ overall. The seed used for weight initialization and the physical loss factor play only negligible roles.
 
-Figure \ref{fig:sensitivity} shows the relative importance for values of $c$ over which the average was taken.
+Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ over which the average was taken.
 
 
 \begin{figure}
@@ -548,7 +515,7 @@ Figure \ref{fig:sensitivity} shows the relative importance for values of $c$ ove
 
 \section{Discussion}
 \subsection{Retardation Range} % TODO: better name?
-For some $c$ $R(c)$ does not affect the whole $c$ field equally. This can be seen by looking at figure \ref{fig:triangle_ret_pertubation} which shows constant retardation curves that are pertubed additively by triangle functions with centers at different $c$ values. With increasing $c$ center, the error caused by the hat functions goes quickly to zero. For $c > 1$, the error becomes zero. This is because the concentration field $c(x,t)$ only contains values between $0$ and $1$. But there is also a noticeable difference between the maximum error measured on the full field vs. the BTC. The BTC error is consistently much lower.
+For some $c$ $R(c)$ does not affect the whole $c$ field equally. This can be seen by looking at figure ~\vref{fig:triangle_ret_pertubation} which shows constant retardation curves that are pertubed additively by triangle functions with centers at different $c$ values. With increasing $c$ center, the error caused by the hat functions goes quickly to zero. For $c > 1$, the error becomes zero. This is because the concentration field $c(x,t)$ only contains values between $0$ and $1$. But there is also a noticeable difference between the maximum error measured on the full field vs. the BTC. The BTC error is consistently much lower.
 The full field error can not be detected in the case of experimental data as there is no access to the full field solution. For this reason, the range of $c$ values for which significant statements about the uncertainty of $R(c)$ can be made, is restricted to a narrow range. The exact range is difficult to estimate as the stength of influence for different retardations is unclear.
 
 
@@ -563,7 +530,7 @@ The full field error can not be detected in the case of experimental data as the
 \subsection{Samples and PIs}
 The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between Full-SPAN and Markov Chain Monte Carlo (MCMC).
 
-Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Data-SPAN due to the absence of noise in the synthetic data; and the utilization of less effective SPAN hyperparameters (such as excluding the strongest options like "Max Epoch" or "MSE loss factor," as shown in Section \ref{sec:sensitivity}).
+Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Data-SPAN due to the absence of noise in the synthetic data; and the utilization of less effective SPAN hyperparameters (such as excluding the strongest options like "Max Epoch" or "MSE loss factor," as shown in Section ~\vref{sec:sensitivity}).
 
 Interestingly, Data-SPAN does not demonstrate a substantial improvement in uncertainty estimation with an increasing number of samples, especially when compared to MCMC. This is a favorable characteristic, as it implies that Data-SPAN can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, SPAN benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with Data-SPAN's ability to operate effectively with fewer samples, establishes SPAN as a more computationally efficient method for uncertainty quantification.
 % TODO: I don't like how I sometimes use SPAN but mean Full-SPAN and stuff like this. Maybe I should introduce Para-SPAN and get rid of Full-SPAN?
@@ -589,9 +556,3 @@ This work investigated uncertainty quantification (UQ) for the retardation facto
 \subsection{Future Work}
 % TODO
 
-
-\section{References}
-\printbibliography
-
-
-\end{document}

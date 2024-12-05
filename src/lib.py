@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import torch
@@ -102,6 +103,18 @@ class ExperimentalSamples:
                 axs[2].plot(core2b_x, self.core2b.T, **line_kwargs)
             if self.ret_x.size > 0:
                 axs[3].plot(self.ret_x, self.ret_y.T, **line_kwargs)
+
+        axs[0].sharex(axs[1])
+        axs[1].set_yticklabels([])
+        axs[0].set_ylabel("$c_{\\text{diss}}(t)$")
+        axs[2].set_ylabel("$c_{\\text{tot}}(x)$")
+        axs[3].set_ylabel("$R(c)$")
+
+        axs[3].set_xlim(0, 1.5)
+
+        for ax in axs:
+            ax.xaxis.set_major_locator(ticker.MaxNLocator(3))
+            ax.yaxis.set_major_locator(ticker.MaxNLocator(3))
 
         return fig, axs
 

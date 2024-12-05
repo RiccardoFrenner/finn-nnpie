@@ -363,3 +363,90 @@ np.quantiles
 
 % TODOs:
 % - check that it's PI3NN and not P3INN (also in plots)
+
+# 04.12.2024
+- spezielle methoden (FINN, Bayes) aus Motivation raus. Nur noch high level ohne Fachwörter
+- FINN (aber keine UQ methoden) dann in Background (aber nicht im Detail, nur Idee)
+- Problem statement kapitel + uniqueness in neues kapitel nach motivation
+
+# Introduction
+keine Formeln hier
+## Motivation
+## Background
+- quasi alles was ich benutze/worauf ich aufbaue
+## Contributions of this work
+## Related work
+- hier dann Bayes
+
+# Foundations (besser: Basics (weil dann kann uniqueness und UQ noch rein))
+## Bisheriges Problemstatement
+## FINN
+### FINN spezifisches
+## Uniqueness
+## UQ
+### Bayes
+### PI3NN
+
+
+SPAN Namensänderung:
+soll sich nicht nur nach Sensitivity Analysis anhören. der UQ/PI-Teil sollte auch irgendwie rein
+
+SPAN -> Network Hyperparameters * Analysis
+Data-SPAN -> Data * Analysis (soll sich nicht nur so anhören als wäre es das erste nur mit Daten)
+
+Hyperparameter-based Analysis of NN PI estimation (HANNPIE)
+Data-based Analysis of NN PI estimation (DANNPIE)
+Aber Analysis passt irgendwie nicht:
+Hyperparameter-based NN PI estimation (Hy-NNPIE) oder Hyperparameter-based NNPIE
+Data-based NN PI estimation (Da-NNPIE) oder Data-based NNPIE
+Kombination dann: HyDa-NNPIE
+
+
+Methodology:
+- Methodology Section mit X statt h
+    - Dann mit Hyp
+    - Dann mit Data
+        - auch hier erklären was der hyperp jeweils macht (z.b bei seed sagen wie pytorch das initialisiert)
+- Noch eine section mit HyDa für die mathematische Kombination der beiden
+
+# Data and Setup
+- parameter (wie diff noch hier rein)
+- welche daten experimentell nutzt
+- welche daten synth nutzt
+## synth data
+## experimental data
+- wer gemacht hat
+- wie sie aussehen
+## computational setup
+- computer specs
+### training details
+- architecture
+- optimizer
+
+# Results and Discussion (statt zwei verschi. Kapitel)
+(Experiments section jeweils an die entsprechende stelle)
+
+## synth
+folgende hypas: ... (keine Tabelle mehr)
+### hyparam
+### Data
+- warum hier kein Data-NNPIE sondern synthdata + noise
+### HyDa
+
+## exp
+folgende hypas: ...
+### hyparam
+#### sensitivity analysis
+### Data
+### HyDa
+### HyDa vs MCMC
+#### Runtime
+#### Likelihood
+#### Reliability
+
+## Conclusion
+conclusion of results
+- Limitations
+
+## Summary and Outlook
+
