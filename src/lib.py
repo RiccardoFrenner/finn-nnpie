@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
+
+import plotting
 
 
 @dataclasses.dataclass
@@ -28,6 +29,7 @@ class ExperimentalSamples:
                 return np.load(p)
             except FileNotFoundError:
                 return np.array([[]])
+
         p = Path(p).resolve()
         return cls(
             core1=try_load(p / "y_core1_samples.npy"),
@@ -36,7 +38,7 @@ class ExperimentalSamples:
             ret_x=try_load(p / "x_ret_samples.npy").squeeze(),
             ret_y=try_load(p / "y_ret_samples.npy"),
         )
-    
+
     def to_dir(self, p):
         p = Path(p).resolve()
         np.save(p / "y_core1_samples.npy", self.core1)
@@ -53,7 +55,11 @@ class ExperimentalSamples:
         only_outlines: bool = False,
     ):
         if axs is None:
-            fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(10, 6))
+            fig, axs = plt.subplots(
+                ncols=2,
+                nrows=2,
+                figsize=(2 * plotting.FIGURE_WIDTH, 2 * plotting.FIGURE_HEIGHT),
+            )
             axs = axs.flatten().tolist()
         else:
             fig = plt.gcf()
@@ -78,21 +84,31 @@ class ExperimentalSamples:
         line_kwargs.setdefault("linestyle", "-")
 
         def compute_outlines(arr):
-            return np.array([
-                np.min(arr, axis=0),
-                np.max(arr, axis=0),
-            ])
+            return np.array(
+                [
+                    np.min(arr, axis=0),
+                    np.max(arr, axis=0),
+                ]
+            )
 
         if only_outlines:
             line_kwargs.setdefault("alpha", 0.5)
             if self.core1.size > 0:
-                axs[0].fill_between(core1_x, *compute_outlines(self.core1), **line_kwargs)
+                axs[0].fill_between(
+                    core1_x, *compute_outlines(self.core1), **line_kwargs
+                )
             if self.core2.size > 0:
-                axs[1].fill_between(core2_x, *compute_outlines(self.core2), **line_kwargs)
+                axs[1].fill_between(
+                    core2_x, *compute_outlines(self.core2), **line_kwargs
+                )
             if self.core2b.size > 0:
-                axs[2].fill_between(core2b_x, *compute_outlines(self.core2b), **line_kwargs)
+                axs[2].fill_between(
+                    core2b_x, *compute_outlines(self.core2b), **line_kwargs
+                )
             if self.ret_x.size > 0:
-                axs[3].fill_between(self.ret_x, *compute_outlines(self.ret_y), **line_kwargs)
+                axs[3].fill_between(
+                    self.ret_x, *compute_outlines(self.ret_y), **line_kwargs
+                )
         else:
             line_kwargs["alpha"] = max(1e-2, min(1.0, 6 / self.core2.shape[0]))
             if self.core1.size > 0:
@@ -106,15 +122,19 @@ class ExperimentalSamples:
 
         axs[0].sharex(axs[1])
         axs[1].set_yticklabels([])
-        axs[0].set_ylabel("$c_{\\text{diss}}(t)$")
-        axs[2].set_ylabel("$c_{\\text{tot}}(x)$")
-        axs[3].set_ylabel("$R(c)$")
+        # axs[0].set_ylabel(plotting.C_DISS_Y_LABEL)
+        # axs[2].set_ylabel(plotting.C_TOT_Y_LABEL)
 
         axs[3].set_xlim(0, 1.5)
 
-        for ax in axs:
-            ax.xaxis.set_major_locator(ticker.MaxNLocator(3))
-            ax.yaxis.set_major_locator(ticker.MaxNLocator(3))
+        plotting.set_retardation_axes_stuff(axs[-1], set_xlabel=True, set_ylabel=True)
+        for i, ax in enumerate(axs[:-1]):
+            plotting.set_concentration_axes_stuff(
+                ax,
+                core="2" if i != 2 else "2B",
+                set_xlabel=i in [1, 2],
+                set_ylabel=i in [0, 2],
+            )
 
         return fig, axs
 
