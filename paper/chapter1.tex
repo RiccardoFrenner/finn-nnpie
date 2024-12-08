@@ -43,7 +43,7 @@ While FINN has shown promising results in modeling contaminant transport, quanti
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/parametric_isotherms.pdf}
+    \includegraphics{figs/parametric_isotherms.png}
     \caption{Parametric sorption isotherms for the set of parameters used in Section \vref{sec:TODO}.}
     \label{fig:parametric_isotherms}
 \end{figure}
@@ -77,7 +77,7 @@ The diffusion-sorption process, governed by a PDE, describes contaminant transpo
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/c_diss_field_full.pdf}
+    \includegraphics{figs/c_diss_field_full.png}
     \caption{Synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm for a spatial domain of $x \in [0, 1]$ meters and a temporal domain of $t \in [0, 10000]$ days.}
     \label{fig:c_diss_field_full}
 \end{figure}
@@ -148,7 +148,7 @@ Figure \ref{fig:ret_uniqueness} shows the results of this empirical uniqueness a
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{figs/retardation_uniqueness.pdf}
+    \includegraphics{figs/ret_uniqueness.png}
     \caption{Empirical investigation of the uniqueness of the retardation factor $R(c)$ for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. The left and top panels show the raw $R(c)$ estimates (colored circles) and the binned and averaged $R(c)$ values (black line with circle markers) as a function of $c$. The bottom-right panel compares the binned and averaged $R(c)$ values (colored circle markers) with the analytical isotherms (colored line) used to generate the synthetic datasets. Error bars indicate the standard deviation inside the bin.}
     \label{fig:ret_uniqueness}
 \end{figure}
@@ -251,7 +251,7 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/3pinn_illustration.pdf}
+    \includegraphics{figs/3pinn_illustration.png}
     \caption{Illustration of the PI3NN method.}
     \label{fig:3pinn_illustration}
 \end{figure}
@@ -262,14 +262,14 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 
 \section{Methodology}
 \subsection{SPAN (Stochastic Perturbation Analysis of Networks)}
-% TODO: SPAN = Epistemic uncertainty
-Our objective is to determine the posterior predictive distribution $p(\hat{R}(c; \theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain parameters $h$ of the solver and employing an approximate likelihood function $p(\mathcal{D} | h)$ based on the same assumtions that were used for the Bayes aproach.
+% SPAN = Epistemic uncertainty
+Our objective is to determine the posterior predictive distribution $p(\hat{R}(c; \theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$ based on the same assumtion of a normally disturbed dataset that was used for the Bayes approach.
 
-\subsubsection{Approximating the Posterior Predictive Distribution via Hyperparameter Marginalization}
+\subsubsection{Approximating the Posterior Predictive Distribution via Marginalization over Uncertain Factors}
 
 \paragraph{Model Formulation:}
 
-We represent our neural network as $\hat{R}(c; \theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(h, \mathcal{D})$, which takes hyperparameters $h$ and training data $\mathcal{D}$ as input. A prior distribution $p(h)$ is assigned over the hyperparameters; the exact form of $p(h)$ is not crucial, as it suffices to generate samples from it.
+We represent our neural network as $\hat{R}(c; \theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(\mathcal{X}, \mathcal{D})$, which takes hyperparameters $h$ and training data $\mathcal{D}$ as input. A prior distribution $p(h)$ is assigned over the hyperparameters; the exact form of $p(h)$ is not crucial, as it suffices to generate samples from it.
 
 With $w(h) = \frac{p(\mathcal{D} | h)}{p(\mathcal{D})}$, the posterior predictive distribution can be expressed as:
 
@@ -336,7 +336,7 @@ To enhance the accuracy of the likelihood computation in Section \vref{sec:likel
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/btc_dataspan_quantiles.pdf}
+    \includegraphics{figs/btc_dataspan_quantiles.png}
     \caption{Left: BTC quantile functions for all quantile samples $q_j$. Middle: BTC quantile functions for quantiles $0$, $0.5$, and $1$. Right: BTC datasets for quantiles $0$, $0.5$, and $1$.}
     \label{fig:btc_dataspan_quantiles}
 \end{figure}
@@ -394,7 +394,7 @@ In the experimental setting, $780$ samples were generated using the specified hy
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/c_diss_field_train_random_subset.pdf}
+    \includegraphics{figs/c_diss_field_train_random_subset.png}
     \caption{Full synthetic concentration training data where 50\% of datapoints are randomly masked (dark patches).}
     \label{fig:training_data_mask}
 \end{figure}
@@ -418,7 +418,7 @@ We computed $10$k samples using the same parameters as \cite{finn}; the samples 
 % This is not a result (of me) thus it is here and not in the results section
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_mcmc_samples.pdf}
+    \includegraphics{figs/finn_mcmc_samples.png}
     \caption{Retardation curves generated by MCMC sampling as detailed in Section ~\vref{sec:bayes_nn}.}
     \label{fig:mcmc_samples}
 \end{figure}
@@ -437,7 +437,7 @@ When the hyperparameters are randomly sampled to learn different retardations, t
 % TODO: Get rid of upper right triangle
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_synthetic_SPAN_factors_PIs.pdf}
+    \includegraphics{figs/finn_synthetic_SPAN_factors_PIs.png}
     \caption{Comparison of retardation PIs obtained via SPAN on synthetic data (generated by langmuir isotherm).}
     \label{fig:synthetic_SPAN_factors_PIs}
 \end{figure}
@@ -447,7 +447,7 @@ When applying gaussian noise of the same strength as the experimental data has d
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_synthetic_langmuir_c_noise.pdf}
+    \includegraphics{figs/finn_synthetic_langmuir_c_noise.png}
     \caption{Retardations learned by FINN on synthetic dataset (generated by langmuir isotherm) pertubed by gaussian noise.}
     \label{fig:synthetic_langmuir_c_noise}
 \end{figure}
@@ -461,7 +461,7 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_My MCMCvsFull SPAN_PIs.pdf}
+    \includegraphics{figs/finn_My MCMCvsFull SPAN_PIs.png}
     \caption{Retardation PIs and correspoding concentration PIs obtained from it by training FINN with random hyperparameters and random datasets using PI3NN (orange). Compared with MCMC approach (blue). (90\% PIs are depicted.)}
     \label{fig:mcmc_vs_fullspan}
 \end{figure}
@@ -469,14 +469,14 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_span_samples.pdf}
+    \includegraphics{figs/finn_span_samples.png}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters.}
     \label{fig:span_samples}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_dataspan_samples.pdf}
+    \includegraphics{figs/finn_dataspan_samples.png}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random datasets using PI3NN.}
     \label{fig:dataspan_samples}
 \end{figure}
@@ -484,7 +484,7 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 % TODO: Simulations for this have not been done yet.
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/finn_fullspan_samples.pdf}
+    \includegraphics{figs/finn_fullspan_samples.png}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters and random datasets using PI3NN.}
     \label{fig:fullspan_samples}
 \end{figure}
@@ -506,7 +506,7 @@ The MCMC method uses thinning, saving only every $10$th sample. The average runt
 % Bit unnecessary plot?
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/runtime_per_sample.pdf}
+    \includegraphics{figs/runtime_per_sample.png}
     \caption{Runtime for generating a single sample using SPAN (left bar) and MCMC (right bar). Measured on the same machine and averaged over $10$ trials. Variance is too insignificant to matter here.}
     \label{fig:runtime_per_sample}
 \end{figure}
@@ -528,7 +528,7 @@ The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Data-S
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/reliability_curves.pdf}
+    \includegraphics{figs/reliability_curves.png}
     \caption{Top: Core 2 BTC 90\% PIs for the different methods (SPAN, Data-SPAN, MCMC). Bottom: Reliability curve for each method.}
     \label{fig:reliability_curves}
 \end{figure}
@@ -551,7 +551,7 @@ Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ o
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/sensitivity.pdf}
+    \includegraphics{figs/sensitivity.png}
     \caption{Relative importance on the variance of $R(c)$ of each hyperparameter for different values of $c$.}
     \label{fig:sensitivity}
 \end{figure}
@@ -566,7 +566,7 @@ The full field error can not be detected in the case of experimental data as the
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/triangle_ret_pertubation.pdf}
+    \includegraphics{figs/triangle_ret_pertubation.png}
     \caption{Left: Retardations with triangle peaks. Middle: Concentration BTC for these Retardations. Right: MAE for each on the full field and BTC.}
     \label{fig:triangle_ret_pertubation}
 \end{figure}
@@ -604,13 +604,14 @@ This work investigated UQ for the retardation factor in a diffusion-sorption pro
 
 
 % TODO: I computed the likelihood also with a gaussian PI. I should also plot this Gaussian PI - maybe even with the reliability curve together.
+% TODO: replace .png with .pdf
 
 
 
 % TODO: Include this in experiments section
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/c_diss_field_full_black_test.pdf}
+    \includegraphics{figs/c_diss_field_full_black_test.png}
     \caption{Training data for the model, represented by a pcolor plot of the synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm. The spatial domain is $x \in [0, 1]$ meters, and the temporal domain is $t \in [0, 10000]$ days. The period from $t = 1255$ to $t = 10000$ days is masked, indicating that these values are not used for training but are reserved for testing.}
     \label{fig:c_diss_field_full_black_test}
 \end{figure}
