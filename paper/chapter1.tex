@@ -197,10 +197,10 @@ p(\theta) = \mathcal{N}(\theta | \theta_{PT}, \Sigma_p)
 
 \paragraph{Likelihood Function:}
 
-The likelihood function, $p(\mathcal{D} | \theta)$, quantifies the probability of observing the data $\mathcal{D}$ given a specific set of NN parameters $\theta$. We assume additive Gaussian noise with standard deviation $\sigma$ corrupts the observed concentrations. Let $c_{obs}(x,t)$ represent the observed concentration at position $x$ and time $t$, and $c_{model}(x,t; \theta)$ the concentration predicted by the model (using a FINN solver with $\hat{R}(c(x,t);\theta)$). The likelihood is:
+The likelihood function, $p(\mathcal{D} | \theta)$, quantifies the probability of observing the data $\mathcal{D}$ given a specific set of NN parameters $\theta$. We assume additive Gaussian noise with standard deviation $\sigma$ corrupts the observed concentrations. Let $c_{obs}(x,t)$ represent the observed concentration at position $x$ and time $t$, and $\hat{c}(x,t; \theta)$ the concentration predicted by the model (using a FINN solver with $\hat{R}(c(x,t);\theta)$). The likelihood is:
 
 \begin{equation}
-p(\mathcal{D} | \theta) = \prod_{(x_i, t_i, c_i) \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - c_{model}(x_i, t_i; \theta))^2}{2\sigma^2} \right)
+p(\mathcal{D} | \theta) = \prod_{(x_i, t_i, c_i) \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - \hat{c}(x_i, t_i; \theta))^2}{2\sigma^2} \right)
 \label{eq:likelihood}
 \end{equation}
 
@@ -261,66 +261,66 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 
 
 \section{Methodology}
+% TODO: Check if the math adds up here and if there are any inconsistencies.
 \subsection{SPAN (Stochastic Perturbation Analysis of Networks)}
-% SPAN = Epistemic uncertainty
-Our objective is to determine the posterior predictive distribution $p(\hat{R}(c; \theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$ based on the same assumtion of a normally disturbed dataset that was used for the Bayes approach.
+Our objective is to determine the posterior predictive distribution $p(\hat{R}(c; \theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$.
 
 \subsubsection{Approximating the Posterior Predictive Distribution via Marginalization over Uncertain Factors}
 
 \paragraph{Model Formulation:}
 
-We represent our neural network as $\hat{R}(c; \theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(\mathcal{X}, \mathcal{D})$, which takes hyperparameters $h$ and training data $\mathcal{D}$ as input. A prior distribution $p(h)$ is assigned over the hyperparameters; the exact form of $p(h)$ is not crucial, as it suffices to generate samples from it.
-
-With $w(h) = \frac{p(\mathcal{D} | h)}{p(\mathcal{D})}$, the posterior predictive distribution can be expressed as:
+We represent our neural network as $\hat{R}(c; \theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(h, \mathcal{D})$, which takes hyperparameters $h$ and training data $\mathcal{D}$ as input. A prior distribution $p(\mathcal{X})$ is assigned over $\mathcal{X}$; the exact form of $p(\mathcal{X})$ is not crucial for the derivation, as it suffices to generate samples from it.
+When we choose to treat $h$ or the training data $\mathcal{D}$ to be a random variable, so to be our uncertain factor $\mathcal{X}$, the network parameters $\theta = S(h, \mathcal{D})$ become a random variable and thus uncertain. We denote this by $\theta_{\mathcal{X}}$ This allows us to calculate the posterior predictive distribution as follows:
 
 \begin{align*}
-p(\hat{R}(c; \theta) = R(c)| \mathcal{D}) &= \int p(\hat{R}(c; \theta) | h, \mathcal{D})\; p(h | \mathcal{D}) \, dh \\
-                                          &= \int p(\hat{R}(c; \theta) | h, \mathcal{D})\; \frac{p(\mathcal{D} | h) p(h)}{p(\mathcal{D})} \, dh \\
-                                          &= \int p(\hat{R}(c; \theta) | h, \mathcal{D})\; w(h)\; p(h) \, dh \\
-                                          &= \int \delta(\hat{R}(c; \theta) - R(c))\; w(h)\; p(h) \, dh \\
+p(\hat{R}(c; \theta_{\mathcal{X}}) = R(c)| \mathcal{D}) &= \int p(\hat{R}(c; \theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X} | \mathcal{D}) \, d\mathcal{X} \\
+                                          &= \int p(\hat{R}(c; \theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X}) \underbrace{\frac{p(\mathcal{D} | \mathcal{X}) }{p(\mathcal{D})}}_{= w(\mathcal{X})} \, d\mathcal{X} \\
+                                          &= \int p(\hat{R}(c; \theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X} \\
+                                          &= \int \delta(\hat{R}(c; \theta_{\mathcal{X}}) - R(c))\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X} \\
 \end{align*}
 
-The first step is the marginalization over $h$, the second the application of Bayes' Theorem, and the last stems from the fact that the solver $\theta = S(h, \mathcal{D})$ is deterministic given $h$ and $\mathcal{D}$ and thus the distribution becomes a delta distribution.
+The first step is the marginalization over $\mathcal{X}$, the second the application of Bayes' Theorem, and the last stems from the fact that the solver is deterministic given $\mathcal{X}$ and $\mathcal{D}$ and thus the distribution becomes a delta distribution.
 
 
 \paragraph{Importance Sampling:}
 
-So sampling from $p(\hat{R}(c; \theta) = R| \mathcal{D})$ becomes equivalent to sampling from $p(h)$, evaluating the solver to obtain the model parameters $\theta = S(h, \mathcal{D})$, evaluating the model $\hat{R}(c; \theta)$, and reweighting the samples with $w(h)$. This is the concept of importance sampling. To approximate the distribution, we thus have to draw $M$ samples $\{h_m\}_{m=1}^M$ from the prior distribution $p(h)$ and calculate the importance weight for each:
+Sampling from $p(\hat{R}(c; \theta_{\mathcal{X}}) = R| \mathcal{D})$ is equivalent to sampling from $p(\mathcal{X})$, evaluating the solver to obtain the model parameters $\theta_{\mathcal{X}}$, evaluating the model $\hat{R}(c; \theta_{\mathcal{X}})$, and reweighting the samples with $w(\mathcal{X})$. This is the concept of importance sampling. To approximate the distribution, we draw $M$ samples $\{\mathcal{X}_m\}_{m=1}^M$ from the prior distribution $p(\mathcal{X})$ and calculate the importance weight for each:
 
 \begin{equation*}
-w_m = \frac{p(\mathcal{D} | h_m)}{p(\mathcal{D})} \propto p(\mathcal{D} | h_m)
+w_m = \frac{p(\mathcal{D} | \mathcal{X}_m)}{p(\mathcal{D})} \propto p(\mathcal{D} | \mathcal{X}_m)
 \end{equation*}
 
 As $p(\mathcal{D})$ is a constant, it can be omitted, and the weights can be normalized subsequently.
 
 
 \paragraph{Likelihood Computation:}
-We use the same assumption about our data that the Bayesian baseline uses which results in an easy computation of the likelihood by just substituting $\theta$ with $S(h, \mathcal{D})$ in Equation ~\vref{eq:likelihood}:
+
+We use the same assumption about our data that the Bayesian baseline uses, which results in an easy computation of the likelihood by substituting $\theta$ with $\theta_{\mathcal{X}}$ in Equation ~\vref{eq:likelihood}:
 
 \begin{equation*}
-p(\mathcal{D} | h) = \prod_{x_i, t_i, c_i \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - c_{model}(x_i, t_i; S(h, \mathcal{D})))^2}{2\sigma^2} \right)
+p(\mathcal{D} | \mathcal{X}) = \prod_{x_i, t_i, c_i \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - \hat{c}(x_i, t_i; \theta_{\mathcal{X}}))^2}{2\sigma^2} \right)
 \end{equation*}
 
+\subsubsection{SPAN Variants: Hyperparameter and Data Marginalization}
+
+The generalized framework above can be applied to different sources of uncertainty. Here, we describe two variants:
+
+\paragraph{SPAN (Hyperparameter Marginalization)}
+
+In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperparameters $h$ of the solver. This variant, which we refer to as SPAN, captures epistemic uncertainty arising from the choice of hyperparameters. The equations above are applied directly with $\mathcal{X} = h$.
+
+\paragraph{Data-SPAN (Data Marginalization)}
+
+Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Data-SPAN, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$.
+
+\paragraph{Full-SPAN}
+
+We can even treat both the hyperparameters and the training dataset as random variables at the same time and obtain a combined result. So $\mathcal{X} = (h, \mathcal{D})$ and both are sampled independently.
 
 
-\subsubsection{Data-SPAN}
-% TODO: Data-SPAN = Aleatoric uncertainty
-The exact same derivation can be applied when we assume a random dataset $\tilde{\mathcal{D}}$ instead of random hyperparameters $h$:
-
-\begin{align*}
-    p(\hat{R}(c; \theta) = R(c)| \mathcal{D}) &= \int p(\hat{R}(c; \theta) | \tilde{\mathcal{D}}, \mathcal{D})\; p(\tilde{\mathcal{D}} | \mathcal{D}) \, d \tilde{\mathcal{D}} \\
-                                              &= \int p(\hat{R}(c; \theta) | \tilde{\mathcal{D}}, \mathcal{D})\; \frac{p(\mathcal{D} | \tilde{\mathcal{D}}) p(\tilde{\mathcal{D}})}{p(\mathcal{D})} \, d \tilde{\mathcal{D}} \\
-                                              &= \int p(\hat{R}(c; \theta) | \tilde{\mathcal{D}}, \mathcal{D})\; w(\tilde{\mathcal{D}})\; p(\tilde{\mathcal{D}}) \, d \tilde{\mathcal{D}} \\
-                                              &= \int \delta(\hat{R}(c; \theta) - R(c))\; w(\tilde{\mathcal{D}})\; p(\tilde{\mathcal{D}}) \, d \tilde{\mathcal{D}} \\
-\end{align*}
-
-\begin{equation*}
-    p(\mathcal{D} | \tilde{\mathcal{D}}) = \prod_{x_i, t_i, c_i \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - c_{model}(x_i, t_i; S(h, \tilde{\mathcal{D}})))^2}{2\sigma^2} \right)
-\end{equation*}
-
-\paragraph{Random Dataset Sampling:}
+\subsubsection{Random Dataset Sampling:}
 \label{sec:random_dataset_sampling}
-To generate random datasets, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset $\mathcal{D}$. Let $\hat{c}(t; \theta_{\mathcal{D}})$ be the mean concentration curve predicted by FINN trained on the full dataset $\mathcal{D}$, with $\theta_{\mathcal{D}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
+To generate random datasets for Data-SPAN, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset $\mathcal{D}$. Let $\hat{c}(x=L, t; \theta_{\mathcal{D}})$ be the mean concentration curve predicted by FINN trained on the full dataset $\mathcal{D}$, with $\theta_{\mathcal{D}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
 PI3NN then learns the residuals, effectively modeling the distribution of $c$ given $t$. Let $F^{-1}(q | t)$ denote the quantile function predicted by PI3NN, where $q \in [0, 1]$ is the quantile level and $t$ is the time point. This function provides the concentration value at time $t$ corresponding to the $q$-th quantile of the learned distribution (see Figure ~\vref{fig:btc_dataspan_quantiles}).
 
