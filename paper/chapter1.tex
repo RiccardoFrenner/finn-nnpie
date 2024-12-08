@@ -41,7 +41,7 @@ Recent advances like physics-informed neural networks in ML have opened up new p
 
 While FINN has shown promising results in modeling contaminant transport, quantifying the uncertainty associated with its predictions remains a challenge. Existing UQ methods for FINN, such as BNNs with MCMC sampling, can be computationally demanding, limiting their practical applicability. This motivates the development of more efficient UQ methods for FINN, which is the focus of this study. Our goal is to develop computationally efficient UQ methods for estimating the uncertainty in the retardation factor predicted by FINN, enabling faster and more reliable assessment of contaminant transport predictions.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/parametric_isotherms.pdf}
     \caption{Parametric sorption isotherms for the set of parameters used in Section \vref{sec:TODO}.}
@@ -50,7 +50,7 @@ While FINN has shown promising results in modeling contaminant transport, quanti
 
 
 \subsection{Contributions of this Work}
-This study addresses UQ in the FINN framework when applied to a diffusion-sorption process. We begin with an empirical analysis of the uniqueness of the retardation factor, which is a crucial step for interpreting the FINN output. We summarize FINN and PI3NN, the foundational methods used in this work.
+This study addresses UQ in the FINN framework when applied to a diffusion-sorption process. We begin with an empirical analysis of the uniqueness of the retardation factor, which is a crucial step for interpreting the FINN output. We summarize FINN and PI3NN (Prediction Intervals from Three Neural Networks), the foundational methods used in this work.
 A novel framework tailored for FINN called SPAN (Stochastic Perturbation Analysis of Networks) is introduced to assess both aleatoric and epistemic uncertainty, allowing us to construct prediction intervals for the retardation factor.
 We apply this framework to synthetic and experimental data to quantify the uncertainty of the retardation factor and compare the performance of our proposed methods against a BNN baseline employing MCMC sampling. Our results demonstrate that SPAN provides a computationally efficient alternative to MCMC for obtaining prediction intervals for the retardation factor, offering valuable insights into the reliability of the estimated parameter.
 
@@ -75,7 +75,7 @@ This work is structured as follows: Section 2 empirically investigates the uniqu
 \subsection{Problem Statement}
 The diffusion-sorption process, governed by a PDE, describes contaminant transport in groundwater. Experimentally, data can be obtained from a soil cylinder, including breakthrough curves at a fixed location ($x=L$) over time ($t \in [0, T_{\text{end}}]$), and a concentration profile at a specific time ($t=T_{\text{end}}$) across the cylinder's length ($x \in [0,L]$). While a complete concentration field $c(x,t)$ (see Figure ~\vref{fig:c_diss_field_full}) would be ideal, it's practically unobtainable as measurements at all $x$ values require destructive sampling. Solving the PDE requires knowing the retardation factor, $R(c)$, which quantifies sorption and is dependent on soil properties. Since $R(c)$ is typically unknown, FINN is employed to learn it from the available data. However, uncertainties arise from measurement errors in the data and non-uniqueness of the solver solution, leading to uncertainty in the learned retardation factor. Therefore, the goal is to estimate a prediction interval around the learned $R(c)$ to quantify this uncertainty.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/c_diss_field_full.pdf}
     \caption{Synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm for a spatial domain of $x \in [0, 1]$ meters and a temporal domain of $t \in [0, 10000]$ days.}
@@ -114,21 +114,7 @@ The following boundary conditions were considered here:
 
 The goal is to learn $\hat{R}(x,t;\theta)$ (represented by a neural network) given the data $\mathcal{D} = \{ (x_i, t_i, c_i) \}_{i=1}^N$ which consists of concentration measurements $c_i$ at spatial positions $x_i$ and temporal points $t_i$. The network needs to be trained such that the PDE solution using $\hat{R}$ minimizes the error with respect to the data.
 
-\subsubsection{Uncertainty Quantification}
-There are two main aspects of UQ in this context:
-\begin{enumerate}
-    \item UQ for FINN output: $p(\hat{c}(x,t) | \mathcal{D})$. This represents the probability distribution of the predicted contaminant concentration $\hat{c}(x,t)$ obtained from the FINN model, given the data $\mathcal{D}$.
-    \item UQ for the predicted retardation factor: $p(\hat{R}(c) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor.
-\end{enumerate}
 
-But there are also two types of uncertainty that have to be differentiated \cite{depeweg2018decomposition, gawlikowski2023survey}:
-
-\begin{enumerate}
-    \item Aleatoric uncertainty: This arises from inherent randomness in the data and the physical system. It is irreducible and is caused by factors such as measurement noise and variability in the system parameters.
-    \item Epistemic uncertainty: This stems from limited knowledge of the model (e.g. uncertainty over its parameters). It is associated with model structure, neural network architecture, and limited training data. It quantifies the model's predictive uncertainty.
-\end{enumerate}
-
-While a clear decomposition into aleatoric and epistemic uncertainty is often not feasible, our interest extends to quantifying the overall predictive uncertainty, which encompasses both.
 
 
 \subsection{Finite Volume Neural Network (FINN)}
@@ -146,22 +132,53 @@ Furthermore, FINN employs ``state kernels'' $S_i$ that take the local concentrat
 
 \subsection{Uniqueness of Inverse Problem}
 \label{sec:uniqueness}
-Inverse problems are not necessarily unique. Consider the simple equation $x^2 = 4$. This equation has two solutions, $x=2$ and $x=-2$. Thus, knowing the output ($4$) does not uniquely determine the input ($x$). This illustrates the concept of non-uniqueness in inverse problems. Instead of rigorously analyzing the problem mathematically, we perform an empirical uniqueness analysis. We achieve this by rearranging the PDE ~\vref{eq:diff-sorpt-pde} to solve for $R(c)$
-\begin{equation*}
-    R(c) = D \frac{\partial^2 c}{\partial x^2} \frac{1}{\frac{\partial c}{\partial t}}
-\end{equation*}
 
-and substituting the synthetic data. The results, shown in Figure ~\vref{fig:ret_uniqueness}, suggest a unique solution for this data, except for minor numerical inaccuracies.
+As a prerequisite for uncertainty quantification, it's crucial to investigate whether the inverse problem of determining the retardation factor, $R(c)$, from concentration data is unique. Non-uniqueness, meaning multiple possible $R(c)$ functions could produce the same concentration field, would complicate the interpretation of any UQ results. Instead of a purely theoretical analysis, we conduct an empirical investigation into the uniqueness of $R(c)$ for our specific problem.
 
-This allows us to attribute potential discrepancies in solutions to two primary factors: aleatoric uncertainty and epistemic uncertainty. We will first examine these separately and then combine them to obtain a final UQ.
+Our approach leverages the available synthetic concentration data generated using known $R(c)$ functions (e.g., Langmuir, Freundlich, and linear isotherms). We rearrange the diffusion-sorption PDE (Equation \ref{eq:diff-sorpt-pde}) to explicitly solve for $R(c)$:
 
+\begin{equation}
+    R(c) = D \frac{\partial^2 c}{\partial x^2} \left/ \frac{\partial c}{\partial t} \right .
+    \label{eq:rearranged_pde}
+\end{equation}
 
-\begin{figure}
+We then numerically approximate the first-order time derivative ($\partial c / \partial t$) and the second-order spatial derivative ($\partial^2 c / \partial x^2$) of the concentration field $c(x,t)$ using a B-spline surrogate model. This spline allows us to estimate the derivatives at any point within the spatial and temporal domain of the data.
+
+Figure \ref{fig:ret_uniqueness} shows the results of this empirical uniqueness analysis for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. For each case, we plot the raw $R(c)$ estimates and the binned and averaged $R(c)$ values as a function of $c$. We also include a comparison with the analytical isotherms used to generate the synthetic datasets.
+
+\begin{figure}[h]
     \centering
-    \includegraphics[width=0.9\textwidth]{figs/ret_uniqueness.pdf}
-    \caption{Computed retardation values (dots) and mean (black line) from analytical expression and synthetic data for linear, Freundlich and Langmuir retardations. Bottom right: Means (colored lines) and exact synthetic retardations (circles).}
+    \includegraphics[width=\textwidth]{figs/retardation_uniqueness.pdf}
+    \caption{Empirical investigation of the uniqueness of the retardation factor $R(c)$ for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. The left and top panels show the raw $R(c)$ estimates (colored circles) and the binned and averaged $R(c)$ values (black line with circle markers) as a function of $c$. The bottom-right panel compares the binned and averaged $R(c)$ values (colored circle markers) with the analytical isotherms (colored line) used to generate the synthetic datasets. Error bars indicate the standard deviation inside the bin.}
     \label{fig:ret_uniqueness}
 \end{figure}
+
+The results suggest that, for these synthetic datasets, the inverse problem of determining $R(c)$ from concentration data is largely unique, apart from minor numerical inaccuracies. The binned and averaged $R(c)$ values closely follow the trend of the analytical isotherms, indicating that our approach can recover the underlying retardation behavior with reasonable accuracy.
+
+This empirical evidence of uniqueness provides a foundation for subsequent uncertainty quantification. It suggests that discrepancies between different $R(c)$ solutions obtained using FINN can be attributed primarily to aleatoric uncertainty (e.g., measurement noise) and epistemic uncertainty (e.g., limitations in model knowledge) rather than inherent non-uniqueness in the inverse problem itself.
+% TODO: Bad that I explain these uncertainties only in the next section?
+
+
+
+
+\subsubsection{Uncertainty Quantification}
+There are two main aspects of UQ in this context:
+\begin{enumerate}
+    \item UQ for FINN output: $p(\hat{c}(x,t) | \mathcal{D})$. This represents the probability distribution of the predicted contaminant concentration $\hat{c}(x,t)$ obtained from the FINN model, given the data $\mathcal{D}$.
+    \item UQ for the predicted retardation factor: $p(\hat{R}(c) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor.
+\end{enumerate}
+
+But there are also two types of uncertainty that have to be differentiated \cite{depeweg2018decomposition, gawlikowski2023survey}:
+
+\begin{enumerate}
+    \item Aleatoric uncertainty: This arises from inherent randomness in the data and the physical system. It is irreducible and is caused by factors such as measurement noise and variability in the system parameters.
+    \item Epistemic uncertainty: This stems from limited knowledge of the model (e.g. uncertainty over its parameters). It is associated with model structure, neural network architecture, and limited training data. It quantifies the model's predictive uncertainty.
+\end{enumerate}
+
+While a clear decomposition into aleatoric and epistemic uncertainty is often challenging, as seen with methods like BNNs using MCMC, our primary focus is on quantifying the overall predictive uncertainty, which includes both components. However, our method has the added advantage of decomposing the uncertainty by design, providing a more precise and interpretable quantification of both aleatoric and epistemic uncertainties.
+
+
+
 
 
 \subsection{Bayes Neural Networks}
@@ -212,6 +229,7 @@ Since \cite{finn} obtain the best results with the Barker method and no burn-in 
 
 
 
+
 \subsection{PI3NN (Prediction Intervals from Three Neural Networks)}
 PI3NN \cite{pi3nn} is a method for constructing prediction intervals (PIs) that uses three independently trained neural networks. It aims to provide tight, non-crossing PIs across various confidence levels without requiring retraining for each level.
 
@@ -231,7 +249,7 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 \end{enumerate}
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/3pinn_illustration.pdf}
     \caption{Illustration of the PI3NN method.}
@@ -316,7 +334,7 @@ This process is repeated $M$ times to obtain a collection of random datasets $\{
 
 To enhance the accuracy of the likelihood computation in Section \vref{sec:likelihood}, we intentionally include the quantile levels $0$ and $1$ in the random samples. This improves the fit of the distribution to the histogram of the samples.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/btc_dataspan_quantiles.pdf}
     \caption{Left: BTC quantile functions for all quantile samples $q_j$. Middle: BTC quantile functions for quantiles $0$, $0.5$, and $1$. Right: BTC datasets for quantiles $0$, $0.5$, and $1$.}
@@ -374,7 +392,7 @@ The hyperparameters that were used differ for the synthetic data case and the ex
 In the experimental setting, $780$ samples were generated using the specified hyperparameters. For the synthetic experiments, the number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. The experimental results are shown in Figure ~\vref{fig:span_samples}.
 % TODO: synthetic results
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/c_diss_field_train_random_subset.pdf}
     \caption{Full synthetic concentration training data where 50\% of datapoints are randomly masked (dark patches).}
@@ -398,7 +416,7 @@ We computed $10$k samples using the same parameters as \cite{finn}; the samples 
 % TODO: Why 10k? This is very important to know for arguing about efficiency.
 
 % This is not a result (of me) thus it is here and not in the results section
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_mcmc_samples.pdf}
     \caption{Retardation curves generated by MCMC sampling as detailed in Section ~\vref{sec:bayes_nn}.}
@@ -417,7 +435,7 @@ We computed $10$k samples using the same parameters as \cite{finn}; the samples 
 When the hyperparameters are randomly sampled to learn different retardations, the uncertainty in $R(c)$ is very small as can be seen in Figure ~\vref{fig:synthetic_SPAN_factors_PIs}, even when all hyperparameters are combined in ``All UQ''.
 
 % TODO: Get rid of upper right triangle
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_synthetic_SPAN_factors_PIs.pdf}
     \caption{Comparison of retardation PIs obtained via SPAN on synthetic data (generated by langmuir isotherm).}
@@ -427,7 +445,7 @@ When the hyperparameters are randomly sampled to learn different retardations, t
 \paragraph{Data-SPAN}
 When applying gaussian noise of the same strength as the experimental data has due to measurement error \cite{nowak2016entropy}, the uncertainty in $R(c)$ becomes much larger compared to SPAN as can be seen in Figure ~\vref{fig:synthetic_langmuir_c_noise}.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_synthetic_langmuir_c_noise.pdf}
     \caption{Retardations learned by FINN on synthetic dataset (generated by langmuir isotherm) pertubed by gaussian noise.}
@@ -441,7 +459,7 @@ When applying gaussian noise of the same strength as the experimental data has d
 Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_My MCMCvsFull SPAN_PIs.pdf}
     \caption{Retardation PIs and correspoding concentration PIs obtained from it by training FINN with random hyperparameters and random datasets using PI3NN (orange). Compared with MCMC approach (blue). (90\% PIs are depicted.)}
@@ -449,14 +467,14 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_span_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters.}
     \label{fig:span_samples}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_dataspan_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random datasets using PI3NN.}
@@ -464,7 +482,7 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 \end{figure}
 
 % TODO: Simulations for this have not been done yet.
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/finn_fullspan_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters and random datasets using PI3NN.}
@@ -486,7 +504,7 @@ The MCMC method uses thinning, saving only every $10$th sample. The average runt
 
 
 % Bit unnecessary plot?
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/runtime_per_sample.pdf}
     \caption{Runtime for generating a single sample using SPAN (left bar) and MCMC (right bar). Measured on the same machine and averaged over $10$ trials. Variance is too insignificant to matter here.}
@@ -508,7 +526,7 @@ The reliability curve assesses the calibration of predicted confidence intervals
 
 The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Data-SPAN provides the best calibrated PI. Overall, all methods are generally overconfident, SPAN the strongest. Only Data-SPAN is a little underconfident for very small $c$ values.
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/reliability_curves.pdf}
     \caption{Top: Core 2 BTC 90\% PIs for the different methods (SPAN, Data-SPAN, MCMC). Bottom: Reliability curve for each method.}
@@ -531,7 +549,7 @@ This indicates that \textbf{Max Epochs} and \textbf{MSE Loss Factor} have the la
 Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ over which the average was taken.
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/sensitivity.pdf}
     \caption{Relative importance on the variance of $R(c)$ of each hyperparameter for different values of $c$.}
@@ -546,7 +564,7 @@ For some $c$ $R(c)$ does not affect the whole $c$ field equally. This can be see
 The full field error can not be detected in the case of experimental data as there is no access to the full field solution. For this reason, the range of $c$ values for which significant statements about the uncertainty of $R(c)$ can be made, is restricted to a narrow range. The exact range is difficult to estimate as the stength of influence for different retardations is unclear.
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/triangle_ret_pertubation.pdf}
     \caption{Left: Retardations with triangle peaks. Middle: Concentration BTC for these Retardations. Right: MAE for each on the full field and BTC.}
@@ -590,7 +608,7 @@ This work investigated UQ for the retardation factor in a diffusion-sorption pro
 
 
 % TODO: Include this in experiments section
-\begin{figure}
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.9\textwidth]{figs/c_diss_field_full_black_test.pdf}
     \caption{Training data for the model, represented by a pcolor plot of the synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm. The spatial domain is $x \in [0, 1]$ meters, and the temporal domain is $t \in [0, 10000]$ days. The period from $t = 1255$ to $t = 10000$ days is masked, indicating that these values are not used for training but are reserved for testing.}
