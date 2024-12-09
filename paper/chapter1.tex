@@ -186,7 +186,7 @@ While a clear decomposition into aleatoric and epistemic uncertainty is often ch
 % TODO: Maybe too detailed. Move some to appendix?
 This section describes the baseline methodology used for comparison, which employs Bayesian Neural Networks and MCMC to estimate the posterior distribution of the retardation factor, $\hat{R}(c(x,t))$, parameterized by a neural network (NN). The retardation factor is a function of concentration, $c$, which itself is a function of spatial position, $x$, and time, $t$. This approach updates prior beliefs about the retardation factor based on observed data, $\mathcal{D}$.
 
-\paragraph{Prior Distribution:}
+\paragraph{Prior Distribution}
 
 A Gaussian prior distribution, $p(\theta)$, is placed over the NN parameters $\theta$, reflecting prior knowledge or assumptions. This prior is centered on the parameters $\theta_{PT}$ of a pre-trained NN, with covariance matrix $\Sigma_p = 0.05 \, I$:
 
@@ -195,7 +195,7 @@ A Gaussian prior distribution, $p(\theta)$, is placed over the NN parameters $\t
 p(\theta) = \mathcal{N}(\theta | \theta_{PT}, \Sigma_p)
 \end{equation*}
 
-\paragraph{Likelihood Function:}
+\paragraph{Likelihood Function}
 
 The likelihood function, $p(\mathcal{D} | \theta)$, quantifies the probability of observing the data $\mathcal{D}$ given a specific set of NN parameters $\theta$. We assume additive Gaussian noise with standard deviation $\sigma$ corrupts the observed concentrations. Let $c_{obs}(x,t)$ represent the observed concentration at position $x$ and time $t$, and $\hat{c}(x,t; \theta)$ the concentration predicted by the model (using a FINN solver with $\hat{R}(c(x,t);\theta)$). The likelihood is:
 
@@ -204,7 +204,7 @@ p(\mathcal{D} | \theta) = \prod_{(x_i, t_i, c_i) \in \mathcal{D}} \frac{1}{\sqrt
 \label{eq:likelihood}
 \end{equation}
 
-\paragraph{Posterior Distribution:}
+\paragraph{Posterior Distribution}
 
 Bayes' theorem provides the posterior distribution of the NN parameters given the data:
 
@@ -215,7 +215,7 @@ p(\theta | \mathcal{D}) \propto p(\mathcal{D} | \theta) p(\theta)
 
 \cite{finn} compare several methods to obtain samples from this distribution, including the Metropolis-Hastings algorithm, the MALA algorithm, and the Barker method. The accepted samples $\{\theta_i\}$ from the used algorithm are then treated as draws from the posterior distribution $p(\theta | \mathcal{D})$.
 
-\paragraph{Posterior of Retardation Function:}
+\paragraph{Posterior of Retardation Function}
 
 Finally, the posterior distribution of the retardation factor $\hat{R}(c)$ is obtained by evaluating the NN with the sampled parameters $\{\theta_i\}$:
 
@@ -267,7 +267,7 @@ Our objective is to determine the posterior predictive distribution $p(\hat{R}(c
 
 \subsubsection{Approximating the Posterior Predictive Distribution via Marginalization over Uncertain Factors}
 
-\paragraph{Model Formulation:}
+\paragraph{Model Formulation}
 
 We represent our neural network as $\hat{R}(c; \theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(h, \mathcal{D})$, which takes hyperparameters $h$ and training data $\mathcal{D}$ as input. A prior distribution $p(\mathcal{X})$ is assigned over $\mathcal{X}$; the exact form of $p(\mathcal{X})$ is not crucial for the derivation, as it suffices to generate samples from it.
 When we choose to treat $h$ or the training data $\mathcal{D}$ to be a random variable, so to be our uncertain factor $\mathcal{X}$, the network parameters $\theta = S(h, \mathcal{D})$ become a random variable and thus uncertain. We denote this by $\theta_{\mathcal{X}}$ This allows us to calculate the posterior predictive distribution as follows:
@@ -282,7 +282,7 @@ p(\hat{R}(c; \theta_{\mathcal{X}}) = R(c)| \mathcal{D}) &= \int p(\hat{R}(c; \th
 The first step is the marginalization over $\mathcal{X}$, the second the application of Bayes' Theorem, and the last stems from the fact that the solver is deterministic given $\mathcal{X}$ and $\mathcal{D}$ and thus the distribution becomes a delta distribution.
 
 
-\paragraph{Importance Sampling:}
+\paragraph{Importance Sampling}
 
 Sampling from $p(\hat{R}(c; \theta_{\mathcal{X}}) = R| \mathcal{D})$ is equivalent to sampling from $p(\mathcal{X})$, evaluating the solver to obtain the model parameters $\theta_{\mathcal{X}}$, evaluating the model $\hat{R}(c; \theta_{\mathcal{X}})$, and reweighting the samples with $w(\mathcal{X})$. This is the concept of importance sampling. To approximate the distribution, we draw $M$ samples $\{\mathcal{X}_m\}_{m=1}^M$ from the prior distribution $p(\mathcal{X})$ and calculate the importance weight for each:
 
@@ -293,7 +293,7 @@ w_m = \frac{p(\mathcal{D} | \mathcal{X}_m)}{p(\mathcal{D})} \propto p(\mathcal{D
 As $p(\mathcal{D})$ is a constant, it can be omitted, and the weights can be normalized subsequently.
 
 
-\paragraph{Likelihood Computation:}
+\paragraph{Likelihood Computation}
 
 We use the same assumption about our data that the Bayesian baseline uses, which results in an easy computation of the likelihood by substituting $\theta$ with $\theta_{\mathcal{X}}$ in Equation ~\vref{eq:likelihood}:
 
@@ -309,16 +309,42 @@ The generalized framework above can be applied to different sources of uncertain
 
 In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperparameters $h$ of the solver. This variant, which we refer to as SPAN, captures epistemic uncertainty arising from the choice of hyperparameters. The equations above are applied directly with $\mathcal{X} = h$.
 
+\subparagraph{Hyperparameter Sampling}
+The following hyperparameters were selected for perturbation in the SPAN framework:
+
+\begin{itemize}
+    \item \textbf{Seed:} This hyperparameter influences various aspects of the model, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which is known for mitigating the vanishing/exploding gradient problem in deep networks by ensuring the variance of activations and gradients is maintained throughout the network. The seed values were sampled uniformly from the integer range $[0, 10^9]$.
+    \item \textbf{Number of Epochs:} This determines the number of training iterations the FINN model undergoes. The values were sampled uniformly from the integer range $[10, 30]$.
+    \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c))$. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
+    \item \textbf{Physical Loss Factor ($a_{Phys}$):} Similar to the MSE loss factor, this parameter weighs the contribution of the physical loss term, $Loss_{Phys}(\hat{R}(c))$, in the overall loss function. The values for $a_{Phys}$ were also sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
+\end{itemize}
+
+
+
 \paragraph{Data-SPAN (Data Marginalization)}
 
 Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Data-SPAN, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$.
 
-\paragraph{Full-SPAN}
 
-We can even treat both the hyperparameters and the training dataset as random variables at the same time and obtain a combined result. So $\mathcal{X} = (h, \mathcal{D})$ and both are sampled independently.
+\subparagraph{Mask-based Random Dataset Sampling}
+
+To create variations in the training data, we employed a random masking technique. For each sample, a unique seed was used to randomly select 50\% of the data points for masking to generate a random dataset. ``Masking'' in this context means that these data points were excluded when computing the loss during training. Each data point had an equal probability (0.5) of being masked or retained. The seed values were drawn uniformly from the integer range $[0, 10^9]$. Figure \ref{fig:training_data_mask} illustrates an example of the full synthetic concentration training data with 50\% of the data points randomly masked.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/c_diss_field_train_random_subset.png}
+    \caption{Full synthetic concentration training data where 50\% of datapoints are randomly masked (dark patches).}
+    \label{fig:training_data_mask}
+\end{figure}
 
 
-\subsubsection{Random Dataset Sampling:}
+\subparagraph{Noise-based Random Dataset Sampling}
+
+Another approach to generating dataset variations involved the introduction of additive Gaussian noise. Following \cite{nowak2016entropy}, which suggests measurement error can be modeled as Gaussian with zero mean and a standard deviation of 5\% of the measured value, we used this noise level to simulate data uncertainty comparable to experimental data.
+A unique seed, uniformly sampled from the integer range $[0, 10^9]$, was used to generate the noise for each dataset. % TODO: correct reference?
+
+
+\subparagraph{PI3NN-based Random Dataset Sampling}
 \label{sec:random_dataset_sampling}
 To generate random datasets for Data-SPAN, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset $\mathcal{D}$. Let $\hat{c}(x=L, t; \theta_{\mathcal{D}})$ be the mean concentration curve predicted by FINN trained on the full dataset $\mathcal{D}$, with $\theta_{\mathcal{D}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
@@ -341,6 +367,13 @@ To enhance the accuracy of the likelihood computation in Section \vref{sec:likel
     \label{fig:btc_dataspan_quantiles}
 \end{figure}
 
+
+
+\paragraph{Full-SPAN}
+
+We can even treat both the hyperparameters and the training dataset as random variables at the same time and obtain a combined result. So $\mathcal{X} = (h, \mathcal{D})$ and both are sampled independently.
+
+For both hyperparameter and dataset sampling, a few samples resulted in FINN not converging during training. These samples were discarded from further analysis. Convergence was determined by monitoring the loss value, requiring it to fall below a threshold of 1e-5 and remain unchanged for a certain number of iterations.
 
 
 \section{Data and Setup}
@@ -391,13 +424,6 @@ The hyperparameters that were used differ for the synthetic data case and the ex
 
 In the experimental setting, $780$ samples were generated using the specified hyperparameters. For the synthetic experiments, the number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. The experimental results are shown in Figure ~\vref{fig:span_samples}.
 % TODO: synthetic results
-
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/c_diss_field_train_random_subset.png}
-    \caption{Full synthetic concentration training data where 50\% of datapoints are randomly masked (dark patches).}
-    \label{fig:training_data_mask}
-\end{figure}
 
 
 \subsection{Data-SPAN}
