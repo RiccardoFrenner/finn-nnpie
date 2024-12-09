@@ -79,9 +79,10 @@ def set_concentration_axes_stuff(ax: plt.Axes, xticks=None, yticks=None, core="2
         # )
 
 
-def savefig(fig: plt.Figure, path):
+def savefig(fig: plt.Figure, path, tight=True):
     path = Path(path)
-    fig.tight_layout()
+    if tight:
+        fig.tight_layout()
     fig.savefig(path.with_suffix(".png"))
     fig.savefig(path.with_suffix(".svg"))
     fig.savefig(path.with_suffix(".pdf"))

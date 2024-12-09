@@ -43,16 +43,16 @@ While FINN has shown promising results in modeling contaminant transport, quanti
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/parametric_isotherms.png}
-    \caption{Parametric sorption isotherms for the set of parameters used in Section \vref{sec:TODO}.}
+    \includegraphics{figs/parametric_isotherms.pdf}
+    \caption{Parametric sorption isotherms for the set of parameters used in Section \vref{sec:synthetic_data}.}
     \label{fig:parametric_isotherms}
 \end{figure}
 
 
 \subsection{Contributions of this Work}
 This study addresses UQ in the FINN framework when applied to a diffusion-sorption process. We begin with an empirical analysis of the uniqueness of the retardation factor, which is a crucial step for interpreting the FINN output. We summarize FINN and PI3NN (Prediction Intervals from Three Neural Networks), the foundational methods used in this work.
-A novel framework tailored for FINN called SPAN (Stochastic Perturbation Analysis of Networks) is introduced to assess both aleatoric and epistemic uncertainty, allowing us to construct prediction intervals for the retardation factor.
-We apply this framework to synthetic and experimental data to quantify the uncertainty of the retardation factor and compare the performance of our proposed methods against a BNN baseline employing MCMC sampling. Our results demonstrate that SPAN provides a computationally efficient alternative to MCMC for obtaining prediction intervals for the retardation factor, offering valuable insights into the reliability of the estimated parameter.
+A novel framework tailored for FINN called NNPIE (Neural Network Prediction Interval Estimation) is introduced to assess both aleatoric and epistemic uncertainty, allowing us to construct prediction intervals for the retardation factor.
+We apply this framework to synthetic and experimental data to quantify the uncertainty of the retardation factor and compare the performance of our proposed methods against a BNN baseline employing MCMC sampling. Our results demonstrate that NNPIE provides a computationally efficient alternative to MCMC for obtaining prediction intervals for the retardation factor, offering valuable insights into the reliability of the estimated parameter.
 
 
 \subsection{Related Work}
@@ -66,7 +66,7 @@ Existing UQ methods for PDEs often rely on computationally expensive Monte Carlo
 
 
 \subsection{Outline of this Work}
-This work is structured as follows: Section 2 empirically investigates the uniqueness of the retardation factor inverse problem. Section 3 provides background information on the employed methods FINN and PI3NN. Section 4 details our methodology, introducing the Stochastic Perturbation Analysis of Networks (SPAN) and Data-SPAN approaches for UQ. Section 5 describes the experimental data and setup. Section 6 presents the experimental results, including runtime comparisons and evaluations of likelihood and reliability. Section 7 discusses the findings and limitations of the proposed methods. Finally, Section 8 summarizes the work and outlines potential future research directions.
+This work is structured as follows: Section 2 empirically investigates the uniqueness of the retardation factor inverse problem. Section 3 provides background information on the employed methods FINN and PI3NN. Section 4 details our methodology, introducing the Neural Network Prediction Interval Estimation (NNPIE) approach for UQ. Section 5 describes the experimental data and setup. Section 6 presents the experimental results, including runtime comparisons and evaluations of likelihood and reliability. Section 7 discusses the findings and limitations of the proposed methods. Finally, Section 8 summarizes the work and outlines potential future research directions.
 
 
 
@@ -77,7 +77,7 @@ The diffusion-sorption process, governed by a PDE, describes contaminant transpo
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/c_diss_field_full.png}
+    \includegraphics{figs/c_diss_field_full.pdf}
     \caption{Synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm for a spatial domain of $x \in [0, 1]$ meters and a temporal domain of $t \in [0, 10000]$ days.}
     \label{fig:c_diss_field_full}
 \end{figure}
@@ -135,7 +135,7 @@ Furthermore, FINN employs ``state kernels'' $S_i$ that take the local concentrat
 
 As a prerequisite for uncertainty quantification, it's crucial to investigate whether the inverse problem of determining the retardation factor, $R(c)$, from concentration data is unique. Non-uniqueness, meaning multiple possible $R(c)$ functions could produce the same concentration field, would complicate the interpretation of any UQ results. Instead of a purely theoretical analysis, we conduct an empirical investigation into the uniqueness of $R(c)$ for our specific problem.
 
-Our approach leverages the available synthetic concentration data generated using known $R(c)$ functions (e.g., Langmuir, Freundlich, and linear isotherms). We rearrange the diffusion-sorption PDE (Equation \ref{eq:diff-sorpt-pde}) to explicitly solve for $R(c)$:
+Our approach leverages the available synthetic concentration data generated using known $R(c)$ functions (e.g., Langmuir, Freundlich, and linear isotherms). We rearrange the diffusion-sorption PDE ~\vref{eq:diff-sorpt-pde} to explicitly solve for $R(c)$:
 
 \begin{equation}
     R(c) = D \frac{\partial^2 c}{\partial x^2} \left/ \frac{\partial c}{\partial t} \right .
@@ -144,11 +144,11 @@ Our approach leverages the available synthetic concentration data generated usin
 
 We then numerically approximate the first-order time derivative ($\partial c / \partial t$) and the second-order spatial derivative ($\partial^2 c / \partial x^2$) of the concentration field $c(x,t)$ using a B-spline surrogate model. This spline allows us to estimate the derivatives at any point within the spatial and temporal domain of the data.
 
-Figure \ref{fig:ret_uniqueness} shows the results of this empirical uniqueness analysis for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. For each case, we plot the raw $R(c)$ estimates and the binned and averaged $R(c)$ values as a function of $c$. We also include a comparison with the analytical isotherms used to generate the synthetic datasets.
+Figure ~\vref{fig:ret_uniqueness} shows the results of this empirical uniqueness analysis for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. For each case, we plot the raw $R(c)$ estimates and the binned and averaged $R(c)$ values as a function of $c$. We also include a comparison with the analytical isotherms used to generate the synthetic datasets.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/ret_uniqueness.png}
+    \includegraphics{figs/ret_uniqueness.pdf}
     \caption{Empirical investigation of the uniqueness of the retardation factor $R(c)$ for three different synthetic datasets generated using the Langmuir, Freundlich, and linear isotherms. The left and top panels show the raw $R(c)$ estimates (colored circles) and the binned and averaged $R(c)$ values (black line with circle markers) as a function of $c$. The bottom-right panel compares the binned and averaged $R(c)$ values (colored circle markers) with the analytical isotherms (colored line) used to generate the synthetic datasets. Error bars indicate the standard deviation inside the bin.}
     \label{fig:ret_uniqueness}
 \end{figure}
@@ -161,7 +161,7 @@ This empirical evidence of uniqueness provides a foundation for subsequent uncer
 
 
 
-\subsubsection{Uncertainty Quantification}
+\subsection{Uncertainty Quantification}
 There are two main aspects of UQ in this context:
 \begin{enumerate}
     \item UQ for FINN output: $p(\hat{c}(x,t) | \mathcal{D})$. This represents the probability distribution of the predicted contaminant concentration $\hat{c}(x,t)$ obtained from the FINN model, given the data $\mathcal{D}$.
@@ -181,7 +181,7 @@ While a clear decomposition into aleatoric and epistemic uncertainty is often ch
 
 
 
-\subsection{Bayes Neural Networks}
+\subsubsection{Bayes Neural Networks}
 \label{sec:bayes_nn}
 % TODO: Maybe too detailed. Move some to appendix?
 This section describes the baseline methodology used for comparison, which employs Bayesian Neural Networks and MCMC to estimate the posterior distribution of the retardation factor, $\hat{R}(c(x,t))$, parameterized by a neural network (NN). The retardation factor is a function of concentration, $c$, which itself is a function of spatial position, $x$, and time, $t$. This approach updates prior beliefs about the retardation factor based on observed data, $\mathcal{D}$.
@@ -230,7 +230,7 @@ Since \cite{finn} obtain the best results with the Barker method and no burn-in 
 
 
 
-\subsection{PI3NN (Prediction Intervals from Three Neural Networks)}
+\subsubsection{PI3NN (Prediction Intervals from Three Neural Networks)}
 PI3NN \cite{pi3nn} is a method for constructing prediction intervals (PIs) that uses three independently trained neural networks. It aims to provide tight, non-crossing PIs across various confidence levels without requiring retraining for each level.
 
 The method's theoretical foundation lies in approximating the ground-truth PI bounds with a family of neural networks. Specifically, PI3NN approximates the median of the target variable, $M[y]$, and the expected deviations above and below the median, $E[(y - M[y]) \ind{y-M[y]>0}]$ and $E[(M[y] - y) \ind{M[y]-y>0}]$, respectively, using three independently trained neural networks ($f_w(x)$, $u_\theta(x)$, and $l_\epsilon(x)$). These networks are trained using the standard mean squared error loss, simplifying the training process and avoiding the need for specialized loss functions and sensitive hyperparameters that often require fine-tuning in other PI methods.
@@ -251,7 +251,7 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/3pinn_illustration.png}
+    \includegraphics{figs/3pinn_illustration.pdf}
     \caption{Illustration of the PI3NN method.}
     \label{fig:3pinn_illustration}
 \end{figure}
@@ -262,7 +262,7 @@ Figure ~\vref{fig:3pinn_illustration} illustrates the 6-step breakdown of the PI
 
 \section{Methodology}
 % TODO: Check if the math adds up here and if there are any inconsistencies.
-\subsection{SPAN (Stochastic Perturbation Analysis of Networks)}
+\subsection{NNPIE (Neural Network Prediction Interval Estimation)}
 Our objective is to determine the posterior predictive distribution $p(\hat{R}(c; \theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$.
 
 \subsubsection{Approximating the Posterior Predictive Distribution via Marginalization over Uncertain Factors}
@@ -301,11 +301,11 @@ We use the same assumption about our data that the Bayesian baseline uses, which
 p(\mathcal{D} | \mathcal{X}) = \prod_{x_i, t_i, c_i \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - \hat{c}(x_i, t_i; \theta_{\mathcal{X}}))^2}{2\sigma^2} \right)
 \end{equation*}
 
-\subsubsection{SPAN Variants: Hyperparameter and Data Marginalization}
+\subsubsection{NNPIE Variants: Hyperparameter (Hy) and Data (Da) Marginalization}
 
 The generalized framework above can be applied to different sources of uncertainty. Here, we describe two variants:
 
-\paragraph{SPAN (Hyperparameter Marginalization)}
+\paragraph{Hy-NNPIE}
 
 In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperparameters $h$ of the solver. This variant, which we refer to as SPAN, captures epistemic uncertainty arising from the choice of hyperparameters. The equations above are applied directly with $\mathcal{X} = h$.
 
@@ -321,18 +321,18 @@ The following hyperparameters were selected for perturbation in the SPAN framewo
 
 
 
-\paragraph{Data-SPAN (Data Marginalization)}
+\paragraph{Da-NNPIE}
 
-Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Data-SPAN, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$.
+Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Da-NNPIE, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$.
 
 
 \subparagraph{Mask-based Random Dataset Sampling}
 
-To create variations in the training data, we employed a random masking technique. For each sample, a unique seed was used to randomly select 50\% of the data points for masking to generate a random dataset. ``Masking'' in this context means that these data points were excluded when computing the loss during training. Each data point had an equal probability (0.5) of being masked or retained. The seed values were drawn uniformly from the integer range $[0, 10^9]$. Figure \ref{fig:training_data_mask} illustrates an example of the full synthetic concentration training data with 50\% of the data points randomly masked.
+To create variations in the training data, we employed a random masking technique. For each sample, a unique seed was used to randomly select 50\% of the data points for masking to generate a random dataset. ``Masking'' in this context means that these data points were excluded when computing the loss during training. Each data point had an equal probability (0.5) of being masked or retained. The seed values were drawn uniformly from the integer range $[0, 10^9]$. Figure ~\vref{fig:training_data_mask} illustrates an example of the full synthetic concentration training data with 50\% of the data points randomly masked.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/c_diss_field_train_random_subset.png}
+    \includegraphics{figs/c_diss_field_train_random_subset.pdf}
     \caption{Full synthetic concentration training data where 50\% of datapoints are randomly masked (dark patches).}
     \label{fig:training_data_mask}
 \end{figure}
@@ -346,7 +346,7 @@ A unique seed, uniformly sampled from the integer range $[0, 10^9]$, was used to
 
 \subparagraph{PI3NN-based Random Dataset Sampling}
 \label{sec:random_dataset_sampling}
-To generate random datasets for Data-SPAN, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset of core 2 $\mathcal{D}_{\text{BTC-2}}$. For more detailed information about the data, see Section \vref{sec:experimental_data}.
+To generate random datasets for Da-NNPIE, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset of core 2 $\mathcal{D}_{\text{BTC-2}}$. For more detailed information about the data, see Section \vref{sec:experimental_data}.
 Let $\hat{c}(x=L, t; \theta_{\mathcal{D}_{\text{BTC-2}}})$ be the mean concentration curve predicted by FINN trained on $\mathcal{D}_{\text{BTC-2}}$, with $\theta_{\mathcal{D}_{\text{BTC-2}}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
 PI3NN then learns the residuals, effectively modeling the distribution of $c$ given $t$. Let $F^{-1}(q | t)$ denote the quantile function predicted by PI3NN, where $q \in [0, 1]$ is the quantile level and $t$ is the time point. This function provides the concentration value at time $t$ corresponding to the $q$-th quantile of the learned distribution (see Figure ~\vref{fig:btc_dataspan_quantiles}).
@@ -363,14 +363,14 @@ To enhance the accuracy of the likelihood computation in Section \vref{sec:likel
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/btc_dataspan_quantiles.png}
+    \includegraphics{figs/btc_dataspan_quantiles.pdf}
     \caption{Left: BTC quantile functions for all quantile samples $q_j$. Middle: BTC quantile functions for quantiles $0$, $0.5$, and $1$. Right: BTC datasets for quantiles $0$, $0.5$, and $1$.}
     \label{fig:btc_dataspan_quantiles}
 \end{figure}
 
 
 
-\paragraph{Full-SPAN}
+\paragraph{HyDa-NNPIE}
 
 We can even treat both the hyperparameters and the training dataset as random variables at the same time and obtain a combined result. So $\mathcal{X} = (h, \mathcal{D})$ and both are sampled independently.
 
@@ -378,19 +378,19 @@ For both hyperparameter and dataset sampling, a few samples resulted in FINN not
 
 
 \section{Data and Setup}
-
-\subsection{Experimental Setup}
+\subsection{Environment Setup}
 The experiments were conducted using Python 3.11.3. Modified versions of the FINN code from \cite{finn} and the PI3NN code from \cite{pi3nn} were used. The code and specific library versions are available on GitHub. GNU parallel \cite{tange_2023_10199085} was used for parallel execution of experiments. % TODO: insert github link
 
 Simulations and timing measurements were conducted on a M1 Pro Macbook. This setup provided the necessary computational resources for efficient model training and evaluation.
 
 
 \subsection{Data}
-\paragraph{Synthetic Data}
+\subsubsection{Synthetic Data}
+\label{sec:synthetic_data}
 For the synthetic datasets, we used the exact parameter values from \cite{finn} (Table 1), including porosity, effective diffusion coefficient, and others. The concentration data was generated using the same solver employed by FINN, ensuring consistency in our experimental setup.
 
 
-\paragraph{Experimental Data}
+\subsubsection{Experimental Data}
 \label{sec:experimental_data}
 
 This study utilizes experimental data originally presented by \cite{nowak2016entropy} and subsequently employed by \cite{finn}. The data consist of breakthrough curves (BTCs) and a concentration profile, obtained from laboratory column experiments. These are detailed below and summarized in Table \vref{tab:experimental_data}.
@@ -421,7 +421,7 @@ Following the approach of \cite{finn}, Core 2 was used for model training, while
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/core_data.png}
+    \includegraphics{figs/core_data.pdf}
     \caption{Experimental concentration data obtained from the ``Core 1'', ``Core 2'', and ``Core 2B'' sample (left to right) by \cite{nowak2016entropy}.}
     \label{fig:core_data}
 \end{figure}
@@ -447,7 +447,7 @@ During training, runs were discarded if the normalized mean squared error (NMSE)
 % TODO: I think I did not explain anywhere, why I did synth data experiments even.
 
 \subsection{Synthetic Data Case}
-\subsubsection{SPAN}
+\subsubsection{Hy-NNPIE}
 We developed and validated our method using synthetic data prior to its application on experimental data, where actual comparisons and quantifications could be performed. As a result, our initial evaluation focused on a simplified parameter space, with only a single hyperparameter, namely the weight initialization seed.
 The number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. % TODO
 
@@ -456,19 +456,19 @@ The influence of the seed is relatively small as can be seen in Figure \vref{fig
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_synthetic_SPAN_seed.png}
+    \includegraphics{figs/finn_synthetic_SPAN_seed.pdf}
     \caption{Retardation factors learned by FINN with random weight initialization seed samples and dataset generated by langmuir isotherm.}
     \label{fig:synthetic_SPAN_seed}
 \end{figure}
 
 
 
-\subsubsection{Data-SPAN}
-When applying gaussian noise of the same strength as the experimental data has, the variation in learned retardation factors becomes much larger compared to SPAN as can be seen in Figure ~\vref{fig:synthetic_SPAN_noise}.
+\subsubsection{Da-NNPIE}
+When applying gaussian noise of the same strength as the experimental data has, the variation in learned retardation factors becomes much larger compared to Hy-NNPIE as can be seen in Figure ~\vref{fig:synthetic_SPAN_noise}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_synthetic_SPAN_noise.png}
+    \includegraphics{figs/finn_synthetic_SPAN_noise.pdf}
     \caption{Retardation factors learned by FINN on synthetic dataset (generated by langmuir isotherm) pertubed by gaussian noise.}
     \label{fig:synthetic_SPAN_noise}
 \end{figure}
@@ -478,7 +478,7 @@ Masking the training data has a smaller effect, as seen in Figure \vref{fig:synt
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_synthetic_SPAN_losspattern.png}
+    \includegraphics{figs/finn_synthetic_SPAN_losspattern.pdf}
     \caption{Retardation factors learned by FINN on synthetic dataset (generated by langmuir isotherm) with 50\% of training data randomly masked.}
     \label{fig:synthetic_SPAN_losspattern}
 \end{figure}
@@ -490,14 +490,14 @@ Masking the training data has a smaller effect, as seen in Figure \vref{fig:synt
 
 \subsection{Experimental Data Case}
 
-\subsubsection{SPAN}
+\subsubsection{Hy-NNPIE}
 For the experimental data, the full set of hyperparameters was used: \textbf{Weight Initialization Seed}, \textbf{Number of Epochs}, \textbf{MSE Loss Factor}, \textbf{Physical Loss Factor}.
 
 To introduce greater variability in the retardation factor output, we simultaneously sampled all hyperparameters, as opposed to the individual approach used in the synthetic data case. To still assess the impact of each hyperparameter, we conducted a sensitivity analysis, which is presented in Section \vref{sec:sensitivity}. This experiment generated a dataset of $780$ samples, based on the defined hyperparameter ranges, and the results are illustrated in Figure ~\vref{fig:span_samples}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_span_samples.png}
+    \includegraphics{figs/finn_span_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained via FINN by training with random hyperparameters.}
     \label{fig:span_samples}
 \end{figure}
@@ -507,7 +507,7 @@ To introduce greater variability in the retardation factor output, we simultaneo
 
 \paragraph{Sensitivity Analysis}
 \label{sec:sensitivity}
-Sensitivity analysis investigates how variations in input parameters affect the model output. Unweighted SPAN samples inherently perform sensitivity analysis because each sample represents a different set of hyperparameters, and the resulting retardation factor and its impact on the concentration field demonstrate the influence of those hyperparameters.
+Sensitivity analysis investigates how variations in input parameters affect the model output. Unweighted Hy-NNPIE samples inherently perform sensitivity analysis because each sample represents a different set of hyperparameters, and the resulting retardation factor and its impact on the concentration field demonstrate the influence of those hyperparameters.
 
 One sensitivity analysis method is based on standardized regression coefficients, sometimes referred to as beta coefficients or beta weights. They represent the relative importance of each predictor variable (hyperparameter $h$ in this case) in explaining the variance of the outcome variable ($R(c)$).
 Importantly, the sum of these normalized coefficients can exceed 1 as parameters may explain common variances. The value shows how important the respective parameter is in relation to the rest.
@@ -521,7 +521,7 @@ Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ o
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/sensitivity.png}
+    \includegraphics{figs/sensitivity.pdf}
     \caption{Relative importance on the variance of $R(c)$ of each hyperparameter for different values of $c$.}
     \label{fig:sensitivity}
 \end{figure}
@@ -529,7 +529,7 @@ Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ o
 
 
 
-\subsubsection{Data-SPAN}
+\subsubsection{Da-NNPIE}
 This approach was applied only to the experimental data because the synthetic training data lacks noise, leading to extremely small residuals and a very narrow distribution that does not impact sampling. % TODO: Bit weird intro
 
 For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vref{sec:random_dataset_sampling}. The results are shown in Figure ~\vref{fig:dataspan_samples}.
@@ -537,27 +537,27 @@ For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vr
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_dataspan_samples.png}
+    \includegraphics{figs/finn_dataspan_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random datasets using PI3NN.}
     \label{fig:dataspan_samples}
 \end{figure}
 
 
 
-\subsubsection{Full-SPAN}
+\subsubsection{HyDa-NNPIE}
 % TODO: Simulations for this have not been done yet.
-This approach is equivalent to Data-SPAN but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in Figure ~\vref{fig:fullspan_samples}.
+This approach is equivalent to Da-NNPIE but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in Figure ~\vref{fig:fullspan_samples}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_fullspan_samples.png}
+    \includegraphics{figs/finn_fullspan_samples.pdf}
     \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters and random datasets using PI3NN.}
     \label{fig:fullspan_samples}
 \end{figure}
 
 
 
-\subsubsection{Full-SPAN vs. MCMC}
+\subsubsection{HyDa-NNPIE vs. MCMC}
 
 \paragraph{Baseline (Bayes NN via MCMC)}
 We computed $10$k samples using the same parameters as \cite{finn}; the samples are visualized in Figure ~\vref{fig:mcmc_samples}.
@@ -565,18 +565,18 @@ We computed $10$k samples using the same parameters as \cite{finn}; the samples 
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_mcmc_samples.png}
+    \includegraphics{figs/finn_mcmc_samples.pdf}
     \caption{Retardation factors generated by MCMC sampling as detailed in Section ~\vref{sec:bayes_nn}.}
     \label{fig:mcmc_samples}
 \end{figure}
 
 
 \paragraph{Retardation Uncertainty Comparison}
-Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
+Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and HyDa-NNPIE methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that HyDa-NNPIE produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_My MCMCvsFull SPAN_PIs.png}
+    \includegraphics{figs/finn_My MCMCvsFull-SPAN_PIs.pdf}
     \caption{Retardation PIs and correspoding concentration PIs obtained from it by training FINN with random hyperparameters and random datasets using PI3NN (orange). Compared with MCMC approach (blue). (90\% PIs are depicted.)}
     \label{fig:mcmc_vs_fullspan}
 \end{figure}
@@ -585,27 +585,27 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 
 
 \paragraph{Runtime Comparison}
-We measure and compare the runtime of generating a single sample of our method and the baseline. Since SPAN as well as Data-SPAN require training of the NN from scratch for each sample, the runtime approximately equals the training time. Averaging over $10$ trials, the runtime is $170$ seconds.
+We measure and compare the runtime of generating a single sample of our method and the baseline. Since NNPIE requires training of the NN from scratch for each sample, the runtime approximately equals the training time. Averaging over $10$ trials, the runtime is $170$ seconds.
 
-The MCMC method uses thinning, saving only every $10$th sample. The average runtime for this is about $11.4$ seconds, almost $15$ times faster than our method.
+The MCMC method uses thinning, saving only every $10$th sample. The average runtime for this is about $11.4$ seconds, almost $15$ times faster than our method as also seen in Figure \vref{fig:runtime_comparison}.
+However, when considering the total number of samples used for both methods, our method is about $10$ times faster.
 % TODO: But how many samples does each method need?
 % TODO: And what if the log posterior trace plot is still decreasing? Am I even allowed to take samples from it then?
 % TODO: What about parallelization? Our method is trivially paralellizable. What about MCMC with Barker sampler?
 % TODO: What about other problems (with e.g. more weights). Does our method get better then?
 
-% Bit unnecessary plot?
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/runtime_per_sample.png}
-    \caption{Runtime for generating a single sample using SPAN (left bar) and MCMC (right bar). Measured on the same machine and averaged over $10$ trials. Variance is too insignificant to matter here.}
-    \label{fig:runtime_per_sample}
+    \includegraphics{figs/runtime_comparison.pdf}
+    \caption{Runtime for generating a single sample (left panel) and all samples (right panel) using NNPIE (left bar) and MCMC (right bar). Measured on the same machine and averaged over $10$ trials.}
+    \label{fig:runtime_comparison}
 \end{figure}
 
 
 
 \paragraph{Likelihood Comparison}
 \label{sec:likelihood}
-To evaluate the predictive quality of our method, we use its samples to estimate a probability distribution. This is done by computing a histogram. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution. We transform the likelihood into a negative log-likelihood (NLL) to obtain more accurate results. A lower NLL is better. Applying this procedure on SPAN yields a NLL of $-6.41$, $-7.11$ for MCMC, and $-7.14$ for Data-SPAN. A good baseline to compare this against, is a normal distribution around the FINN BTC prediction mean and standard deviation equal to the sample standard deviation computed from the residuals:
+To evaluate the predictive quality of our method, we use its samples to estimate a probability distribution. This is done by computing a histogram. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution. We transform the likelihood into a negative log-likelihood (NLL) to obtain more accurate results. A lower NLL is better. Applying this procedure on Hy-NNPIE yields a NLL of $-6.41$, $-7.11$ for MCMC, and $-7.14$ for Da-NNPIE. A good baseline to compare this against, is a normal distribution around the FINN BTC prediction mean and standard deviation equal to the sample standard deviation computed from the residuals:
 \begin{equation*}
     p(c; t) = \frac{1}{\sqrt{2 \pi \mathcal{s}^2}} \exp(-\frac{1}{2 \mathcal{s}^2} (\hat{c}(x=L, t; \theta_{\mathcal{D}}) - c)^2)
 \end{equation*}
@@ -618,26 +618,24 @@ Another quantification done by \cite{finn} is the average calibration of the PI.
 
 The reliability curve assesses the calibration of predicted confidence intervals. It plots the observed frequency of the true value falling within a given confidence interval against the predicted confidence level. To compute it, the prediction range is divided into bins (e.g., by confidence levels). For each bin, the proportion of predictions where the true value falls within the corresponding PI is calculated. Ideally, the curve should follow the diagonal line (perfect calibration). A curve above the diagonal indicates underconfidence (the true value falls within the PI more often than predicted), while a curve below the diagonal indicates overconfidence.
 
-The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Data-SPAN provides the best calibrated PI. Overall, all methods are generally overconfident, SPAN the strongest. Only Data-SPAN is a little underconfident for very small $c$ values.
+The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Da-NNPIE provides the best calibrated PI. Overall, all methods are generally overconfident, Hy-NNPIE the strongest. Only Da-NNPIE is a little underconfident for very small $c$ values.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/reliability_curves.png}
-    \caption{Top: Core 2 BTC 90\% PIs for the different methods (SPAN, Data-SPAN, MCMC). Bottom: Reliability curve for each method.}
+    \includegraphics{figs/reliability_curves.pdf}
+    \caption{Top: Core 2 BTC 90\% PIs for the different methods (Hy-NNPIE, Da-NNPIE, MCMC). Bottom: Reliability curve for each method.}
     \label{fig:reliability_curves}
 \end{figure}
 
 
 \subsection{Summary}
-The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between Full-SPAN and MCMC.
+The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between HyDa-NNPIE and MCMC.
 
-Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Data-SPAN due to the absence of real noise and presence of artificial noise in the synthetic data, which, although introducing some level of uncertainty, does not represent a real distribution, rendering the application of PI3NN, our strongest method to generate datasets, unreasonable since it is designed to learn the underlying real distribution; and the utilization of less effective SPAN hyperparameters (such as excluding the strongest options like \textbf{Number of Epochs} or \textbf{MSE loss factor}, as shown in Section ~\vref{sec:sensitivity}).
+Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Da-NNPIE due to the absence of real noise and presence of artificial noise in the synthetic data, which, although introducing some level of uncertainty, does not represent a real distribution, rendering the application of PI3NN, our strongest method to generate datasets, unreasonable since it is designed to learn the underlying real distribution; and the utilization of less effective hyperparameters (such as excluding the strongest options like \textbf{Number of Epochs} or \textbf{MSE loss factor}, as shown in Section ~\vref{sec:sensitivity}).
 
-Given that the hyperparameters of SPAN have a negligible impact on output variation relative to Data-SPAN, and considering Data-SPAN's ability to efficiently sample the entire space due to its one-dimensional nature, Full-SPAN requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that Full-SPAN can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, Full-SPAN benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes Full-SPAN as a more computationally efficient method for UQ.
+Given that the hyperparameters Hy-NNPIE have a negligible impact on output variation relative to Da-NNPIE, and considering Da-NNPIE's ability to efficiently sample the entire space due to its one-dimensional nature, HyDa-NNPIE requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that HyDa-NNPIE can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, HyDa-NNPIE benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes HyDa-NNPIE as a more computationally efficient method for UQ.
 
 
-
-% TODO: I don't like how I sometimes use SPAN but mean Full-SPAN and stuff like this. Maybe I should introduce Para-SPAN and get rid of Full-SPAN?
 % TODO: Btw, I remember that I was told not to use the word "parameter" because this can be confused with something else.
 
 
@@ -645,27 +643,28 @@ Given that the hyperparameters of SPAN have a negligible impact on output variat
 
 
 
-\subsection{Limitations}
-One limitation of our approach lies in its ``brute-force'' nature, due not only to the computational effort but also to the process itself. While we gain insights into uncertainty, the obtained result is highly dependent on the used solver and selected hyperparameters in the case of SPAN and highly dependent on the given dataset in the case of Data-SPAN. Ideally, uncertainty is a byproduct of the method and the uncertainty in the data.
-
-Furthermore, the weighting process raises concerns. The BTC is constrained to a small subset of concentration values compared to the entire field (only 0 to 0.04 instead of 0 to 1.0). This raises questions about the validity of weighting, e.g. $R(c=0.0)$ samples the same way as $R(c=1.0)$, as the latter do not directly influence the predicted BTC and thus their likelihood contribution is questionable.
 
 
 \section{Conclusion}
 Although our sensitivity analysis indicated that certain hyperparameters exerted minimal influence on the results, their inclusion does not negatively affect performance. This is because Monte Carlo sampling, the core technique employed here, is inherently independent of dimensionality.
 
-Finally, a comparison of the PIs generated by Full-SPAN and MCMC, specifically the $R(c)$ PI, and their respective likelihoods, reveals comparable performance. Qualitatively, both methods appear to achieve a similar level of accuracy in capturing uncertainty.
-
-\subsection{Summary}
-This work investigated UQ for the retardation factor in a diffusion-sorption process using the FINN framework. We proposed two novel UQ methods, SPAN and Data-SPAN, based on perturbing hyperparameters and training data, respectively. Empirical analysis demonstrated the near uniqueness of the inverse problem, enabling interpretation of the UQ results. Although computationally more expensive than MCMC, our methods offer a different perspective on uncertainty by directly exploring the effects of various uncertainties within the training data and solver process.
-
-\subsection{Future Work}
-% TODO
+Finally, a comparison of the PIs generated by HyDa-NNPIE and MCMC, specifically the $R(c)$ PI, and their respective likelihoods, reveals comparable performance. Qualitatively, both methods appear to achieve a similar level of accuracy in capturing uncertainty.
 
 
+\subsection{Limitations}
+One limitation of our approach lies in its ``brute-force'' nature, due not only to the computational effort but also to the process itself. While we gain insights into uncertainty, the obtained result is highly dependent on the used solver and selected hyperparameters in the case of Hy-NNPIE and highly dependent on the given dataset in the case of Da-NNPIE. Ideally, uncertainty is a byproduct of the method and the uncertainty in the data.
 
-% TODO: I computed the likelihood also with a gaussian PI. I should also plot this Gaussian PI - maybe even with the reliability curve together.
-% TODO: replace .png with .pdf
+Furthermore, the weighting process raises concerns. The BTC is constrained to a small subset of concentration values compared to the entire field (only 0 to 0.04 instead of 0 to 1.0). This raises questions about the validity of weighting, e.g. $R(c=0.0)$ samples the same way as $R(c=1.0)$, as the latter do not directly influence the predicted BTC and thus their likelihood contribution is questionable.
+
+
+\subsection{Summary and Outlook}
+This work investigated UQ for the retardation factor in a diffusion-sorption process using the FINN framework. We proposed two novel UQ methods, Hy-NNPIE and Da-NNPIE, based on perturbing hyperparameters and training data, respectively. Empirical analysis demonstrated the near uniqueness of the inverse problem, enabling interpretation of the UQ results. Although computationally more expensive than MCMC, our methods offer a different perspective on uncertainty by directly exploring the effects of various uncertainties within the training data and solver process.
+
+% TODO: Outlook
+
+
+
+% TODO: replace .pdf with .pdf
 % TODO: I miss \textcite...
 % TODO: change \phi to \varphi
 
@@ -674,7 +673,7 @@ This work investigated UQ for the retardation factor in a diffusion-sorption pro
 % TODO: Include this in experiments section
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/c_diss_field_full_black_test.png}
+    \includegraphics{figs/c_diss_field_full_black_test.pdf}
     \caption{Training data for the model, represented by a pcolor plot of the synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm. The spatial domain is $x \in [0, 1]$ meters, and the temporal domain is $t \in [0, 10000]$ days. The period from $t = 1255$ to $t = 10000$ days is masked, indicating that these values are not used for training but are reserved for testing.}
     \label{fig:c_diss_field_full_black_test}
 \end{figure}
@@ -692,7 +691,7 @@ The full field error can not be detected in the case of experimental data as the
 
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/triangle_ret_pertubation.png}
+    \includegraphics{figs/triangle_ret_pertubation.pdf}
     \caption{Left: Retardation factors with triangle peaks. Middle: Concentration BTC for these retardation factors. Right: MAE for each on the full field and BTC.}
     \label{fig:triangle_ret_pertubation}
 \end{figure}
