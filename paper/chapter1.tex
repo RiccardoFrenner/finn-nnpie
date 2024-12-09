@@ -313,7 +313,7 @@ In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperpara
 The following hyperparameters were selected for perturbation in the SPAN framework to assess their influence on model output uncertainty. Each hyperparameter was chosen based on its inherent uncertainty or significant impact on the training process:
 
 \begin{itemize}
-    \item \textbf{Seed:} This hyperparameter dictates the initial conditions for the neural network training process. It influences various stochastic elements, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which mitigates the vanishing/exploding gradient problem in deep networks by ensuring consistent variance of activations and gradients throughout the network. \textit{Rationale:} The initialization of a neural network is a critical step, and the seed provides the starting point for optimization. Since a zero initialization is often detrimental, a random value is typically chosen. The impact of this fundamental choice on model output is important to quantify. Seed values were sampled uniformly from the integer range $[0, 10^9]$.
+    \item \textbf{Weight Initialization Seed:} This hyperparameter dictates the initial conditions for the neural network training process. It influences various stochastic elements, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which mitigates the vanishing/exploding gradient problem in deep networks by ensuring consistent variance of activations and gradients throughout the network. \textit{Rationale:} The initialization of a neural network is a critical step, and the seed provides the starting point for optimization. Since a zero initialization is often detrimental, a random value is typically chosen. The impact of this fundamental choice on model output is important to quantify. Seed values were sampled uniformly from the integer range $[0, 10^9]$.
     \item \textbf{Number of Epochs:} This parameter determines the number of complete passes the model makes over the training dataset during optimization. \textit{Rationale:}  Determining the optimal number of training epochs for a neural network is often challenging. While monitoring loss is a common practice, loss can sometimes decrease unexpectedly after long plateaus. This implies that the ideal stopping point is inherently uncertain. Additionally, selecting an inadequate number of epochs can mimic the effect of a poorly chosen learning rate. A learning rate that is too high may prevent convergence to the optimal solution, similar to stopping the training process prematurely. By varying the number of epochs, we can capture this uncertainty and its effect on the model's final predictions. The number of epochs was sampled uniformly from the integer range $[10, 30]$.
     \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c))$. \textit{Rationale:} The optimal balance between the data-driven MSE loss and the physics-informed loss (described below) is often unknown a priori. There is no established theoretical framework to guide the selection of this factor, making it a source of uncertainty. Thus, by perturbing $a_{MSE}$, we investigate how the model's sensitivity to data fidelity influences its predictions. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
     \item \textbf{Physical Loss Factor ($a_{Phys}$):}  This parameter, analogous to the MSE loss factor, governs the weight of the physical loss term, $Loss_{Phys}(\hat{R}(c))$, in the overall loss function. \textit{Rationale:} Similar to the MSE loss factor, the optimal weighting for the physics-informed loss is generally unknown and lacks a strong theoretical basis. By varying $a_{Phys}$, we explore how strongly the model relies on the underlying physical constraints and how this affects its predictions. The values for $a_{Phys}$ were also sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
@@ -443,111 +443,97 @@ During training, runs were discarded if the normalized mean squared error (NMSE)
 
 
 
-\section{Experiments}
+\section{Results and Discussion}
+% TODO: I think I did not explain anywhere, why I did synth data experiments even.
 
-\subsection{SPAN}
-The hyperparameters that were used differ for the synthetic data case and the experimental data case:
+\subsection{Synthetic Data Case}
+\subsubsection{SPAN}
+We developed and validated our method using synthetic data prior to its application on experimental data, where actual comparisons and quantifications could be performed. As a result, our initial evaluation focused on a simplified parameter space, with only a single hyperparameter, namely the weight initialization seed.
+The number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. % TODO
 
-\begin{table}[h!]
-    \centering
-    \begin{tabular}{>{\raggedleft\arraybackslash}m{3.5cm} | >{\raggedright\arraybackslash}m{3cm} >{\centering\arraybackslash}m{2.5cm} >{\centering\arraybackslash}m{2.5cm}}
-        \toprule
-        \textbf{Hyperparameter} & \textbf{Description} & \textbf{Experimental} & \textbf{Synthetic} \\
-        \midrule
-        Weight Initialization & \small{Seed for initial values for model weights} & \textcolor{green}{\checkmark} & \textcolor{green}{\checkmark} \\
-        \midrule
-        Training Data Mask (see Figure ~\vref{fig:training_data_mask}) & \small{Seed for mask applied to training data} & \textcolor{red}{\ding{55}} & \textcolor{green}{\checkmark} \\
-        \midrule
-        Training Data Noise & \small{Seed for noise added to training data} & \textcolor{red}{\ding{55}} & \textcolor{green}{\checkmark} \\
-        \midrule
-        Max Epochs & \small{Maximum number of training iterations} & \textcolor{green}{\checkmark} & \textcolor{red}{\ding{55}} \\
-        \midrule
-        MSE Loss Factor & \small{Factor for Mean Squared Error loss} & \textcolor{green}{\checkmark} & \textcolor{red}{\ding{55}} \\
-        \midrule
-        Physical Loss Factor & \small{Factor for physical loss} & \textcolor{green}{\checkmark} & \textcolor{red}{\ding{55}} \\
-        \bottomrule
-    \end{tabular}
-    \caption{Hyperparameters for Experimental and Synthetic Settings}
-    \label{tab:hparams}
-\end{table}
-
-In the experimental setting, $780$ samples were generated using the specified hyperparameters. For the synthetic experiments, the number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts. The experimental results are shown in Figure ~\vref{fig:span_samples}.
-% TODO: synthetic results
+The influence of the seed is relatively small as can be seen in Figure \vref{fig:synthetic_SPAN_seed}.
 
 
-\subsection{Data-SPAN}
-This approach was applied only to the experimental data because the synthetic training data lacks noise, leading to extremely small residuals and a very narrow distribution that does not impact sampling.
-
-For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vref{sec:random_dataset_sampling}. The results are shown in Figure ~\vref{fig:dataspan_samples}.
-
-
-
-\subsection{Full-SPAN}
-This approach is equivalent to Data-SPAN but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in Figure ~\vref{fig:fullspan_samples}.
-
-
-\subsection{Baselines (Bayes NN via MCMC)}
-We computed $10$k samples using the same parameters as \cite{finn}; the samples are visualized in Figure ~\vref{fig:mcmc_samples}.
-% TODO: Why 10k? This is very important to know for arguing about efficiency.
-
-% This is not a result (of me) thus it is here and not in the results section
 \begin{figure}[h]
     \centering
-    \includegraphics{figs/finn_mcmc_samples.png}
-    \caption{Retardation curves generated by MCMC sampling as detailed in Section ~\vref{sec:bayes_nn}.}
-    \label{fig:mcmc_samples}
+    \includegraphics{figs/finn_synthetic_SPAN_seed.png}
+    \caption{Retardation factors learned by FINN with random weight initialization seed samples and dataset generated by langmuir isotherm.}
+    \label{fig:synthetic_SPAN_seed}
+\end{figure}
+
+
+
+\subsubsection{Data-SPAN}
+When applying gaussian noise of the same strength as the experimental data has, the variation in learned retardation factors becomes much larger compared to SPAN as can be seen in Figure ~\vref{fig:synthetic_SPAN_noise}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/finn_synthetic_SPAN_noise.png}
+    \caption{Retardation factors learned by FINN on synthetic dataset (generated by langmuir isotherm) pertubed by gaussian noise.}
+    \label{fig:synthetic_SPAN_noise}
+\end{figure}
+
+
+Masking the training data has a smaller effect, as seen in Figure \vref{fig:synthetic_SPAN_losspattern}, although there is one outlier retardation factor, indicating, that there is the potential for high variations similarly to applying gaussian noise. More samples would be needed to confirm this.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/finn_synthetic_SPAN_losspattern.png}
+    \caption{Retardation factors learned by FINN on synthetic dataset (generated by langmuir isotherm) with 50\% of training data randomly masked.}
+    \label{fig:synthetic_SPAN_losspattern}
 \end{figure}
 
 
 
 
 
-\section{Results}
-\subsection{Samples and Prediction Intervals}
-\subsubsection{Synthetic Data}
 
-\paragraph{SPAN}
-When the hyperparameters are randomly sampled to learn different retardations, the uncertainty in $R(c)$ is very small as can be seen in Figure ~\vref{fig:synthetic_SPAN_factors_PIs}, even when all hyperparameters are combined in ``All UQ''.
+\subsection{Experimental Data Case}
 
-% TODO: Get rid of upper right triangle
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/finn_synthetic_SPAN_factors_PIs.png}
-    \caption{Comparison of retardation PIs obtained via SPAN on synthetic data (generated by langmuir isotherm).}
-    \label{fig:synthetic_SPAN_factors_PIs}
-\end{figure}
+\subsubsection{SPAN}
+For the experimental data, the full set of hyperparameters was used: \textbf{Weight Initialization Seed}, \textbf{Number of Epochs}, \textbf{MSE Loss Factor}, \textbf{Physical Loss Factor}.
 
-\paragraph{Data-SPAN}
-When applying gaussian noise of the same strength as the experimental data has due to measurement error \cite{nowak2016entropy}, the uncertainty in $R(c)$ becomes much larger compared to SPAN as can be seen in Figure ~\vref{fig:synthetic_langmuir_c_noise}.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/finn_synthetic_langmuir_c_noise.png}
-    \caption{Retardations learned by FINN on synthetic dataset (generated by langmuir isotherm) pertubed by gaussian noise.}
-    \label{fig:synthetic_langmuir_c_noise}
-\end{figure}
-
-
-
-\subsubsection{Experimental Data}
-
-Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
-
-
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/finn_My MCMCvsFull SPAN_PIs.png}
-    \caption{Retardation PIs and correspoding concentration PIs obtained from it by training FINN with random hyperparameters and random datasets using PI3NN (orange). Compared with MCMC approach (blue). (90\% PIs are depicted.)}
-    \label{fig:mcmc_vs_fullspan}
-\end{figure}
-
+To introduce greater variability in the retardation factor output, we simultaneously sampled all hyperparameters, as opposed to the individual approach used in the synthetic data case. To still assess the impact of each hyperparameter, we conducted a sensitivity analysis, which is presented in Section \vref{sec:sensitivity}. This experiment generated a dataset of $780$ samples, based on the defined hyperparameter ranges, and the results are illustrated in Figure ~\vref{fig:span_samples}.
 
 \begin{figure}[h]
     \centering
     \includegraphics{figs/finn_span_samples.png}
-    \caption{Retardation samples and correspoding concentration curves obtained from it by training FINN with random hyperparameters.}
+    \caption{Retardation samples and correspoding concentration curves obtained via FINN by training with random hyperparameters.}
     \label{fig:span_samples}
 \end{figure}
+
+% TODO: I forgot ~ for a few vrefs. (What does that even do? print the page number? Maybe I shouldn't use it everywhere then.)
+
+
+\paragraph{Sensitivity Analysis}
+\label{sec:sensitivity}
+Sensitivity analysis investigates how variations in input parameters affect the model output. Unweighted SPAN samples inherently perform sensitivity analysis because each sample represents a different set of hyperparameters, and the resulting retardation factor and its impact on the concentration field demonstrate the influence of those hyperparameters.
+
+One sensitivity analysis method is based on standardized regression coefficients, sometimes referred to as beta coefficients or beta weights. They represent the relative importance of each predictor variable (hyperparameter $h$ in this case) in explaining the variance of the outcome variable ($R(c)$).
+Importantly, the sum of these normalized coefficients can exceed 1 as parameters may explain common variances. The value shows how important the respective parameter is in relation to the rest.
+Since these parameters are based on linear regression, they should be interpreted with caution, especially when non-linear relationships exist between the hyperparameters and the retardation factor. % TODO: reference for beta coefficients
+
+We average the importance for $R(c)$ over a set of $c$ values and obtain $0.033$ for \textbf{Physical Loss Factor}, $0.051$ for \textbf{Weight Initialization}, $0.159$ for \textbf{MSE Loss Factor}, and $0.570$ for \textbf{Number of Epochs}.
+
+This indicates that \textbf{Number of Epochs} and \textbf{MSE Loss Factor} have the largest impact on $R(c)$ overall. The seed used for weight initialization and the physical loss factor play only negligible roles.
+
+Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ over which the average was taken.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/sensitivity.png}
+    \caption{Relative importance on the variance of $R(c)$ of each hyperparameter for different values of $c$.}
+    \label{fig:sensitivity}
+\end{figure}
+
+
+
+
+\subsubsection{Data-SPAN}
+This approach was applied only to the experimental data because the synthetic training data lacks noise, leading to extremely small residuals and a very narrow distribution that does not impact sampling. % TODO: Bit weird intro
+
+For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vref{sec:random_dataset_sampling}. The results are shown in Figure ~\vref{fig:dataspan_samples}.
+
 
 \begin{figure}[h]
     \centering
@@ -556,7 +542,12 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
     \label{fig:dataspan_samples}
 \end{figure}
 
+
+
+\subsubsection{Full-SPAN}
 % TODO: Simulations for this have not been done yet.
+This approach is equivalent to Data-SPAN but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in Figure ~\vref{fig:fullspan_samples}.
+
 \begin{figure}[h]
     \centering
     \includegraphics{figs/finn_fullspan_samples.png}
@@ -566,8 +557,34 @@ Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the M
 
 
 
+\subsubsection{Full-SPAN vs. MCMC}
 
-\subsection{Runtime}
+\paragraph{Baseline (Bayes NN via MCMC)}
+We computed $10$k samples using the same parameters as \cite{finn}; the samples are visualized in Figure ~\vref{fig:mcmc_samples}.
+% TODO: Why 10k? This is very important to know for arguing about efficiency.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/finn_mcmc_samples.png}
+    \caption{Retardation factors generated by MCMC sampling as detailed in Section ~\vref{sec:bayes_nn}.}
+    \label{fig:mcmc_samples}
+\end{figure}
+
+
+\paragraph{Retardation Uncertainty Comparison}
+Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and full SPAN methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that full SPAN produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/finn_My MCMCvsFull SPAN_PIs.png}
+    \caption{Retardation PIs and correspoding concentration PIs obtained from it by training FINN with random hyperparameters and random datasets using PI3NN (orange). Compared with MCMC approach (blue). (90\% PIs are depicted.)}
+    \label{fig:mcmc_vs_fullspan}
+\end{figure}
+
+
+
+
+\paragraph{Runtime Comparison}
 We measure and compare the runtime of generating a single sample of our method and the baseline. Since SPAN as well as Data-SPAN require training of the NN from scratch for each sample, the runtime approximately equals the training time. Averaging over $10$ trials, the runtime is $170$ seconds.
 
 The MCMC method uses thinning, saving only every $10$th sample. The average runtime for this is about $11.4$ seconds, almost $15$ times faster than our method.
@@ -575,8 +592,6 @@ The MCMC method uses thinning, saving only every $10$th sample. The average runt
 % TODO: And what if the log posterior trace plot is still decreasing? Am I even allowed to take samples from it then?
 % TODO: What about parallelization? Our method is trivially paralellizable. What about MCMC with Barker sampler?
 % TODO: What about other problems (with e.g. more weights). Does our method get better then?
-
-
 
 % Bit unnecessary plot?
 \begin{figure}[h]
@@ -586,7 +601,9 @@ The MCMC method uses thinning, saving only every $10$th sample. The average runt
     \label{fig:runtime_per_sample}
 \end{figure}
 
-\subsection{Likelihood}
+
+
+\paragraph{Likelihood Comparison}
 \label{sec:likelihood}
 To evaluate the predictive quality of our method, we use its samples to estimate a probability distribution. This is done by computing a histogram. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution. We transform the likelihood into a negative log-likelihood (NLL) to obtain more accurate results. A lower NLL is better. Applying this procedure on SPAN yields a NLL of $-6.41$, $-7.11$ for MCMC, and $-7.14$ for Data-SPAN. A good baseline to compare this against, is a normal distribution around the FINN BTC prediction mean and standard deviation equal to the sample standard deviation computed from the residuals:
 \begin{equation*}
@@ -594,7 +611,9 @@ To evaluate the predictive quality of our method, we use its samples to estimate
 \end{equation*}
 This yields a NLL of $-7.50$, which is the lowest value. % TODO: Interpretation
 
-\subsection{Reliability Curve}
+
+
+\paragraph{PI Calibration Comparison}
 Another quantification done by \cite{finn} is the average calibration of the PI. This can be visualized using the reliability curve.
 
 The reliability curve assesses the calibration of predicted confidence intervals. It plots the observed frequency of the true value falling within a given confidence interval against the predicted confidence level. To compute it, the prediction range is divided into bins (e.g., by confidence levels). For each bin, the proportion of predictions where the true value falls within the corresponding PI is calculated. Ideally, the curve should follow the diagonal line (perfect calibration). A curve above the diagonal indicates underconfidence (the true value falls within the PI more often than predicted), while a curve below the diagonal indicates overconfidence.
@@ -609,56 +628,19 @@ The results, shown in Figure ~\vref{fig:reliability_curves}, suggest that Data-S
 \end{figure}
 
 
-\subsection{Sensitivity Analysis}
-\label{sec:sensitivity}
-Sensitivity analysis investigates how variations in input parameters affect the model output. Unweighted SPAN samples inherently perform sensitivity analysis because each sample represents a different set of hyperparameters, and the resulting retardation factor and its impact on the concentration field demonstrate the influence of those hyperparameters.
-
-One sensitivity analysis method is based on standardized regression coefficients, sometimes referred to as beta coefficients or beta weights. They represent the relative importance of each predictor variable (hyperparameter $h$ in this case) in explaining the variance of the outcome variable ($R(c)$).
-Importantly, the sum of these normalized coefficients can exceed 1 as parameters may explain common variances. The value shows how important the respective parameter is in relation to the rest.
-Since these parameters are based on linear regression, they should be interpreted with caution, especially when non-linear relationships exist between the hyperparameters and the retardation factor.
-
-We average the importance for $R(c)$ over a set of $c$ values and obtain $0.033$ for \textbf{Physical Loss Factor}, $0.051$ for \textbf{Weight Initialization}, $0.159$ for \textbf{MSE Loss Factor}, and $0.570$ for \textbf{Max Epochs}.
-
-This indicates that \textbf{Max Epochs} and \textbf{MSE Loss Factor} have the largest impact on $R(c)$ overall. The seed used for weight initialization and the physical loss factor play only negligible roles.
-
-Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ over which the average was taken.
-
-
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/sensitivity.png}
-    \caption{Relative importance on the variance of $R(c)$ of each hyperparameter for different values of $c$.}
-    \label{fig:sensitivity}
-\end{figure}
-
-
-
-\section{Discussion}
-\subsection{Retardation Range} % TODO: better name?
-For some $c$ $R(c)$ does not affect the whole $c$ field equally. This can be seen by looking at Figure ~\vref{fig:triangle_ret_pertubation} which shows constant retardation curves that are pertubed additively by triangle functions with centers at different $c$ values. With increasing $c$ center, the error caused by the hat functions goes quickly to zero. For $c > 1$, the error becomes zero. This is because the concentration field $c(x,t)$ only contains values between $0$ and $1$. But there is also a noticeable difference between the maximum error measured on the full field vs. the BTC. The BTC error is consistently much lower.
-The full field error can not be detected in the case of experimental data as there is no access to the full field solution. For this reason, the range of $c$ values for which significant statements about the uncertainty of $R(c)$ can be made, is restricted to a narrow range. The exact range is difficult to estimate as the stength of influence for different retardations is unclear.
-
-
-\begin{figure}[h]
-    \centering
-    \includegraphics{figs/triangle_ret_pertubation.png}
-    \caption{Left: Retardations with triangle peaks. Middle: Concentration BTC for these Retardations. Right: MAE for each on the full field and BTC.}
-    \label{fig:triangle_ret_pertubation}
-\end{figure}
-
-
-\subsection{Samples and Prediction Intervals}
+\subsection{Summary}
 The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between Full-SPAN and MCMC.
 
-Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Data-SPAN due to the absence of noise in the synthetic data; and the utilization of less effective SPAN hyperparameters (such as excluding the strongest options like \textbf{Max Epoch} or \textbf{MSE loss factor}, as shown in Section ~\vref{sec:sensitivity}).
+Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Data-SPAN due to the absence of real noise and presence of artificial noise in the synthetic data, which, although introducing some level of uncertainty, does not represent a real distribution, rendering the application of PI3NN, our strongest method to generate datasets, unreasonable since it is designed to learn the underlying real distribution; and the utilization of less effective SPAN hyperparameters (such as excluding the strongest options like \textbf{Number of Epochs} or \textbf{MSE loss factor}, as shown in Section ~\vref{sec:sensitivity}).
 
-Interestingly, Data-SPAN does not demonstrate a substantial improvement in uncertainty estimation with an increasing number of samples, especially when compared to MCMC. This is a favorable characteristic, as it implies that Data-SPAN can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, SPAN benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with Data-SPAN's ability to operate effectively with fewer samples, establishes SPAN as a more computationally efficient method for UQ.
+Given that the hyperparameters of SPAN have a negligible impact on output variation relative to Data-SPAN, and considering Data-SPAN's ability to efficiently sample the entire space due to its one-dimensional nature, Full-SPAN requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that Full-SPAN can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, Full-SPAN benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes Full-SPAN as a more computationally efficient method for UQ.
+
+
+
 % TODO: I don't like how I sometimes use SPAN but mean Full-SPAN and stuff like this. Maybe I should introduce Para-SPAN and get rid of Full-SPAN?
 % TODO: Btw, I remember that I was told not to use the word "parameter" because this can be confused with something else.
 
-Although our sensitivity analysis indicated that certain hyperparameters exerted minimal influence on the results, their inclusion does not negatively affect performance. This is because Monte Carlo sampling, the core technique employed here, is inherently independent of dimensionality.
 
-Finally, a comparison of the PIs generated by Full-SPAN and MCMC, specifically the $R(c)$ PI, and their respective likelihoods, reveals comparable performance. Qualitatively, both methods appear to achieve a similar level of accuracy in capturing uncertainty.
 
 
 
@@ -670,6 +652,10 @@ Furthermore, the weighting process raises concerns. The BTC is constrained to a 
 
 
 \section{Conclusion}
+Although our sensitivity analysis indicated that certain hyperparameters exerted minimal influence on the results, their inclusion does not negatively affect performance. This is because Monte Carlo sampling, the core technique employed here, is inherently independent of dimensionality.
+
+Finally, a comparison of the PIs generated by Full-SPAN and MCMC, specifically the $R(c)$ PI, and their respective likelihoods, reveals comparable performance. Qualitatively, both methods appear to achieve a similar level of accuracy in capturing uncertainty.
+
 \subsection{Summary}
 This work investigated UQ for the retardation factor in a diffusion-sorption process using the FINN framework. We proposed two novel UQ methods, SPAN and Data-SPAN, based on perturbing hyperparameters and training data, respectively. Empirical analysis demonstrated the near uniqueness of the inverse problem, enabling interpretation of the UQ results. Although computationally more expensive than MCMC, our methods offer a different perspective on uncertainty by directly exploring the effects of various uncertainties within the training data and solver process.
 
@@ -691,4 +677,22 @@ This work investigated UQ for the retardation factor in a diffusion-sorption pro
     \includegraphics{figs/c_diss_field_full_black_test.png}
     \caption{Training data for the model, represented by a pcolor plot of the synthetic concentration field $c(x,t)$ generated using the Langmuir isotherm. The spatial domain is $x \in [0, 1]$ meters, and the temporal domain is $t \in [0, 10000]$ days. The period from $t = 1255$ to $t = 10000$ days is masked, indicating that these values are not used for training but are reserved for testing.}
     \label{fig:c_diss_field_full_black_test}
+\end{figure}
+
+
+
+
+\section*{Appendix}
+
+
+\subsection{Retardation Range} % is this an Ablation Study? % TODO: better name?
+For some $c$ $R(c)$ does not affect the whole $c$ field equally. This can be seen by looking at Figure ~\vref{fig:triangle_ret_pertubation} which shows constant retardation factors that are pertubed additively by triangle functions with centers at different $c$ values. With increasing $c$ center, the error caused by the hat functions goes quickly to zero. For $c > 1$, the error becomes zero. This is because the concentration field $c(x,t)$ only contains values between $0$ and $1$. But there is also a noticeable difference between the maximum error measured on the full field vs. the BTC. The BTC error is consistently much lower.
+The full field error can not be detected in the case of experimental data as there is no access to the full field solution. For this reason, the range of $c$ values for which significant statements about the uncertainty of $R(c)$ can be made, is restricted to a narrow range. The exact range is difficult to estimate as the stength of influence for different retardation factors is unclear.
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/triangle_ret_pertubation.png}
+    \caption{Left: Retardation factors with triangle peaks. Middle: Concentration BTC for these retardation factors. Right: MAE for each on the full field and BTC.}
+    \label{fig:triangle_ret_pertubation}
 \end{figure}

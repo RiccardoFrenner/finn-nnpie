@@ -404,31 +404,33 @@ Kombination dann: HyDa-NNPIE
 
 
 Methodology:
-- Methodology Section mit X statt h
-    - Dann mit Hyp
-    - Dann mit Data
-        - auch hier erklären was der hyperp jeweils macht (z.b bei seed sagen wie pytorch das initialisiert)
-- Noch eine section mit HyDa für die mathematische Kombination der beiden
+- [x] Methodology Section mit X statt h
+    - [x] Dann mit Hyp
+    - [x] Dann mit Data
+        - [x] auch hier erklären was der hyperp jeweils macht (z.b bei seed sagen wie pytorch das initialisiert)
+- [x] Noch eine section mit HyDa für die mathematische Kombination der beiden
 
 # Data and Setup
-- parameter (wie diff noch hier rein)
-- welche daten experimentell nutzt
-- welche daten synth nutzt
+- [x] parameter (wie diffusivity noch hier rein)
+- [x] welche daten experimentell nutzt
+- [x] welche daten synth nutzt
 ## synth data
 ## experimental data
-- wer gemacht hat
-- wie sie aussehen
+- [x] wer gemacht hat
+- [x] wie sie aussehen
 ## computational setup
-- computer specs
+- [x] computer specs
 ### training details
-- architecture
-- optimizer
+- [x] architecture
+- [x] optimizer
+
+
 
 # Results and Discussion (statt zwei verschi. Kapitel)
-(Experiments section jeweils an die entsprechende stelle)
+- [x] (Experiments section jeweils an die entsprechende stelle)
 
 ## synth
-folgende hypas: ... (keine Tabelle mehr)
+- [x] folgende hypas: ... (keine Tabelle mehr)
 ### hyparam
 ### Data
 - warum hier kein Data-NNPIE sondern synthdata + noise

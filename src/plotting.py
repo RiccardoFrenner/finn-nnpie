@@ -4,10 +4,10 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-FIGURE_WIDTH = 4
-FIGURE_HEIGHT = 2.5
+FIGURE_WIDTH = 3.0
+FIGURE_HEIGHT = 1.875
 
-FONT_SIZE = 14
+FONT_SIZE = 13
 
 
 _font_path = Path().home() / "Documents/lm2/lmroman10-regular.otf"
