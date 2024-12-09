@@ -309,14 +309,14 @@ The generalized framework above can be applied to different sources of uncertain
 
 In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperparameters $h$ of the solver. This variant, which we refer to as SPAN, captures epistemic uncertainty arising from the choice of hyperparameters. The equations above are applied directly with $\mathcal{X} = h$.
 
-\subparagraph{Hyperparameter Sampling}
-The following hyperparameters were selected for perturbation in the SPAN framework:
+\subparagraph{Hyperparameter Sampling and Rationale}
+The following hyperparameters were selected for perturbation in the SPAN framework to assess their influence on model output uncertainty. Each hyperparameter was chosen based on its inherent uncertainty or significant impact on the training process:
 
 \begin{itemize}
-    \item \textbf{Seed:} This hyperparameter influences various aspects of the model, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which is known for mitigating the vanishing/exploding gradient problem in deep networks by ensuring the variance of activations and gradients is maintained throughout the network. The seed values were sampled uniformly from the integer range $[0, 10^9]$.
-    \item \textbf{Number of Epochs:} This determines the number of training iterations the FINN model undergoes. The values were sampled uniformly from the integer range $[10, 30]$.
-    \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c))$. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
-    \item \textbf{Physical Loss Factor ($a_{Phys}$):} Similar to the MSE loss factor, this parameter weighs the contribution of the physical loss term, $Loss_{Phys}(\hat{R}(c))$, in the overall loss function. The values for $a_{Phys}$ were also sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
+    \item \textbf{Seed:} This hyperparameter dictates the initial conditions for the neural network training process. It influences various stochastic elements, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which mitigates the vanishing/exploding gradient problem in deep networks by ensuring consistent variance of activations and gradients throughout the network. \textit{Rationale:} The initialization of a neural network is a critical step, and the seed provides the starting point for optimization. Since a zero initialization is often detrimental, a random value is typically chosen. The impact of this fundamental choice on model output is important to quantify. Seed values were sampled uniformly from the integer range $[0, 10^9]$.
+    \item \textbf{Number of Epochs:} This parameter determines the number of complete passes the model makes over the training dataset during optimization. \textit{Rationale:}  Determining the optimal number of training epochs for a neural network is often challenging. While monitoring loss is a common practice, loss can sometimes decrease unexpectedly after long plateaus. This implies that the ideal stopping point is inherently uncertain. Additionally, selecting an inadequate number of epochs can mimic the effect of a poorly chosen learning rate. A learning rate that is too high may prevent convergence to the optimal solution, similar to stopping the training process prematurely. By varying the number of epochs, we can capture this uncertainty and its effect on the model's final predictions. The number of epochs was sampled uniformly from the integer range $[10, 30]$.
+    \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c))$. \textit{Rationale:} The optimal balance between the data-driven MSE loss and the physics-informed loss (described below) is often unknown a priori. There is no established theoretical framework to guide the selection of this factor, making it a source of uncertainty. Thus, by perturbing $a_{MSE}$, we investigate how the model's sensitivity to data fidelity influences its predictions. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
+    \item \textbf{Physical Loss Factor ($a_{Phys}$):}  This parameter, analogous to the MSE loss factor, governs the weight of the physical loss term, $Loss_{Phys}(\hat{R}(c))$, in the overall loss function. \textit{Rationale:} Similar to the MSE loss factor, the optimal weighting for the physics-informed loss is generally unknown and lacks a strong theoretical basis. By varying $a_{Phys}$, we explore how strongly the model relies on the underlying physical constraints and how this affects its predictions. The values for $a_{Phys}$ were also sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
 \end{itemize}
 
 
@@ -346,7 +346,8 @@ A unique seed, uniformly sampled from the integer range $[0, 10^9]$, was used to
 
 \subparagraph{PI3NN-based Random Dataset Sampling}
 \label{sec:random_dataset_sampling}
-To generate random datasets for Data-SPAN, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset $\mathcal{D}$. Let $\hat{c}(x=L, t; \theta_{\mathcal{D}})$ be the mean concentration curve predicted by FINN trained on the full dataset $\mathcal{D}$, with $\theta_{\mathcal{D}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
+To generate random datasets for Data-SPAN, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset of core 2 $\mathcal{D}_{\text{BTC-2}}$. For more detailed information about the data, see Section \vref{sec:experimental_data}.
+Let $\hat{c}(x=L, t; \theta_{\mathcal{D}_{\text{BTC-2}}})$ be the mean concentration curve predicted by FINN trained on $\mathcal{D}_{\text{BTC-2}}$, with $\theta_{\mathcal{D}_{\text{BTC-2}}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
 PI3NN then learns the residuals, effectively modeling the distribution of $c$ given $t$. Let $F^{-1}(q | t)$ denote the quantile function predicted by PI3NN, where $q \in [0, 1]$ is the quantile level and $t$ is the time point. This function provides the concentration value at time $t$ corresponding to the $q$-th quantile of the learned distribution (see Figure ~\vref{fig:btc_dataspan_quantiles}).
 
@@ -381,11 +382,58 @@ For both hyperparameter and dataset sampling, a few samples resulted in FINN not
 \subsection{Experimental Setup}
 The experiments were conducted using Python 3.11.3. Modified versions of the FINN code from \cite{finn} and the PI3NN code from \cite{pi3nn} were used. The code and specific library versions are available on GitHub. GNU parallel \cite{tange_2023_10199085} was used for parallel execution of experiments. % TODO: insert github link
 
-\subsection{Data Acquisition}
-The BTC data was obtained from the work by \cite{finn}, originally sourced from \cite{nowak2016entropy}. Synthetic data was generated using the same solver employed by FINN, ensuring consistency in the experimental setup.
+
+\subsection{Data}
+\paragraph{Synthetic Data}
+For the synthetic datasets, exactly the same parameter values as \cite{finn} (Table 1) were used by us (e.g. porosity, effective diffusion coefficient, ...).
+The concentration data was generated using the same solver employed by FINN, ensuring consistency in the experimental setup.
+
+
+\paragraph{Experimental Data}
+\label{sec:experimental_data}
+
+This study utilizes experimental data originally presented by \cite{nowak2016entropy} and subsequently employed by \cite{finn}. The data consist of breakthrough curves (BTCs) and a concentration profile, obtained from laboratory column experiments. These are detailed below and summarized in Table \vref{tab:experimental_data}.
+
+\begin{itemize}
+    \item \textbf{Core 1:} BTC data representing the concentration, $c$, at the outlet ($x = L$) of the column over time, $t$. Measurements were taken at $L = 0.0254\,\text{m}$, with time points spanning $t \in \{0.792\,\text{days} \cdot i \mid i = 0, \dots, 49\}$ (see Figure \vref{fig:core_data}, left).
+    \item \textbf{Core 2:} BTC data similar to Core 1, but with $L = 0.026\,\text{m}$ and time points $t \in \{0.737\,\text{days} \cdot i \mid i = 0, \dots, 54\}$ (see Figure \vref{fig:core_data}, middle).
+    \item \textbf{Core 2B:} Concentration profile data representing $c$ as a function of distance, $x$, along the column at a fixed time $T = 48.88\,\text{days}$. Measurements were taken at intervals of $0.00362\,\text{m}$, spanning $x \in \{0.00362\,\text{m} \cdot i \mid i = 0, \dots, 29\}$ (see Figure \vref{fig:core_data}, right).
+\end{itemize}
+
+\begin{table}[h!]
+    \centering
+    \caption{Summary of Experimental Data}
+    \label{tab:experimental_data}
+    \begin{tabular}{llll}
+        \toprule
+        Core   & Type       & Variables                 & Parameter Values                                      \\
+        \midrule
+        Core 1 & BTC        & $c(x=L, t)$              & $L = 0.0254\,\text{m}$, $t \in \{0.792\,\text{days} \cdot i \mid i = 0, \dots, 49\}$ \\
+        Core 2 & BTC        & $c(x=L, t)$              & $L = 0.026\,\text{m}$, $t \in \{0.737\,\text{days} \cdot i \mid i = 0, \dots, 54\}$  \\
+        Core 2B & Profile    & $c(x, t=T)$              & $T = 48.88\,\text{days}$, $x \in \{0.00362\,\text{m} \cdot i \mid i = 0, \dots, 29\}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Following the approach of \cite{finn}, Core 2 was used for model training, while Core 1 and Core 2B served as independent test datasets. The parameter values provided alongside the concentration data in \cite{nowak2016entropy} were also used.
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/core_data.png}
+    \caption{Experimental concentration data obtained from the ``Core 1'', ``Core 2'', and ``Core 2B'' sample (left to right) by \cite{nowak2016entropy}.}
+    \label{fig:core_data}
+\end{figure}
+
+
 
 \subsection{Training Details}
-Early stopping was implemented to halt training when the loss plateaued. Training runs for FINN were discarded if the normalized mean squared error (NMSE) exceeded $10^{-5}$ (measured on BTC), ensuring a minimum level of accuracy in the learned retardation factor.
+The architecture and training is consistent with \cite{finn}. For the dissolved concentration $c$, the function $\phi_D(c)$ is defined as a feedforward neural network with a 5-layer configuration of [1, 10, 20, 10, 1] neurons. For the total concentration $c_t$, $\phi_D(c_t)$ is defined as a scalar parameter to learn the unknown diffusion coefficient $D$. Although the FINN framework allows for learning the stencil, we did not utilize this feature in our implementation.
+
+The L-BFGS optimizer \cite{malouf2002comparison}
+
+During training, runs were discarded if the normalized mean squared error (NMSE) on the training set exceeded $10^{-5}$. This threshold ensures a minimum level of accuracy in the learned retardation factor.
+
 
 \begin{equation*}
     \text{NMSE}(y, \hat{y}) = \text{MSE}(y, \hat{y}) / \text{mean}(y)
@@ -631,6 +679,8 @@ This work investigated UQ for the retardation factor in a diffusion-sorption pro
 
 % TODO: I computed the likelihood also with a gaussian PI. I should also plot this Gaussian PI - maybe even with the reliability curve together.
 % TODO: replace .png with .pdf
+% TODO: I miss \textcite...
+% TODO: change \phi to \varphi
 
 
 
