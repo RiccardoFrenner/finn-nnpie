@@ -1,3 +1,38 @@
+# Notebooks that make plots:
+```yml
+talk_plot_3pinn.ipynb:
+    3pinn_illustration
+
+plots.ipynb:
+    btc_dataspan_quantiles
+    core_data
+    runtime_comparison
+
+talk_plots.ipynb:
+    c_diss_field_full
+    c_diss_field_train_random_subset
+    parametric_isotherms
+
+news_29102024.ipynb:
+    finn_dataspan_samples
+    finn_fullspan_samples
+    finn_mcmc_samples
+    finn_span_samples
+    finn_MCMCvsFull-SPAN_PIs
+    reliability_curves
+    sensitivity
+
+analyze_multiple_finn_dirs.ipynb:
+    finn_synthetic_SPAN_losspattern
+    finn_synthetic_SPAN_noise
+    finn_synthetic_SPAN_seed
+    
+~/Documents/dev/tests/pertubing_functions/:
+    ret_uniqueness
+    triangle_ret_pertubation
+```
+
+
 # TODOs
 
 - [x] What if I use mean for the loss in FINN?

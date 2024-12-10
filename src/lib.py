@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import time
+import random
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -897,6 +898,19 @@ def compute_core2B_profile(finn_dir: FinnDir, u_and_ret=None) -> np.ndarray:
     return profile
 
 
+def random_logunif(min_val, max_val):
+    # Sample a value from the log-uniform distribution
+    log_min_val = np.log10(min_val)
+    log_max_val = np.log10(max_val)
+    
+    # Uniformly sample a value from the log space
+    log_val = np.random.uniform(log_min_val, log_max_val)
+    
+    # Convert back to normal scale
+    val = 10 ** log_val
+    return val
+
+
 class Training:
     def __init__(
         self,
@@ -956,13 +970,21 @@ class Training:
             self.train_losses = self.checkpoint["loss_train"]
 
     def model_train(
-        self, *, u0: torch.Tensor, t: torch.Tensor, data: torch.Tensor
+        self, *, u0: torch.Tensor, t: torch.Tensor, data: torch.Tensor, random_hypers=False
     ) -> None:
         finn_dir = self.finn_dir
         u = torch.linspace(0.0, 2.0, 100).view(-1, 1)  # TODO: Adjust limits and n
         np.save(finn_dir.u_ret_path, u)
 
         criterion = torch.nn.MSELoss()
+
+        if random_hypers:
+            loss_phys_fac = random_logunif(1e2, 1e8)
+            loss_mse_fac = random_logunif(1e2, 1e8)
+        else:
+            loss_phys_fac = 1000 * self.phys_mult
+            loss_mse_fac = self.error_mult
+
 
         def closure():
             # Set the model to training mode
@@ -982,7 +1004,7 @@ class Training:
             )
             pred = ((ode_pred[:, 0, -2] - ode_pred[:, 0, -1]) * cauchy_mult).squeeze()
 
-            loss = self.error_mult * criterion(data, pred)
+            loss = loss_mse_fac * criterion(data, pred)
 
             # Extract the predicted retardation factor function for physical
             # regularization
@@ -993,9 +1015,7 @@ class Training:
             # Physical regularization: value of the retardation factor should
             # decrease with increasing concentration
             loss_physical = (
-                1000
-                * self.phys_mult
-                * torch.mean(torch.relu(ret_temp[:-1] - ret_temp[1:]))
+                loss_phys_fac * torch.mean(torch.relu(ret_temp[:-1] - ret_temp[1:]))
             )
             self.latest_mse_loss = loss
             self.latest_physical_loss = loss_physical
@@ -1073,7 +1093,7 @@ class Training:
             )
             axs[1].legend()
             fig.savefig(finn_dir.image_dir / f"learned_data_{epoch}.png")
-            # plt.show()
+            plt.close(fig)
 
             assert self.latest_ode_pred is not None
             assert self.latest_pred is not None
@@ -1128,11 +1148,17 @@ def solve_diffusion_sorption_pde_bash(
 
 
 def finn_fit_retardation(
-    out_dir, is_exp_data: bool, c_train_path=None, t_train_path=None, **finn_dict
+    out_dir, is_exp_data: bool, c_train_path=None, t_train_path=None, random_hypers=False, **finn_dict
 ):
     finn_dir = FinnDir(Path(out_dir))
     if finn_dir.is_done:
         return
+
+    if random_hypers:
+        SEED = time.time_ns() % 10**9
+        torch.manual_seed(SEED)
+        random.seed(SEED)
+        np.random.seed(SEED)
 
     finn_params = FinnParams.from_dict(is_exp_data=is_exp_data, **finn_dict)
     finn_dir.finn_params_path.write_text(json.dumps(finn_params.to_dict()))
@@ -1168,7 +1194,7 @@ def finn_fit_retardation(
         start_lr=finn_params.start_lr,
         use_adam_optim=finn_params.use_adam_optim,
     )
-    trainer.model_train(u0=c0, t=t_train, data=c_train)
+    trainer.model_train(u0=c0, t=t_train, data=c_train, random_hypers=random_hypers)
 
     finn_dir.done_marker_path.touch()
 
