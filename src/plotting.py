@@ -83,6 +83,9 @@ def savefig(fig: plt.Figure, path, tight=True):
     path = Path(path)
     if tight:
         fig.tight_layout()
-    fig.savefig(path.with_suffix(".png"))
-    fig.savefig(path.with_suffix(".svg"))
-    fig.savefig(path.with_suffix(".pdf"))
+
+    for suffix in "png", "svg", "pdf":
+        folder = path / suffix
+        folder.mkdir(exist_ok=True, parents=True)
+        fig.savefig((folder / suffix / path).with_suffix("." + suffix))
+

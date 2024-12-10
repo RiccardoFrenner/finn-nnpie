@@ -3,3 +3,5 @@ data*
 data_out*
 *.pyc
 commands.txt
+paper/figs
+paper/old_figs
