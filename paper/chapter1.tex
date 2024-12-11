@@ -165,7 +165,7 @@ This empirical evidence of uniqueness provides a foundation for subsequent uncer
 There are two main aspects of UQ in this context:
 \begin{enumerate}
     \item UQ for FINN output: $p(\hat{c}(x,t) | \mathcal{D})$. This represents the probability distribution of the predicted contaminant concentration $\hat{c}(x,t)$ obtained from the FINN model, given the data $\mathcal{D}$.
-    \item UQ for the predicted retardation factor: $p(\hat{R}(c) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor.
+    \item UQ for the predicted retardation factor: $p(\hat{R}(c) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor. However, it is important to note that variations in $R(c)$ do not uniformly affect the entire concentration field. The effective range over which $R(c)$ significantly influences the observable concentrations is limited. This means that although $p(\hat{R}(c) | \mathcal{D})$ is strongly uncertain for some $c$, $p(\hat{c}(x,t) | \mathcal{D})$ may not inherit that property for the same $c$ (see Appendix for a more detailed analysis and illustration of the effective range of $R(c)$).
 \end{enumerate}
 
 But there are also two types of uncertainty that have to be differentiated \cite{depeweg2018decomposition, gawlikowski2023survey}:
@@ -347,6 +347,8 @@ A unique seed, uniformly sampled from the integer range $[0, 10^9]$, was used to
 
 \subparagraph{PI3NN-based Random Dataset Sampling}
 \label{sec:random_dataset_sampling}
+It is important to note that, although the training dataset contains noise and therefore inherently captures aleatoric uncertainty, neural networks by default learn the mean of the data. Thus, training on random subsets of the data, which represent plausible realizations of the true underlying process, would result in minimal output variation as the mean changes only slightly across these realizations, as can be seen in our Mask-based approach. To address this, we instead generate datasets that also include highly unlikely realizations of the true data, using PI3NN. This approach explores the space of possible outputs significantly better as can be seen by the results in Section ~/vref{sec:results_and_discussion}.
+
 To generate random datasets for Da-NNPIE, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset of core 2 $\mathcal{D}_{\text{BTC-2}}$. For more detailed information about the data, see Section \vref{sec:experimental_data}.
 Let $\hat{c}(x=L, t; \theta_{\mathcal{D}_{\text{BTC-2}}})$ be the mean concentration curve predicted by FINN trained on $\mathcal{D}_{\text{BTC-2}}$, with $\theta_{\mathcal{D}_{\text{BTC-2}}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
 
@@ -447,9 +449,16 @@ During training, runs were discarded if the normalized mean squared error (NMSE)
 
 \chapter{Results and Discussion}
 \label{sec:results_and_discussion}
-% TODO: I think I did not explain anywhere, why I did synth data experiments even.
 
 \section{Synthetic Data Case}
+Before applying our methods to the experimental data, we first developed and validated them using synthetic data. This synthetic data case serves several crucial purposes:
+\begin{enumerate*}
+    \item Synthetic data provides a controlled environment where the ground truth retardation factor, $R(c)$, is known. This allows us to directly assess the accuracy of our methods in recovering the true underlying relationship, which is not possible with experimental data where the true $R(c)$ is unknown.
+    \item By generating data with known properties (e.g., specific parametric isotherms, controlled noise levels), we can thoroughly test the capabilities and limitations of our proposed NNPIE variants under different conditions. This helps us identify potential issues and refine the methods before tackling the complexities of real-world experimental data.
+    \item The simulations with synthetic data are less computationally expensive than those with experimental data since the NODE solver needs fewer (adaptive) timesteps due to the larger amount of training data points. This allows for faster experimentation and iteration during the development and testing phase.
+    \item The synthetic setting enables us to systematically explore the influence different data perturbation techniques in a simplified setting. This provides valuable insights into the sensitivity of the model to these factors, which guides our analysis of the experimental data.
+\end{enumerate*}
+
 \subsection{Hy-NNPIE}
 We developed and validated our method using synthetic data prior to its application on experimental data, where actual comparisons and quantifications could be performed. As a result, our initial evaluation focused on a simplified parameter space, with only a single hyperparameter, namely the weight initialization seed.
 The number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts.
@@ -533,9 +542,8 @@ Figure ~\vref{fig:sensitivity} shows the relative importance for values of $c$ o
 
 
 \subsection{Da-NNPIE}
-This approach was applied only to the experimental data because the synthetic training data lacks noise, leading to extremely small residuals and a very narrow distribution that does not impact sampling. % TODO: Bit weird intro
-
-For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vref{sec:random_dataset_sampling}. The results are shown in Figure ~\vref{fig:dataspan_samples}.
+For experimental data we applied the PI3NN-based sampling technique detailed in Section ~\vref{sec:random_dataset_sampling}, since we determined this to be the more effective than the approaches investigated for synthetic data. And since the experimental data contains sufficient noise, this method is able to return datasets with significant variation.
+These datasets were then used to train $70$ separate instances of FINN, resulting in a distribution of learned retardation factors. The results, visualized in Figure ~\vref{fig:dataspan_samples}, demonstrate the range of retardation factors that are consistent with the variability in the experimental data.
 
 
 \begin{figure}[h]
@@ -549,7 +557,7 @@ For the experimental data, we sampled $70$ quantiles as detailed in Section ~\vr
 
 \subsection{HyDa-NNPIE}
 % TODO: Simulations for this have not been done yet.
-This approach is equivalent to Da-NNPIE but additionally, for every sampled quantile, the hyperparameters are also randomly sampled. The results are shown in Figure ~\vref{fig:fullspan_samples}.
+Building upon the Da-NNPIE approach, we now combine both hyperparameter and data uncertainty to create a more comprehensive assessment of the overall uncertainty in the learned retardation factor. This method, termed HyDa-NNPIE, simultaneously samples both hyperparameters (according to the ranges defined for Hy-NNPIE) and generates random datasets using the PI3NN-based sampling technique from Da-NNPIE. Thus, for each of the 70 sampled quantiles, we additionally sample a random set of hyperparameters. Each hyperparameter-dataset pair is then used to train a separate FINN instance, resulting in a diverse set of retardation factor predictions. By exploring this broader space of possibilities, we aim to capture the combined effects of both epistemic and aleatoric uncertainties. Figure ~\vref{fig:fullspan_samples} presents the resulting distribution of retardation factors, illustrating the wider range of possibilities obtained by considering both sources of uncertainty.
 
 \begin{figure}[h]
     \centering
@@ -561,10 +569,11 @@ This approach is equivalent to Da-NNPIE but additionally, for every sampled quan
 
 
 \subsection{HyDa-NNPIE vs. MCMC}
+Having explored the capabilities of HyDa-NNPIE, we now turn to a comparative analysis against the established BNN approach using MCMC sampling, which serves as our baseline. This comparison aims to evaluate the relative performance of HyDa-NNPIE in capturing uncertainty and its computational efficiency. We specifically focus on comparing the prediction intervals for the retardation factor and the corresponding concentration fields, as well as the runtime and likelihood of the resulting distributions of each method.
 
 \paragraph{Baseline (Bayes NN via MCMC)}
-We computed $10$k samples using the same parameters as \cite{finn}; the samples are visualized in Figure ~\vref{fig:mcmc_samples}.
-% TODO: Why 10k? This is very important to know for arguing about efficiency.
+For our baseline, we employ the MCMC sampling method detailed in Section ~\vref{sec:bayes_nn}, following the approach and parameters used in \cite{finn}. Specifically, we use the Barker method and generate 10,000 samples, thinning the chain by saving only every 10th sample to reduce autocorrelation. This significantly higher number of samples, compared to our proposed methods, is necessary due to the inherent characteristics of MCMC. While a burn-in period is typically required in MCMC to discard initial samples before convergence, initializing the chain with a pre-trained model mitigates the need for a burn-in phase, as evidenced by the reduced downward trend in the log posterior trace plot (see Figure 8 in \cite{finn}). However, the remaining fluctuations in the log posterior (Figure 9 in \cite{finn}) necessitate a large number of iterations to adequately explore the posterior distribution and obtain a representative sample. These samples, visualized in Figure ~\vref{fig:mcmc_samples}, ultimately represent draws from the posterior distribution of the retardation factor, parameterized by a neural network, capturing both aleatoric and epistemic uncertainty.
+
 
 \begin{figure}[h!]
     \centering
@@ -575,7 +584,8 @@ We computed $10$k samples using the same parameters as \cite{finn}; the samples 
 
 
 \paragraph{Retardation Factor Uncertainty Comparison}
-Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and HyDa-NNPIE methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime. Given that HyDa-NNPIE produces similar $c$ PIs but incorporates larger uncertainty in $R$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections.
+Figure ~\vref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and HyDa-NNPIE methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime (as detailed in Appendix).
+Given that HyDa-NNPIE produces similar PIs for $c$ but incorporates larger uncertainty in $R(c)$, it provides a more robust uncertainty estimate. A more quantitative exploration of these findings is presented in the following sections. % TODO: check if this is really true
 
 \begin{figure}[h!]
     \centering
@@ -608,12 +618,23 @@ However, when considering the total number of samples used for both methods, our
 
 \paragraph{Likelihood Comparison}
 \label{sec:likelihood}
-To evaluate the predictive quality of our method, we use its samples to estimate a probability distribution. This is done by computing a histogram. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution. We transform the likelihood into a negative log-likelihood (NLL) to obtain more accurate results. A lower NLL is better. Applying this procedure on Hy-NNPIE yields a NLL of $-6.41$, $-7.11$ for MCMC, and $-7.14$ for Da-NNPIE. A good baseline to compare this against, is a normal distribution around the FINN BTC prediction mean and standard deviation equal to the sample standard deviation computed from the residuals:
+To evaluate the predictive quality of our methods in terms of capturing the uncertainty in the retardation factor, we use the generated samples to estimate a probability distribution for the concentration data. This is achieved by computing a histogram over the predicted concentration samples. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution and transform it into a negative log-likelihood (NLL) for more accurate numerical computation. A lower NLL generally indicates a better fit to the data. Applying this procedure, Hy-NNPIE yields an NLL of $-6.41$, MCMC an NLL of $-7.11$, and Da-NNPIE an NLL of $-7.14$. It is important to note that the primary goal of our methods was not to directly model the distribution of the training data, but rather to quantify the uncertainty in the retardation factor. The NLL computation serves as a proxy to evaluate the effectiveness of the methods in achieving this goal. To provide a baseline for comparison, we also consider a simple Gaussian distribution centered around the FINN BTC prediction mean, with a standard deviation equal to the sample standard deviation computed from the residuals:
+
 \begin{equation*}
     p(c; t) = \frac{1}{\sqrt{2 \pi \mathcal{s}^2}} \exp(-\frac{1}{2 \mathcal{s}^2} (\hat{c}(x=L, t; \theta_{\mathcal{D}}) - c)^2)
 \end{equation*}
-This yields a NLL of $-7.50$, which is the lowest value. % TODO: Interpretation
 
+This Gaussian baseline yields an NLL of $-7.50$, which is lower than the NLLs obtained from our methods. This suggests that directly modeling the variations in concentration data via a Gaussian fit outperforms methods that first produce variations in the retardation factor and subsequently map them back to variations in concentrations. This also supports the basic assumption of a gaussian likelihood used by all sampling methods. However, this simple Gaussian baseline serves primarily as an interpretable benchmark for the NLL values, rather than a direct competitor to our methods, which focus on the more complex task of uncertainty quantification in the retardation factor.
+
+
+Figure ~\vref{fig:nll_comparison} visualizes the NLLs.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{figs/nll_comparison.pdf}
+    \caption{Negative log-likelihood (NLL) of the training data given the predicted distributions of the different sampling methods as well as a baseline Gaussian distribution.}
+    \label{fig:nll_comparison}
+\end{figure}
 
 
 \paragraph{PI Calibration Comparison}
@@ -637,14 +658,6 @@ The analysis of our results reveals several key insights regarding the performan
 Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to several factors: a larger number of datapoints, which reduces epistemic uncertainty; the reduced effectiveness of Da-NNPIE due to the absence of real noise and presence of artificial noise in the synthetic data, which, although introducing some level of uncertainty, does not represent a real distribution, rendering the application of PI3NN, our strongest method to generate datasets, unreasonable since it is designed to learn the underlying real distribution; and the utilization of less effective hyperparameters (such as excluding the strongest options like \textbf{Number of Epochs} or \textbf{MSE loss factor}, as shown in Section ~\vref{sec:sensitivity}).
 
 Given that the hyperparameters Hy-NNPIE have a negligible impact on output variation relative to Da-NNPIE, and considering Da-NNPIE's ability to efficiently sample the entire space due to its one-dimensional nature, HyDa-NNPIE requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that HyDa-NNPIE can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, HyDa-NNPIE benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes HyDa-NNPIE as a more computationally efficient method for UQ.
-
-
-% TODO: Btw, I remember that I was told not to use the word "parameter" because this can be confused with something else.
-
-
-
-
-
 
 
 
@@ -680,19 +693,10 @@ Finally, a more rigorous theoretical analysis of the proposed UQ methods would b
 
 
 
-
-% TODO: I miss \textcite...
-% TODO: Justify hyperparameter ranges.
-% TODO: How where PI3NN Hyperparameters chosen?
-
-
-
-
-
 \section*{Appendix}
 
 
-\subsection*{Retardation Range} % is this an Ablation Study? % TODO: better name?
+\subsection*{Effective Range of $R(c)$ Influence} % TODO: is this an Ablation Study?
 It is observed that $R(c)$ does not affect the entire $c$ field uniformly. This can be illustrated by examining Figure ~\vref{fig:triangle_ret_pertubation}, which depicts constant retardation factors perturbed additively by triangle functions centered at different $c$ values. As the center of the triangle function increases, the error caused by the perturbation rapidly diminishes and becomes zero for $c > 1$. This is because the concentration field $c(x,t)$ is bounded between 0 and 1. Furthermore, there is a notable discrepancy between the maximum error measured over the full field and the error measured in the breakthrough curve (BTC). The BTC error is consistently lower than the full field error.
 
 However, in the case of experimental data, the full field error cannot be detected, as the full field solution is not accessible. Consequently, the range of $c$ values for which meaningful statements can be made about the uncertainty of $R(c)$ is limited to a narrow range. The exact extent of this range is difficult to estimate, as the strength of influence of different retardation factors is not well understood.
@@ -705,3 +709,11 @@ As a result, we restrict our analysis and plotting of $R(c)$ to the range $0 \le
     \caption{Left: Retardation factors with triangle peaks. Middle: Concentration BTC for these retardation factors. Right: MAE for each on the full field and BTC.}
     \label{fig:triangle_ret_pertubation}
 \end{figure}
+
+
+
+% TODO: I miss \textcite...
+% TODO: Justify hyperparameter ranges.
+% TODO: How where PI3NN Hyperparameters chosen?
+% TODO: Btw, I remember that I was told not to use the word "parameter" because this can be confused with something else.
+
