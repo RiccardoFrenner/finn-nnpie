@@ -79,7 +79,7 @@ def set_concentration_axes_stuff(ax: plt.Axes, xticks=None, yticks=None, core="2
         # )
 
 
-def savefig(fig: plt.Figure, path, tight=True):
+def savefig(fig: plt.Figure, path, tight=True, **kwargs):
     path = Path(path)
     if tight:
         fig.tight_layout()
@@ -87,5 +87,5 @@ def savefig(fig: plt.Figure, path, tight=True):
     for suffix in "png", "svg", "pdf":
         folder = path.parent / suffix
         folder.mkdir(exist_ok=True, parents=True)
-        fig.savefig((folder / path.name).with_suffix("." + suffix))
+        fig.savefig((folder / path.name).with_suffix("." + suffix), **kwargs)
 
