@@ -1,28 +1,28 @@
 \chapter{Introduction}
 
 \section{Motivation}
-Understanding and predicting the transport of contaminants in groundwater is paramount for effective environmental remediation and protection. Although traditional modeling approaches, based on parametric models with few fitted parameters, are useful for many applications, machine learning-based approaches can offer improved accuracy and generalizability, especially when sufficient data are available to address limitations in parametric model assumptions \cite{finn}. Specifically, these traditional models often fail to accurately predict contaminant concentrations, leading to unreliable estimates of groundwater quality. Furthermore, their limitations stem from the specific assumptions used in their derivation, which can be overly simplistic or restrictive, hindering their ability to capture the complexity of real-world systems and making them less effective for predicting contaminant transport in diverse environments.
+Accurate prediction of groundwater contaminant transport is crucial for environmental protection. While traditional parametric models are useful, they can struggle to accurately predict contaminant concentrations, leading to unreliable groundwater quality estimates. This limitation often stems from overly simplistic assumptions that fail to capture the complexity of real-world systems, potentially limiting their effectiveness in diverse environments, unlike machine learning approaches that can offer improved accuracy given sufficient data \cite{finn}.
 
-The Finite Volume Neural Network (FINN) \cite{finn} offers a promising alternative, leveraging a physics-aware, data-driven approach to learn various parts of the physical process directly from experimental data. This allows for greater flexibility and interpretability compared to traditional methods. However, with the increased complexity of FINN, solving the inverse problem of determining how uncertainties in the data propagate to the model's output becomes more challenging. Efficient and reliable uncertainty quantification (UQ) is crucial for determining the confidence in predicted contaminant transport. Existing UQ methods for FINN, such as Bayesian Neural Networks with Markov Chain Monte Carlo (MCMC) sampling \cite{bardenet2017markov}, can be computationally demanding, limiting their practical applicability. This work addresses these limitations by proposing computationally efficient UQ methods for FINN, enabling faster and similarly reliable uncertainty estimation for contaminant transport predictions.
+The Finite Volume Neural Network (FINN) \cite{finn} offers a promising alternative, leveraging a physics-aware, data-driven approach to learn various parts of the physical process directly from experimental data. This allows for greater flexibility and interpretability compared to traditional methods. However, with the increased complexity of FINN, determining how uncertainties in the data propagate to the model's output becomes more challenging. Efficient and reliable uncertainty quantification (UQ) is crucial for determining the confidence in predicted contaminant transport. Existing UQ methods for FINN, such as Bayesian Neural Networks with Markov Chain Monte Carlo (MCMC) sampling \cite{bardenet2017markov}, can be computationally demanding, limiting their practical applicability. This work addresses these limitations by proposing computationally efficient UQ methods for FINN, enabling faster and similarly reliable uncertainty estimation for contaminant transport predictions.
 
 
 \section{Background}
-The transport of contaminants in groundwater is a complex process involving various physical and chemical interactions. One crucial aspect is diffusion-sorption, where contaminants dissolved in groundwater can interact with the solid phase of the porous medium, such as clay, leading to sorption and desorption processes. This interaction significantly affects the migration and fate of contaminants.
+The transport of contaminants in groundwater is a complex process involving various physical and chemical interactions. Specifically, a key mechanism within this complex transport is diffusion-sorption, where contaminants dissolved in groundwater can interact with the solid phase of the porous medium, such as clay, leading to both sorption and desorption processes. Sorption, the process by which contaminants attach to the solid phase of the porous medium, can significantly influence the rate and extent of contaminant migration. Conversely, desorption is the release of contaminants from the solid phase back into the groundwater. These combined processes of sorption and desorption significantly affect the migration and fate of contaminants.
 
 Traditional approaches for modeling contaminant transport rely on numerical solutions of partial differential equations (PDEs) that describe the physical processes. These PDEs often involve parameters that are difficult to measure directly, necessitating the development of parametric models based on physical principles and specific assumptions.
-One key parameter in these models is the retardation factor, $R(c)$, which quantifies the effect of sorption on contaminant transport. Sorption, the process by which contaminants attach to the solid phase of the porous medium, can significantly influence the rate and extent of contaminant migration. The retardation factor is typically a function of the contaminant concentration, $c$, and depends on the specific interaction between the contaminant and the soil properties.
-A common way to define $R(c)$ is via parametric models of sorption isotherms. Among the most frequently used are the linear, Freundlich, and Langmuir isotherms \cite{finn} (see \cref{fig:parametric_isotherms}).
+One key parameter in these models is the retardation factor, $R(c)$, which quantifies the effect of sorption on contaminant transport. It is typically a function of the contaminant concentration, $c$, and depends on the specific interaction between the contaminant and the soil properties.
+A common way to define $R(c)$ is via parametric models of sorption isotherms. The linear, Freundlich, and Langmuir isotherms, illustrated in \cref{fig:parametric_isotherms}, are among the most frequently used.
 
-Determining the retardation factor from concentration data is an inverse problem. Instead of directly solving the PDE with known parameters, the goal is to infer the unknown retardation factor $R(c)$ from observed concentration data. This inverse problem is challenging due to the limited availability and potential noise in the data, as well as the complexity of the underlying sorption processes. Even without noise, uniqueness is not guaranteed for implicit equations. To date, we are not aware of any studies that have mathematically or empirically investigated the uniqueness of the retardation factor for the diffusion-sorption PDE given concentration data and boundary conditions. Understanding the uniqueness of the retardation factor is crucial because it significantly impacts the assessment of uncertainty. If multiple mathematically exact solutions exist, then differences between two solutions obtained by the inverse solver cannot be attributed to uncertainties in the data alone but may reflect inherent non-uniqueness in the problem itself.
+Determining the retardation factor from concentration data is an inverse problem. Instead of directly solving the PDE with known parameters, the goal is to infer the unknown retardation factor $R(c)$ from observed concentration data. This inverse problem is challenging due to the limited availability and potential noise in the data, as well as the non-linearity of the underlying PDE. Even without noise, uniqueness is not guaranteed for implicit equations such as these. To date, we are not aware of any studies that have mathematically or empirically investigated the uniqueness of the retardation factor for the diffusion-sorption PDE given concentration data and boundary conditions. Understanding the uniqueness of the retardation factor is crucial because it significantly impacts the assessment of uncertainty. If multiple mathematically exact solutions exist, then differences between two solutions cannot be attributed to uncertainties in the data alone but may reflect inherent non-uniqueness in the problem itself.
 
 Recent advances like physics-informed neural networks in ML have opened up new possibilities for modeling complex physical systems, including contaminant transport. ML-based approaches can learn intricate relationships from data, offering potential advantages over traditional methods in terms of accuracy, flexibility, and generalizability. FINN \cite{finn} is a physics-aware ML approach that combines the strengths of traditional numerical methods with the adaptability of neural networks. FINN leverages the finite volume method to discretize the governing PDE and employs neural networks to learn the unknown or uncertain components, such as the retardation factor. This allows FINN to incorporate physical constraints and conservation laws while simultaneously learning from data.
 
-While FINN has shown promising results in modeling contaminant transport, quantifying the uncertainty associated with its predictions remains a challenge. Existing UQ methods for FINN, such as Bayesian Neural Networks (BNNs) with MCMC sampling, can be computationally demanding, limiting their practical applicability. This motivates the development of more efficient UQ methods for FINN, which is the focus of this study. Our goal is to develop computationally efficient UQ methods for estimating the uncertainty in the retardation factor predicted by FINN, enabling faster and more reliable assessment of contaminant transport predictions.
+While FINN has shown promising results in modeling contaminant transport, quantifying the uncertainty associated with its predictions remains a challenge. Existing UQ methods for FINN, such as Bayesian Neural Networks (BNNs) with MCMC sampling, are computationally demanding, limiting their practical applicability. This motivates the development of more efficient UQ methods for FINN, which is the focus of this study. Our goal is to develop computationally efficient UQ methods for estimating the uncertainty in the retardation factor predicted by FINN, enabling faster and more reliable assessment of contaminant transport predictions.
 
 \begin{figure}[h]
     \centering
     \includegraphics{figs/parametric_isotherms.pdf}
-    \caption{Parametric linear, Freundlich, and Langmuir sorption isotherms.}
+    \caption{Parametric Langmuir, Freundlich, and linear sorption isotherms.}
     \label{fig:parametric_isotherms}
 \end{figure}
 
@@ -32,7 +32,7 @@ This study addresses UQ in the FINN framework when applied to a diffusion-sorpti
 
 A novel framework tailored for FINN, called NNPIE (Neural Network Prediction Interval Estimation), is introduced to assess both aleatoric and epistemic uncertainty, allowing us to construct prediction intervals for the retardation factor.
 
-We apply this framework to synthetic and experimental data to quantify the uncertainty of the retardation factor and compare the performance of our proposed methods against a BNN baseline employing MCMC sampling. Our results demonstrate that NNPIE provides a computationally efficient alternative to MCMC for obtaining prediction intervals for the retardation factor, offering valuable insights into the reliability of the estimated parameter.
+We apply this framework to synthetic and experimental data to quantify the uncertainty of the retardation factor and compare the performance of our proposed methods against a BNN baseline employing MCMC sampling. Our results demonstrate that NNPIE provides a computationally efficient alternative to the baseline for obtaining prediction intervals for the retardation factor.
 
 
 \section{Related Work}
@@ -41,7 +41,7 @@ Existing UQ methods for PDEs often rely on computationally expensive Monte Carlo
 
 
 \section{Outline of this Work}
-This paper is organized as follows: \Cref{sec:basics} introduces the diffusion-sorption equation governing contaminant transport, formalizes the inverse problem of determining the retardation factor, and reviews the FINN, PI3NN, and BNN methodologies. We also present an empirical analysis of the uniqueness of the retardation factor inverse problem. \Cref{sec:methodology} details our proposed Neural Network Prediction Interval Estimation (NNPIE) framework for UQ in FINN, including its variants for hyperparameter and data uncertainty. \Cref{sec:data_and_setup} describes the synthetic and experimental datasets used for evaluation and the experimental setup. Results and discussion are presented in \cref{sec:results_and_discussion}, comparing NNPIE with the BNN/MCMC baseline in terms of accuracy, runtime, likelihood, and reliability. Finally, \cref{sec:conclusion} summarizes our findings, discusses limitations, and outlines future research directions.
+This paper is organized as follows: \Cref{sec:basics} introduces the diffusion-sorption equation governing contaminant transport, formalizes the inverse problem of determining the retardation factor, and reviews the FINN, PI3NN, and BNN methodologies. We also present an empirical analysis of the uniqueness of the retardation factor inverse problem. \Cref{sec:methodology} details our proposed Neural Network Prediction Interval Estimation (NNPIE) framework for UQ in FINN, including its variants for hyperparameter and data uncertainty. \Cref{sec:data_and_setup} describes the synthetic and experimental datasets used for evaluation and the experimental setup. Results and discussion are presented in \cref{sec:results_and_discussion}, comparing NNPIE with the BNN/MCMC baseline in terms of accuracy, runtime, likelihood, and reliability. Finally, \cref{sec:final_remarks} summarizes our findings, discusses limitations, and outlines future research directions.
 
 
 
@@ -49,7 +49,7 @@ This paper is organized as follows: \Cref{sec:basics} introduces the diffusion-s
 \label{sec:basics}
 
 \section{Problem Statement}
-The diffusion-sorption process, governed by a PDE, describes contaminant transport in groundwater. This process was studied in a laboratory experiment by \textcite{nowak2016entropy}, and the setup is adopted in the numerical experiments performed here. Experimentally, data can be obtained from a soil cylinder, including breakthrough curves at a fixed location ($x=L$) over time ($t \in [0, T_{\text{end}}]$), and a concentration profile at a specific time ($t=T_{\text{end}}$) across the cylinder's length ($x \in [0,L]$). While a complete concentration field $c(x,t)$ (see \cref{fig:c_diss_field_full}) would be ideal, it is practically unobtainable, as measurements at all $x$-values require destructive sampling. Solving the PDE requires knowing the retardation factor, $R(c)$, which quantifies sorption and is dependent on soil properties. Since $R(c)$ is typically unknown, FINN is employed to learn it from the available data. However, uncertainties arise from measurement errors in the data and the non-uniqueness of the solver solution, leading to uncertainty in the learned retardation factor. Therefore, the goal is to estimate a prediction interval around the learned $R(c)$ to quantify this uncertainty.
+The diffusion-sorption process, governed by a PDE, describes contaminant transport in groundwater. This process was studied in a laboratory experiment by \textcite{nowak2016entropy}, and the setup is adopted in the numerical experiments performed here. Experimentally, data can be obtained from a soil cylinder, including breakthrough curves at a fixed location ($x=L$) over time ($t \in [0, T]$), and a concentration profile at a specific time ($t=T$) across the cylinder's length ($x \in [0,L]$). While a complete concentration field $c(x,t)$ (see \cref{fig:c_diss_field_full}) would be ideal, it is practically unobtainable, as measurements at interior $x$-values require destructive sampling. Solving the PDE requires knowing the retardation factor, $R(c)$, which quantifies sorption and is dependent on soil properties. Since $R(c)$ is typically unknown, FINN is employed to learn it from the available data. However, uncertainties arise e.g.\@ from measurement errors in the data and the non-uniqueness of the solver solution, leading to uncertainty in the learned retardation factor. Therefore, the goal is to estimate a prediction interval around the learned $R(c)$ to quantify this uncertainty.
 
 \begin{figure}[h]
     \centering
@@ -94,29 +94,45 @@ The goal is to learn $\hat{R}(c;\theta)$ (represented by a neural network) given
 
 
 \section{Finite Volume Neural Network (FINN)}
+FINN \cite{finn} is a specialized machine learning approach that combines the strengths of traditional numerical methods with the adaptability of neural networks to solve PDEs with unknown or uncertain components. It combines the finite volume method (FVM) discretization with a neural ordinary differential equation (NODE) \cite{chen2019neuralordinarydifferentialequations} approach to learn and solve PDEs by converting them into an ODE using FVM and employing NODE for integration and learning of the PDE constituents. The core of FINN is the flux kernel, $F_i$, which approximates the exchange between adjacent control volumes. For a 1D case, each flux kernel is composed of two subkernels, $F_i = \{f_{i-}, f_{i+}\}$ at the respective surface elements. These subkernels are modeled using neural networks. Each subkernel $f$ is composed of two modules:
 
-FINN \cite{finn} is a specialized machine learning approach that combines the strengths of traditional numerical methods with the adaptability of neural networks to solve PDEs with unknown or uncertain components. It leverages the Finite Volume Method (FVM), dividing the problem domain into discrete control volumes. The core of FINN lies in its use of ``flux kernels'' $F_i$ – neural networks that learn how quantities flow between neighboring volumes. Specifically, each volume has a flux kernel composed of two subkernels, $f_{i-}$ and $f_{i+}$, one for each direction, which model these fluxes based on the concentrations in the volume and its neighbors. These subkernels consist of two parts: a ``stencil'' component $\varphi_N$ that approximates the FVM spatial scheme and a ``diffusivity'' component $\varphi_D$ that learns how the flow rate depends on the concentration itself:
+\begin{enumerate}
+    \item $\varphi_{N}$: A linear layer approximating the FVM stencil. It represents the contribution of neighboring control volumes and the direction of flux. Typically, it is close to $[-1, 1]$. When both subkernels are combined, the coefficients become $[1, -2, 1]$ following the central discretization scheme of the second-order spatial derivative:
+    \begin{equation*}
+    \frac{\partial^2 c}{\partial x^2} \approx \frac{c_{i-1} - 2c_i + c_{i+1}}{\Delta x^2}
+    \end{equation*}
 
+    \item $\varphi_{D}$: A module accounting for the (potentially nonlinear) diffusion coefficient, such that $\varphi_D(c_i) \approx D(c_i)$.
+\end{enumerate}
+The subkernels are then calculated as:
 \begin{align*}
-    f_{i-} &= \varphi_D(c_i) \cdot \varphi_N(c_i, c_{i-1}) \\
-    f_{i+} &= \varphi_D(c_i) \cdot \varphi_N(c_i, c_{i+1}).
+f_{i-} &= \varphi_D(c_i) \cdot \varphi_{N_{i-}}(c_i, c_{i-1}), \\
+f_{i+} &= \varphi_D(c_i) \cdot \varphi_{N_{i+}}(c_i, c_{i+1})
 \end{align*}
+FINN also introduces a state kernel $S_i$ to model $\frac{\partial c}{\partial t}$:
+\begin{equation*}
+S_i(c_i, f_{i-}, f_{i+}) = (\varPhi(c_i) + f_{i-} + f_{i+}) \approx \frac{\partial c_i}{\partial t},
+\end{equation*}
+where $\varPhi(c_i)$ is an optional neural network module representing reaction terms.
 
-Furthermore, FINN employs ``state kernels'' $S_i$ that take the local concentration and calculated fluxes as input to update the concentration over time. This time evolution is governed by a Neural Ordinary Differential Equation (NODE) solver \cite{chen2019neuralordinarydifferentialequations}, a differentiable method that integrates seamlessly into the neural network training. By integrating FVM discretization, specialized neural network modules, and a NODE solver, FINN is capable of learning complex time-dependent spatial patterns while adhering to physical conservation laws and boundary conditions.
+FINN is trained by minimizing a loss function that combines a data-driven error and a physical constraint term:
+\begin{equation*}
+\mathcal{L} = \frac{1}{N_e} \sum_{i=1}^{N_e} (c_i - \hat{c}_i)^2 + \frac{1}{N_p} \sum_{j=1}^{N_p} E_{p,j},
+\end{equation*}
+where $c$ is the training data, $\hat{c}$ is FINN's prediction, $N_e$ is the number of data points, $E_{p,j}$ is the physical constraint, and $N_p$ is the number of data points used for the physical constraint. The physical constraint can enforce properties like a monotonically decreasing retardation factor or a positive diffusion coefficient, which is also what we chose in this work.
 
 
 
 \section{Uniqueness of the Inverse Problem}
 \label{sec:uniqueness}
 
-As a prerequisite for uncertainty quantification, it is crucial to investigate whether the inverse problem of determining the retardation factor, $R(c)$, from concentration data is unique. Non-uniqueness, meaning multiple possible $R(c)$ functions could produce the same concentration field, would complicate the interpretation of any UQ results. Instead of a purely theoretical analysis, we conduct an empirical investigation into the uniqueness of $R(c)$ for our specific problem.
+As a prerequisite for uncertainty quantification, it is crucial to investigate whether the inverse problem of determining the retardation factor $R(c)$ from concentration data is unique. Non-uniqueness, meaning multiple possible $R(c)$ functions could produce the same concentration field, would complicate the interpretation of any UQ results. Instead of a purely theoretical analysis, we conduct an empirical investigation into the uniqueness of $R(c)$ for our specific problem.
 
-Our approach leverages the available synthetic concentration data generated using known $R(c)$ functions (\emph{e.g.} Langmuir, Freundlich, and linear isotherms). We rearrange the diffusion-sorption PDE \ref{eq:diff-sorpt-pde} to explicitly solve for $R(c)$:
+Our approach leverages the available synthetic concentration data generated using parametric $R(c)$ functions (e.g.\@ Langmuir, Freundlich, and linear isotherms). We rearrange the diffusion-sorption PDE (\ref{eq:diff-sorpt-pde}) to explicitly solve for $R(c)$:
 
-\begin{equation}
+\begin{equation*}
     R(c) = D \frac{\partial^2 c}{\partial x^2} \left/ \frac{\partial c}{\partial t} \right .
-    \label{eq:rearranged_pde}
-\end{equation}
+\end{equation*}
 
 We then numerically approximate the first-order time derivative ($\partial c / \partial t$) and the second-order spatial derivative ($\partial^2 c / \partial x^2$) of the concentration field $c(x,t)$ using a B-spline surrogate model. This spline allows us to estimate the derivatives at any point within the spatial and temporal domain of the data.
 
@@ -129,34 +145,34 @@ We then numerically approximate the first-order time derivative ($\partial c / \
     \label{fig:ret_uniqueness}
 \end{figure}
 
-The results suggest that, for these synthetic datasets, the inverse problem of determining $R(c)$ from concentration data is largely unique, apart from minor numerical inaccuracies. The binned and averaged $R(c)$ values closely follow the trend of the analytical isotherms, indicating that our approach can recover the underlying retardation behavior with reasonable accuracy.
+The results suggest that, for these synthetic datasets, the inverse problem of determining $R(c)$ from concentration data is largely unique, apart from minor numerical inaccuracies. The binned and averaged $R(c)$ values closely match the analytical isotherms, demonstrating the approach's ability to recover the generating function. The fact that no other significantly different functions are observed suggests the inverse problem is likely unique.
 
-This empirical evidence of uniqueness provides a foundation for subsequent uncertainty quantification. It suggests that discrepancies between different $R(c)$ solutions obtained using FINN can be attributed primarily to aleatoric uncertainty (\emph{e.g.} measurement noise) and epistemic uncertainty (\emph{e.g.} limitations in model knowledge) rather than inherent non-uniqueness in the inverse problem itself.
+This empirical evidence of uniqueness provides a foundation for subsequent uncertainty quantification. It suggests that discrepancies between different $R(c)$ solutions obtained using FINN can be attributed primarily to aleatoric uncertainty (e.g.\@ measurement noise) and epistemic uncertainty (e.g.\@ limitations in model knowledge) rather than inherent non-uniqueness in the inverse problem itself.
 
 
 
 \section{Uncertainty Quantification}
-There are two main aspects of UQ in this context:
+There are two main aspects of UQ in the context of our diffusion-sorption problem:
 \begin{enumerate}
     \item UQ for the forward problem solution: $p(\hat{c}(x,t;\theta) | \mathcal{D})$. This represents the probability distribution of the predicted contaminant concentration $\hat{c}(x,t;\theta)$ obtained from the FINN model, given the data $\mathcal{D}$.
-    \item UQ for the inverse problem solution: $p(\hat{R}(c;\theta) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c;\theta)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor. However, it is important to note that variations in $R(c)$ do not uniformly affect the entire concentration field. The effective range over which $R(c)$ significantly influences the observable concentrations is limited. This means that although $p(\hat{R}(c;\theta) | \mathcal{D})$ is strongly uncertain for some $c$, $p(\hat{c}(x,t;\theta) | \mathcal{D})$ may not inherit that property for the same $c$ (see \cref{app:supplementary} for a more detailed analysis and illustration of the effective range of $R(c)$).
+    \item UQ for the inverse problem solution: $p(\hat{R}(c;\theta) | \mathcal{D})$. This is arguably more important because it represents the probability distribution of the predicted retardation factor $\hat{R}(c;\theta)$ given the data $\mathcal{D}$. This distribution helps in understanding the confidence in the estimated retardation factor.
 \end{enumerate}
 
 In general, there are also two types of uncertainty that must be differentiated \cite{depeweg2018decomposition, gawlikowski2023survey}:
 
 \begin{enumerate}
     \item Aleatoric uncertainty: This arises from inherent randomness in the data and the physical system. It is irreducible and is caused by factors such as measurement noise and variability in the system parameters.
-    \item Epistemic uncertainty: This stems from limited knowledge of the model (\emph{e.g.} uncertainty over its parameters). It is associated with model structure, neural network architecture, and limited training data. It quantifies the model's predictive uncertainty.
+    \item Epistemic uncertainty: This stems from limited knowledge of the model (e.g.\@ uncertainty over its parameters). It is associated with model structure, neural network architecture, and limited training data. It quantifies the model's predictive uncertainty.
 \end{enumerate}
 
-While a clear decomposition into aleatoric and epistemic uncertainty is often challenging, as seen with methods like BNNs using MCMC, our primary focus is on quantifying the overall predictive uncertainty, which includes both components. However, our method has the added advantage of decomposing the uncertainty by design, providing a more precise and interpretable quantification of both aleatoric and epistemic uncertainty.
+While a clear decomposition into aleatoric and epistemic uncertainty is often challenging, as seen with methods like BNNs using MCMC, our primary focus is on quantifying the overall predictive uncertainty, which includes both components. However, our method has the added advantage of decomposing the uncertainty by design, providing a more precise and interpretable quantification of the combined uncertainty.
 
 
 
 \subsection{Bayesian Neural Networks}
 \label{sec:bayes_nn}
-This section describes the baseline methodology used for comparison, which employs Bayesian neural networks (BNNs) and MCMC to estimate the posterior distribution of the retardation factor $\hat{R}(c(x,t))$, parameterized by a neural network (NN). The retardation factor is a function of concentration $c$, which itself is a function of spatial position $x$, and time $t$. This approach updates prior beliefs about the retardation factor based on observed data $\mathcal{D}$.
-For comparison, we adopt the same setup for the prior, likelihood, and other modeling choices as outlined in \cite{finn}.
+This section describes the baseline methodology used for comparison, which employs Bayesian neural networks (BNNs) and MCMC to estimate the posterior distribution of the retardation factor $\hat{R}(c;\theta)$, parameterized by a neural network (NN). This approach updates prior beliefs about the parameters of $\hat{R}(c;\theta)$ based on observed data $\mathcal{D}$.
+For comparison, we adopt the same model choices (e.g.\@ prior, likelihood) as \textcite{finn}.
 
 \paragraph{Prior Distribution}
 
@@ -169,7 +185,7 @@ p(\theta) = \mathcal{N}(\theta | \theta_{PT}, \Sigma_p) .
 
 \paragraph{Likelihood Function}
 
-The likelihood function, $p(\mathcal{D} | \theta)$, quantifies the probability of observing the data $\mathcal{D}$ given a specific set of NN parameters $\theta$. We assume that additive Gaussian noise with standard deviation $\sigma$ corrupts the observed concentrations. Let $\hat{c}(x,t;\theta)$ be the concentration predicted by the model (using a FINN solver with $\hat{R}(c(x,t);\theta)$). Then, the likelihood is:
+The likelihood function, $p(\mathcal{D} | \theta)$, quantifies the probability of observing the data $\mathcal{D}$ given a specific set of NN parameters $\theta$. We assume that additive Gaussian noise with standard deviation $\sigma$ corrupts the observed concentrations. Let $\hat{c}(x,t;\theta)$ be the concentration predicted by FINN. Then, the likelihood is:
 
 \begin{equation}
 p(\mathcal{D} | \theta) = \prod_{(x_i, t_i, c_i) \in \mathcal{D}} \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left( -\frac{(c_i - \hat{c}(x_i,t_i;\theta))^2}{2\sigma^2} \right) .
@@ -189,10 +205,10 @@ The accepted samples $\{\theta_i\}$ from the used algorithm are then treated as 
 
 \paragraph{Posterior of Retardation Function}
 
-Finally, the posterior distribution of the retardation factor $\hat{R}(c;\theta)$ is obtained by evaluating the NN with the sampled parameters $\{\theta_i\}$:
+Finally, the posterior distribution of the retardation factor $\hat{R}(c;\theta)$ is obtained by evaluating it with the sampled parameters $\{\theta_i\}$:
 
 \begin{equation*}
-\{\hat{R}(c | \theta_i)\} \sim p(\hat{R}(c;\theta) | \mathcal{D}) .
+\{\hat{R}(c;\theta_i)\} \sim p(\hat{R}(c;\theta) | \mathcal{D}) .
 \end{equation*}
 
 This set of retardation factor samples provides a probabilistic description of the retardation behavior, incorporating the uncertainty arising from the limited and noisy data.
@@ -204,19 +220,24 @@ Since \textcite{finn} obtained the best results with the Barker method and no bu
 \subsection{PI3NN (Prediction Intervals from Three Neural Networks)}
 PI3NN, introduced by \textcite{pi3nn}, is a method for constructing prediction intervals (PIs) using three independently trained neural networks. It aims to provide tight, non-crossing PIs across various confidence levels without requiring retraining for each level.
 
-The method's theoretical foundation lies in approximating the ground-truth PI bounds with a family of neural networks. Specifically, PI3NN approximates the median of the target variable, $M[y]$, and the expected deviations above and below the median, $E[(y - M[y]) \ind{y-M[y]>0}]$ and $E[(M[y] - y) \ind{M[y]-y>0}]$, respectively, employing three independently trained neural networks for the three tasks.
-The three networks within PI3NN can be implemented using various architectures, including standard Multilayer Perceptrons (MLPs), offering flexibility in model selection. The networks are typically trained by minimizing the mean squared error (MSE) loss function. Notably, the two networks tasked with estimating the expected deviations above and below the median require a slight modification to ensure their outputs are strictly positive, reflecting the nature of deviations. To achieve this, a transformation of the network output is applied using the function $\sqrt{x^2 + \epsilon}$, where $\epsilon$ is a small constant (\emph{i.e.} $\epsilon \ll 1$), introduced for numerical stability.
+The method's theoretical foundation lies in approximating the ground-truth PI bounds with a family of neural networks. Specifically, PI3NN approximates the median of the target variable, $M[y]$, and the expected deviations (residuals) above and below the median, $E[(y - M[y]) \ind{y-M[y]>0}]$ and $E[(M[y] - y) \ind{M[y]-y>0}]$, respectively, employing three independently trained neural networks for the three tasks.
+The three networks within PI3NN can be implemented using various architectures, including standard Multilayer Perceptrons (MLPs), offering flexibility in model selection. The networks are typically trained by minimizing the mean squared error (MSE) loss function. Notably, the two networks tasked with estimating the expected deviations above and below the median require a slight modification to ensure their outputs are strictly positive/negative, reflecting the nature of deviations. To achieve this, a transformation of the network output is applied using the function $\sqrt{x^2 + \epsilon}$, where $\epsilon$ is a small constant (i.e.\@ $\epsilon \ll 1$), introduced for numerical stability.
 
-Once trained, PI3NN constructs the PI bounds as linear combinations of the three networks' outputs. The coefficients of these linear combinations ($\alpha$ and $\beta$) are determined through a root-finding algorithm that ensures the desired PICP (Prediction Interval Coverage Probability) for a given confidence level $q$ ($\gamma$ in \cite{pi3nn}). This process allows for calculating PIs for multiple confidence levels without retraining the networks, offering significant computational advantages.
+Once trained, PI3NN constructs the PI bounds as linear combinations of the three networks' outputs:
+\begin{align*}
+    U &= M[y] + \alpha \, E[(y - M[y]) \ind{y-M[y]>0}], \\
+    L &= M[y] - \beta \, E[(M[y] - y) \ind{M[y]-y>0}]. \\
+\end{align*}
+The coefficients of these linear combinations ($\alpha$ and $\beta$) are determined through a root-finding algorithm that ensures the desired PICP (Prediction Interval Coverage Probability) for a given confidence level $q$ ($\gamma$ in \cite{pi3nn}). The PICP is calculated by counting how many data points from a validation set fall within the predicted interval, and then dividing that count by the total number of data points in the validation set. This process allows for calculating PIs for multiple confidence levels without retraining the networks, offering significant computational advantages.
 
 \Cref{fig:3pinn_illustration} illustrates the six-step breakdown of the PI3NN process:
 \begin{enumerate}
     \item \textbf{Learn the mean:} Train a neural network to approximate the mean of the target data.
-    \item \textbf{Estimate the median:} Calculate the median by shifting the learned mean.
+    \item \textbf{Compute the median:} Calculate the median by shifting the learned mean.
     \item \textbf{Calculate and split residuals:} Compute the residuals between the actual data and the estimated median, then separate these into positive and negative residuals.
     \item \textbf{Learn residuals:} Train two more neural networks, one to approximate the positive residuals and the other to approximate the negative residuals.
-    \item \textbf{Construct PI:} Calculate a PI using the learned median and the learned positive and negative residuals.
-    \item \textbf{Generate multiple PIs:} Use a root-finding algorithm to compute PIs for different confidence levels $q$ without retraining the networks.
+    \item \textbf{Construct PI:} Calculate a PI with unknown confidence level using the learned median and residuals with arbitrary $\alpha$ and $\beta$.
+    \item \textbf{Fit the PI to a confidence level:} Choose any confidence level $q$ for the PI and use a root-finding algorithm with the PICP function to find suitable coefficients $\alpha$ and $\beta$.
 \end{enumerate}
 
 
@@ -234,13 +255,13 @@ Once trained, PI3NN constructs the PI bounds as linear combinations of the three
 \chapter{Methodology}
 \label{sec:methodology}
 \section{NNPIE (Neural Network Prediction Interval Estimation)}
-Our objective is to determine the posterior predictive distribution $p(\hat{R}(c;\theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed breakthrough curve data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$.
+Our objective is to determine the posterior predictive distribution $p(\hat{R}(c;\theta) = R(c)| \mathcal{D})$, which represents the probability of computing a specific retardation factor value $R(c)$ for a given concentration $c$, based on the observed data $\mathcal{D}$. We present a method that computes this distribution by marginalizing over uncertain factors, denoted by $\mathcal{X}$, of the model and employing an approximate likelihood function $p(\mathcal{D} | \mathcal{X})$.
 
-\subsection{Approximating the Posterior Predictive Distribution via Marginalization over Uncertain Factors}
+\subsection{General Case}
 
 \paragraph{Model Formulation}
-We represent our NN as $\hat{R}(c;\theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(h, \tilde{\mathcal{D}})$, which takes hyperparameters $h$ and training data $\tilde{\mathcal{D}}$ \footnote{We distinguish between $\tilde{\mathcal{D}}$, representing the training dataset used by the solver, and $\mathcal{D}$, the overall observed dataset, used, for example, for evaluation.} as input. These inputs to the solver represent the uncertain factors $\mathcal{X}$. A prior distribution $p(\mathcal{X})$ is assigned over $\mathcal{X}$; the exact form of $p(\mathcal{X})$ is not crucial for the derivation, as it suffices to generate samples from it.
-When we choose to treat $h$ or the training data $\tilde{\mathcal{D}}$ as a random variable, thus becoming $\mathcal{X}$, the network parameters $\theta = S(h, \tilde{\mathcal{D}})$ become a random variable and thus uncertain. We denote this by $\theta_{\mathcal{X}}$.
+We represent our NN as $\hat{R}(c;\theta)$, where $c$ is the input concentration and $\theta$ denotes the network's parameters (weights and biases). The parameters $\theta$ are determined by a deterministic solver $S(h, \tilde{\mathcal{D}})$, which takes hyperparameters $h$ and training data $\tilde{\mathcal{D}}$ \footnote{We distinguish between $\tilde{\mathcal{D}}$, representing the training dataset used by the solver, and $\mathcal{D}$, the overall observed dataset, used, for example, for evaluation.} as input. Any (or both) inputs to the solver represent the uncertain factors $\mathcal{X}$. A prior distribution $p(\mathcal{X})$ is assigned over $\mathcal{X}$; the exact form of $p(\mathcal{X})$ is not crucial for the derivation, as it suffices to generate samples from it.
+When we choose to treat $h$ or the training data $\tilde{\mathcal{D}}$ as a random variable, thus becoming $\mathcal{X}$, the network parameters $\theta = S(h, \tilde{\mathcal{D}})$ become a random variable and thus uncertain. We denote this by $\theta_{\mathcal{X}}$ to simplify notation.
 This allows us to calculate the posterior predictive distribution as follows:
 
 \begin{align*}
@@ -253,9 +274,9 @@ p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| \mathcal{D}) &= \int p(\hat{R}(c;\thet
 The first step is the marginalization over $\mathcal{X}$, the second the application of Bayes' theorem, and the last stems from the fact that the solver is deterministic given $\mathcal{X}$ and $\mathcal{D}$ and thus the distribution becomes a delta distribution.
 
 
-\paragraph{Importance Sampling}
+\paragraph{Sample Generation}
 
-Sampling from $p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| \mathcal{D})$ is equivalent to sampling from $p(\mathcal{X})$, evaluating the solver to obtain the model parameters $\theta_{\mathcal{X}}$, evaluating the model $\hat{R}(c;\theta_{\mathcal{X}})$, and re-weighting the samples with $w(\mathcal{X})$. This is the concept of importance sampling. To approximate the distribution, we draw $M$ samples $\{\mathcal{X}_m\}_{m=1}^M$ from the prior distribution $p(\mathcal{X})$ and calculate the importance weight for each:
+According to the above derivation, sampling from $p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| \mathcal{D})$ is equivalent to sampling from $p(\mathcal{X})$, evaluating the solver to obtain the model parameters $\theta_{\mathcal{X}}$, evaluating the model $\hat{R}(c;\theta_{\mathcal{X}})$, and re-weighting the samples with $w(\mathcal{X})$. To approximate the distribution, we draw $M$ samples $\{\mathcal{X}_m\}_{m=1}^M$ from the prior distribution $p(\mathcal{X})$ and calculate the weight for each:
 
 \begin{equation*}
 w_m = \frac{p(\mathcal{D} | \mathcal{X}_m)}{p(\mathcal{D})} \propto p(\mathcal{D} | \mathcal{X}_m) .
@@ -283,9 +304,9 @@ In this case, we consider the uncertain factor $\mathcal{X}$ to be the hyperpara
 The following hyperparameters were selected for perturbation to assess their influence on the model output uncertainty. Each hyperparameter was chosen based on its inherent uncertainty or significant impact on the training process:
 
 \begin{itemize}
-    \item \textbf{Weight Initialization Seed:} This hyperparameter dictates the initial conditions for the neural network training process. It influences various stochastic elements, including random number generation within algorithms and the initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which mitigates the vanishing/exploding gradient problem in deep networks by ensuring consistent variance of activations and gradients throughout the network. \textit{Rationale:} The initialization of a neural network is a critical step, and the seed provides the starting point for optimization. Since a zero initialization is often detrimental, a random value is typically chosen. The impact of this fundamental choice on model output is important to quantify. Seed values were sampled uniformly from the integer range $[0, 10^9]$.
-    \item \textbf{Number of Epochs:} This parameter determines the number of complete passes the model makes over the training dataset during optimization. \textit{Rationale:} Determining the optimal number of training epochs for a neural network is often challenging. While monitoring loss is a common practice, loss can sometimes decrease unexpectedly after long plateaus. This implies that the ideal stopping point is inherently uncertain. Additionally, selecting an inadequate number of epochs can mimic the effect of a poorly chosen learning rate. A learning rate that is too high may prevent convergence to the optimal solution, similar to stopping the training process prematurely. By varying the number of epochs, we can capture this uncertainty and its effect on the model's final predictions. The number of epochs was sampled uniformly from the integer range $[10, 30]$, since for most cases about 20 epochs are enough for FINN to converge.
-    \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c;\theta))$ and is minimized during training to ensure the predicted concentrations match the observed data while also adhering to the underlying physical principles. \textit{Rationale:} The optimal balance between the data-driven MSE loss and the physics-aware loss (described below) is often unknown a priori. There is no established theoretical framework to guide the selection of this factor, making it a source of uncertainty. Thus, by perturbing $a_{MSE}$, we investigate how the model's sensitivity to data fidelity influences its predictions. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$. This interval is also centered around the default factor which was $10^5$.
+    \item \textbf{Weight Initialization Seed:} This hyperparameter dictates the random initialization of network weights. We employed the Kaiming Uniform initialization scheme \cite{he2015delving}, which mitigates the vanishing/exploding gradient problem in deep networks by ensuring consistent variance of activations and gradients throughout the network. \textit{Rationale:} The initialization of a neural network is a critical step, and the seed provides the starting point for optimization. Since a zero initialization is often detrimental, a random value is typically chosen. The impact of this randomness on model output is important to quantify.
+    \item \textbf{Number of Epochs:} This parameter determines the number of complete passes the model makes over the training dataset during optimization. \textit{Rationale:} Determining the optimal number of training epochs for a neural network is often challenging. While monitoring loss is a common practice, loss can sometimes decrease unexpectedly after long plateaus. This implies that the ideal stopping point is inherently uncertain. By varying the number of epochs, we can capture this uncertainty and its effect on the model's final predictions. The number of epochs was sampled uniformly from the integer range $[10, 30]$, since for most cases about 20 epochs are enough for FINN to converge.
+    \item \textbf{MSE Loss Factor ($a_{MSE}$):} This factor weighs the contribution of the mean squared error (MSE) loss between the predicted concentration ($\hat{c}$) and the true concentration ($c$) in the overall loss function. The loss function is defined as: $a_{MSE} \cdot MSE(c, \hat{c}) + a_{Phys} \cdot Loss_{Phys}(\hat{R}(c;\theta))$ and is minimized during training to ensure the predicted concentrations match the observed data while also adhering to the underlying physical principles. \textit{Rationale:} The optimal balance between the data-driven MSE loss and the physics-aware loss (described below) is often unknown a priori. There is no established theoretical framework to guide the selection of this factor, making it a source of uncertainty. Thus, by perturbing $a_{MSE}$, we investigate how the model's sensitivity to data fidelity influences its predictions. The values for $a_{MSE}$ were sampled from a log-uniform distribution within the range $[10^2, 10^8]$. This interval is also centered around the default factor by \textcite{finn} which was $10^5$.
     \item \textbf{Physical Loss Factor ($a_{Phys}$):} This parameter, analogous to the MSE loss factor, governs the weight of the physics-aware loss term, $Loss_{Phys}(\hat{R}(c;\theta))$, in the overall loss function. The physical loss penalizes non-physical behavior by encouraging the predicted retardation factor to be a monotonically decreasing function of concentration. \textit{Rationale:} Similar to the MSE loss factor, the optimal weighting for the physics-aware loss is generally unknown and lacks a strong theoretical basis. By varying $a_{Phys}$, we explore how strongly the model relies on the underlying physical constraints and how this affects its predictions. The values for $a_{Phys}$ were also sampled from a log-uniform distribution within the range $[10^2, 10^8]$.
 \end{itemize}
 
@@ -293,12 +314,12 @@ The following hyperparameters were selected for perturbation to assess their inf
 
 \subsubsection{Da-NNPIE}
 
-Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Da-NNPIE, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$.
+Alternatively, we can consider the uncertain factor $\mathcal{X}$ to be the training dataset $\tilde{\mathcal{D}}$ itself. This variant, which we call Da-NNPIE, captures aleatoric uncertainty stemming from the inherent randomness in the data. The equations are applied with $\mathcal{X} = \tilde{\mathcal{D}}$. Different methods to generate $\tilde{\mathcal{D}}$ samples were explored.
 
 
 \paragraph{Mask-based Random Dataset Sampling}
 
-To create variations in the training data, we employed a random masking technique. For each sample, a unique seed was used to randomly select 50\% of the data points for masking to generate a random dataset. ``Masking'' in this context means that these data points were excluded when computing the loss during training. Each data point had an equal probability (0.5) of being masked or retained. The seed values were drawn uniformly from the integer range $[0, 10^9]$. \Cref{fig:training_data_mask} illustrates an example of the full synthetic concentration training data with 50\% of the data points randomly masked.
+To create variations in the training data, a random masking technique can be employed. For each sample, a unique seed was used to randomly select 50\% of the data points for masking to generate a random dataset. ``Masking'' in this context means that these data points were excluded when computing the loss during training. Each data point had an equal probability (0.5) of being masked or retained. \Cref{fig:training_data_mask} illustrates an example of the full synthetic concentration training data with 50\% of the data points randomly masked.
 
 \begin{figure}[h!]
     \centering
@@ -310,12 +331,12 @@ To create variations in the training data, we employed a random masking techniqu
 
 \paragraph{Noise-based Random Dataset Sampling}
 \label{sec:da-nnpie_gaussian_noise}
-Another approach to generate dataset variations involved the introduction of additive Gaussian noise. Following \textcite{nowak2016entropy}, which suggests measurement error can be modeled as Gaussian with zero mean and a standard deviation of 5\% of the measured value, we used this noise level to simulate data uncertainty comparable to experimental data. A unique seed, uniformly sampled from the integer range $[0, 10^9]$, was used to generate the noise for each dataset.
+Another approach to generate dataset variations involved the introduction of additive Gaussian noise. Following \textcite{nowak2016entropy}, which suggests measurement error can be modeled as Gaussian with zero mean and a standard deviation of 5\% of the measured value, we used this noise level to simulate data uncertainty comparable to experimental data.
 
 
 \paragraph{PI3NN-based Random Dataset Sampling}
 \label{sec:random_dataset_sampling}
-It is important to note that, although the training dataset contains noise and therefore inherently captures aleatoric uncertainty, neural networks by default learn the mean of the data. Thus, training on random subsets of the data, which represent plausible realizations of the true underlying process, would result in minimal output variation as the mean changes only slightly across these realizations. This can be seen in our mask-based approach. To address this, we instead generate datasets that also include highly unlikely realizations of the true data, using PI3NN. This approach explores the space of possible outputs significantly better, as can be seen by the results in \cref{sec:results_and_discussion}.
+It is important to note that, although the training dataset contains noise and therefore inherently captures aleatoric uncertainty, neural networks by default learn the mean of the data. Thus, training on random subsets of the data, which represent plausible realizations of the true underlying process, would result in minimal output variation as the mean changes only slightly across these realizations. This can be seen in our mask-based approach. To overcome this limitation, we propose our main contribution: PI3NN-based Random Dataset Sampling. This method generates datasets that also include highly unlikely realizations of the true data, using PI3NN. This approach explores the space of possible outputs significantly better, as can be seen by the results in \cref{sec:results_and_discussion}.
 
 To generate random datasets for Da-NNPIE, we leverage PI3NN, applying it to the original breakthrough curve (BTC) dataset of core 2, $\mathcal{D}_{\text{BTC-2}}$. For more detailed information about the data, see \cref{sec:experimental_data}.
 Let $\hat{c}(x=L,t;\theta_{\mathcal{D}_{\text{BTC-2}}})$ be the mean concentration curve predicted by FINN trained on $\mathcal{D}_{\text{BTC-2}}$, with $\theta_{\mathcal{D}_{\text{BTC-2}}}$ representing the learned FINN parameters. This FINN-predicted mean curve is used as input to the PI3NN algorithm, as it provides a more accurate representation of the underlying process compared to the mean curve learned by a standard MLP within the PI3NN framework.
@@ -325,10 +346,10 @@ PI3NN then learns the residuals, effectively modeling the distribution of $c$ gi
 To create a random dataset sample $\tilde{\mathcal{D}}(q)$, we sample a quantile level $q$ from a uniform distribution $\mathcal{U}(0, 1)$. Then, the random dataset sample is constructed as:
 
 $$
-\tilde{\mathcal{D}}(q) = \{ (t_i, F^{-1}(q | t_i) ) \}_{i=1}^N
+\tilde{\mathcal{D}}(q) = \{ (L, t_i, F^{-1}(q | t_i) ) \}_{i=1}^N
 $$
 
-This process is repeated $M$ times to obtain a collection of random datasets $\{\tilde{\mathcal{D}}_j\}_{j=1}^M$. Each $\tilde{\mathcal{D}}_j$ is then used to train a separate instance of FINN, effectively providing a set of retardation factor samples, analogous to the samples obtained from the hyperparameter perturbation approach.
+This process is repeated $M$ times to obtain a collection of random datasets $\{\tilde{\mathcal{D}}(q_j)\}_{j=1}^M$. Each $\tilde{\mathcal{D}}(q_j)$ is then used to train a separate instance of FINN, effectively providing a set of retardation factor samples, analogous to the samples obtained from the hyperparameter perturbation approach.
 
 To enhance the accuracy of the likelihood computation in \cref{sec:likelihood}, we intentionally include the quantile levels 0 and 1 in the random samples. This improves the fit of the distribution to the histogram of the samples.
 
@@ -419,16 +440,15 @@ on the training set exceeded $10^{-5}$. This threshold ensures a minimum level o
 Before applying our methods to the experimental data, we first developed and validated them using synthetic data. This synthetic data case serves several crucial purposes:
 \begin{enumerate*}
     \item Synthetic data provides a controlled environment where the ground truth retardation factor $R(c)$, is known. This allows us to directly assess the accuracy of our methods in recovering the true underlying relationship, which is not possible with experimental data where the true $R(c)$ is unknown.
-    \item By generating data with known properties (\emph{e.g.} specific parametric isotherms, controlled noise levels), we can thoroughly test the capabilities and limitations of our proposed NNPIE variants under different conditions. This helps us identify potential issues and refine the methods before tackling the complexities of real-world experimental data.
+    \item By generating data with known properties (e.g.\@ specific parametric isotherms, controlled noise levels), we can thoroughly test the capabilities and limitations of our proposed NNPIE variants under different conditions. This helps us identify potential issues and refine the methods before tackling the complexities of real-world experimental data.
     \item The simulations with synthetic data are less computationally expensive than those with experimental data since the NODE solver needs fewer (adaptive) time steps due to the larger number of training data points. This allows for faster experimentation and iteration during the development and testing phase.
     \item The synthetic setting enables us to systematically explore the influence of different data perturbation techniques in a simplified setting. This provides valuable insights into the sensitivity of the model to these factors, which guides our analysis of the experimental data.
 \end{enumerate*}
 
 \subsection{Hy-NNPIE}
-We developed and validated our method using synthetic data prior to its application on experimental data, where actual comparisons and quantifications could be performed. As a result, our initial evaluation focused on a simplified parameter space, with only a single hyperparameter, namely the \textit{weight initialization seed}.
-The number of samples varied and is indicated in the respective figure captions for clarity and comparison within those specific contexts.
+Our initial evaluation of Hy-NNPIE on synthetic data focused on a simplified parameter space, with only a single hyperparameter, namely the \textit{weight initialization seed}, for the reasons mentioned above.
 
-The influence of the seed for a synthetic dataset is relatively small, as can be seen in \cref{fig:synthetic_SPAN_seed}. Minor variations in the learned retardation factor $R(c)$, of less than 5\% are observed only at very low concentrations ($c$ < 0.1) and very high concentrations ($c$ > 0.8). For all other concentrations, the learned $R(c)$ values almost perfectly match the synthetic retardation factor.
+We found that the influence of the seed for a synthetic dataset is relatively small, as can be seen in \cref{fig:synthetic_SPAN_seed}. Minor variations in the learned retardation factor $R(c)$, of less than 5\% are observed only at very low concentrations ($c$ < 0.1) and very high concentrations ($c$ > 0.8). For all other concentrations, the learned $R(c)$ values almost perfectly match the synthetic retardation factor.
 
 
 \begin{figure}[h]
@@ -441,9 +461,9 @@ The influence of the seed for a synthetic dataset is relatively small, as can be
 
 
 \subsection{Da-NNPIE}
-When applying Gaussian noise of the same strength as the experimental data has, the variation in learned retardation factors becomes much larger compared to Hy-NNPIE as can be seen in \cref{fig:synthetic_SPAN_noise}.
-
-When applying Gaussian noise as detailed in \cref{sec:da-nnpie_gaussian_noise}, the variation in learned retardation factors ($R(c)$) increases substantially compared to the results obtained with Hy-NNPIE (\cref{fig:synthetic_SPAN_seed}). This is evident in the significantly wider spread of the $R(c)$ predictions. Specifically, the percentage variation in $R(c)$ at the bounds of the concentration interval is approximately 15\%, showing a considerable increase in uncertainty. Furthermore, even at intermediate concentration values, the variation in $R(c)$ remains substantial, reaching at least 6\%.
+\paragraph{Gaussian Noise}
+When Gaussian noise as detailed in \cref{sec:da-nnpie_gaussian_noise} is introduced, the resulting variations in learned retardation factors are significantly greater compared to those observed with Hy-NNPIE, as demonstrated in \cref{fig:synthetic_SPAN_noise}.
+Specifically, the percentage variation in $R(c)$ in the limits of the concentration interval is approximately 15\%, showing a considerable increase in uncertainty compared to the less than 5\% for Hy-NNPIE. Furthermore, even at intermediate concentration values, the variation in $R(c)$ remains substantial, reaching at least 6\%.
 
 \begin{figure}[h]
     \centering
@@ -452,7 +472,7 @@ When applying Gaussian noise as detailed in \cref{sec:da-nnpie_gaussian_noise}, 
     \label{fig:synthetic_SPAN_noise}
 \end{figure}
 
-
+\paragraph{Masking}
 Contrary to initial expectations, masking 50\% of the training data did not produce significantly larger variations in the learned retardation factors than varying the weight initialization seed, as demonstrated in \cref{fig:synthetic_SPAN_losspattern}. This suggests that, for this synthetic dataset and the inherent robustness of the FINN model, data subsetting at this level does not introduce considerably more uncertainty than variations in the network's initial state. A higher masking percentage might be required to observe more notable differences in model output.
 
 \begin{figure}[h]
@@ -462,6 +482,8 @@ Contrary to initial expectations, masking 50\% of the training data did not prod
     \label{fig:synthetic_SPAN_losspattern}
 \end{figure}
 
+\paragraph{PI3NN-based Dataset Sampling}
+The method encountered limitations when applied to the synthetic dataset. The absence of noise in the synthetic concentration data, coupled with FINN's highly accurate predictions, led to exceedingly small residuals, which made it difficult to apply the method effectively. In contrast, we demonstrate its successful application to experimental data in the following sections.
 
 
 
@@ -470,12 +492,12 @@ Contrary to initial expectations, masking 50\% of the training data did not prod
 \subsection{Hy-NNPIE}
 For the experimental data, the full set of hyperparameters was used: \textit{Weight Initialization Seed}, \textit{Number of Epochs}, \textit{MSE Loss Factor}, and \textit{Physical Loss Factor}.
 
-To introduce greater variability in the retardation factor output, we simultaneously sampled all hyperparameters, as opposed to the individual approach used in the synthetic data case. This experiment generated a dataset of 780 samples, based on the defined hyperparameter ranges, and the results are illustrated in \cref{fig:span_samples}.
+To introduce greater variability in the retardation factor output, we simultaneously sampled all hyperparameters. This experiment generated a dataset of 780 samples, based on the defined hyperparameter ranges, and the results are illustrated in \cref{fig:span_samples}.
 
 \begin{figure}[h]
     \centering
     \includegraphics{figs/finn_span_samples.pdf}
-    \caption{Retardation samples and corresponding concentration curves obtained via FINN by training with random hyperparameters.}
+    \caption{Retardation samples and corresponding concentration curves (black lines) obtained via FINN by training with random hyperparameters. Datasets are visualized by red circles.}
     \label{fig:span_samples}
 \end{figure}
 
@@ -483,7 +505,7 @@ To introduce greater variability in the retardation factor output, we simultaneo
 
 \subsection{Da-NNPIE}
 For experimental data, we applied the PI3NN-based sampling technique detailed in \cref{sec:random_dataset_sampling}, since we determined this to be more effective than the approaches investigated for synthetic data. And since the experimental data contains sufficient noise, this method is able to return datasets with significant variation.
-These datasets were then used to train 70 separate instances of FINN, resulting in a distribution of learned retardation factors. The results, visualized in \cref{fig:dataspan_samples}, demonstrate the range of retardation factors that are consistent with the variability in the experimental data.
+These datasets were then used to train 70 separate instances of FINN, resulting in a distribution of learned retardation factors. The results, visualized in \cref{fig:dataspan_samples}, demonstrate a much larger range of retardation factors compared to both the Hy-NNPIE approach for experimental data and the Da-NNPIE approach on synthetic data. Furthermore, the resulting concentration value samples derived from these retardation factors are consistent with the variability observed in the training data.
 
 
 \begin{figure}[h]
@@ -496,9 +518,9 @@ These datasets were then used to train 70 separate instances of FINN, resulting 
 
 
 \subsection{HyDa-NNPIE}
-Building upon the Da-NNPIE approach, we now combine both epistemic and aleatoric uncertainty to create a more comprehensive assessment of the overall uncertainty in the learned retardation factor. This method, termed HyDa-NNPIE, simultaneously samples both hyperparameters (according to the ranges defined for Hy-NNPIE) and generates random datasets using the PI3NN-based sampling technique from Da-NNPIE. Thus, for each of the 70 sampled quantiles, we additionally sample a random set of hyperparameters. Each hyperparameter-dataset pair is then used to train a separate FINN instance, resulting in a diverse set of retardation factor predictions. \Cref{fig:fullspan_samples} presents the resulting distribution of retardation factors, illustrating the wider range of possibilities obtained by considering both sources of uncertainty.
+Building upon the Da-NNPIE approach, we now combine both epistemic and aleatoric uncertainty to create a more comprehensive assessment of the overall uncertainty in the learned retardation factor. This method, termed HyDa-NNPIE, simultaneously samples both hyperparameters (according to the ranges defined for Hy-NNPIE) and generates random datasets using the PI3NN-based sampling technique from Da-NNPIE. Thus, for each of the 70 sampled quantiles, we additionally sample a random set of hyperparameters.
 
-The HyDa-NNPIE approach, combining epistemic and aleatoric uncertainty, showed no significant difference in overall uncertainty compared to Da-NNPIE (see \Cref{fig:dataspan_samples}). This indicates that the aleatoric uncertainty, stemming from data sampling, is the dominant factor influencing the retardation factor's uncertainty range. Specifically, the aleatoric uncertainty effectively dominates the contribution of epistemic uncertainty derived from hyperparameter sampling.
+\Cref{fig:fullspan_samples} presents the resulting retardation factor samples, illustrating no significant difference in overall uncertainty compared to Da-NNPIE (\cref{fig:dataspan_samples}). This indicates that the aleatoric uncertainty, stemming from data sampling, is the dominant factor influencing the retardation factor's uncertainty range. Specifically, the aleatoric uncertainty effectively dominates the contribution of epistemic uncertainty derived from hyperparameter sampling.
 
 \begin{figure}[h]
     \centering
@@ -510,9 +532,9 @@ The HyDa-NNPIE approach, combining epistemic and aleatoric uncertainty, showed n
 
 
 \subsection{HyDa-NNPIE vs. MCMC}
-Having explored the capabilities of HyDa-NNPIE, we now turn to a comparative analysis against the established BNN approach using MCMC sampling, which serves as our baseline. This comparison aims to evaluate the relative performance of HyDa-NNPIE in capturing uncertainty and its computational efficiency. We specifically focus on comparing the prediction intervals for the retardation factor and the corresponding concentration fields, as well as the runtime and likelihood of the resulting distributions of each method.
+Having explored the capabilities of NNPIE, we now turn to a comparative analysis against the established BNN approach using MCMC sampling, which serves as our baseline. This comparison aims to evaluate the relative performance of HyDa-NNPIE in capturing uncertainty and its computational efficiency. We specifically focus on comparing the prediction intervals for the retardation factor and the corresponding concentration fields, as well as the runtime and likelihood of the resulting concentration distributions of each method.
 
-\paragraph{Baseline (BNN via MCMC)}
+\paragraph{Baseline (BNN with MCMC)}
 For our baseline, we employ the MCMC sampling method detailed in \cref{sec:bayes_nn}, following the approach and parameters used by \textcite{finn}. Specifically, we use the Barker method, which \textcite{finn} found to be the most effective among their tested MCMC variants, outperforming both MH and MALA. We generate 10,000 samples using Barker, thinning the chain by saving only every 10th sample to reduce autocorrelation. This significantly higher number of samples, compared to our proposed methods, is necessary due to the inherent characteristics of MCMC. While a burn-in period is typically required in MCMC to discard initial samples before convergence, initializing the chain with a pre-trained model mitigates the need for a burn-in phase, as evidenced by the reduced downward trend in the log posterior trace plot (see Fig. 8 in \textcite{finn}). However, the remaining fluctuations in the log posterior (\cref{fig:mcmc_log_posterior}) necessitate a large number of iterations to adequately explore the posterior distribution and obtain representative samples. These samples, visualized in \cref{fig:mcmc_samples}, ultimately represent draws from the posterior distribution of the retardation factor, parameterized by a neural network, capturing both aleatoric and epistemic uncertainty.
 
 \begin{figure}[h!]
@@ -525,14 +547,14 @@ For our baseline, we employ the MCMC sampling method detailed in \cref{sec:bayes
 \begin{figure}[h!]
     \centering
     \includegraphics{figs/finn_mcmc_samples.pdf}
-    \caption{Retardation factors generated by MCMC sampling as detailed in \cref{sec:bayes_nn}.}
+    \caption{Retardation factors generated by a BNN with MCMC sampling as detailed in \cref{sec:bayes_nn}.}
     \label{fig:mcmc_samples}
 \end{figure}
 
 
 \paragraph{Retardation Factor Uncertainty Comparison}
-\Cref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and HyDa-NNPIE methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration fields, as these are less sensitive to $R(c)$ in that regime (as detailed in \cref{app:supplementary}).
-The HyDa-NNPIE PI for $R(c)$ is slightly tighter than the one obtained with MCMC, which leads to a correspondingly tighter PI for $c$. However, a wider $R(c)$ PI does not automatically indicate a better method. It is easy to achieve a large $R(c)$ PI, but this may result in a correspondingly large and potentially inaccurate $c$ PI. Since we have data for $c$, we can quantify the quality of the $c$ PI, and we will use this as a proxy to evaluate the quality of the $R(c)$ PI in the following sections.
+\Cref{fig:mcmc_vs_fullspan} illustrates that the 90\% PIs for both the MCMC and HyDa-NNPIE methods encompass similar concentration values. This agreement arises from their comparable coverage of $R(c)$ values when $c \leq 1$. While the methods diverge for larger values of $c$, this discrepancy has minimal impact on the concentration field, as it is less sensitive to $R(c)$ in that regime (as detailed in \cref{app:supplementary}).
+Overall, the HyDa-NNPIE PI for $R(c)$ is still slightly tighter than the one obtained with MCMC, which leads to a correspondingly tighter PI for $c$. However, a wider $R(c)$ PI does not automatically indicate a superior method. It is straightforward to achieve a large $R(c)$ PI, but this may result in a correspondingly large and potentially inaccurate $c$ PI. Since we have data for $c$, we can quantify the quality of the $c$ PI, and we will use this as a proxy to evaluate the quality of the $R(c)$ PI in the following sections.
 
 \begin{figure}[h!]
     \centering
@@ -544,10 +566,10 @@ The HyDa-NNPIE PI for $R(c)$ is slightly tighter than the one obtained with MCMC
 
 \paragraph{Likelihood Comparison}
 \label{sec:likelihood}
-To evaluate the predictive quality of our methods in terms of capturing the uncertainty in the retardation factor, we use the generated samples to estimate a probability distribution for the concentration data. This is achieved by computing a histogram over the predicted concentration samples. We can then estimate the likelihood of the training data $\mathcal{D}$ given this distribution and transform it into a negative log-likelihood (NLL) for more accurate numerical computation. A lower NLL generally indicates a better fit to the data. Applying this procedure, Hy-NNPIE yields an NLL of $-6.41$, MCMC an NLL of $-7.11$, and Da-NNPIE an NLL of $-7.14$. It is important to note that the primary goal of our methods was not to directly model the distribution of the training data, but rather to quantify the uncertainty in the retardation factor. The NLL computation serves as a proxy to evaluate the effectiveness of the methods in achieving this goal. To provide a baseline for comparison, we also consider a simple Gaussian distribution centered around the FINN BTC prediction mean, with a standard deviation equal to the sample standard deviation computed from the residuals:
+To evaluate the predictive quality of our methods in terms of capturing the uncertainty in the retardation factor, we use the generated samples to estimate a probability distribution for the concentration data. This is achieved by computing a histogram over the predicted concentration samples. We can then estimate the likelihood of the training data $\mathcal{D}_{\text{BTC-2}}$ given this distribution and transform it into a negative log-likelihood (NLL) for more accurate numerical computation. A lower NLL generally indicates a better fit to the data. Applying this procedure, Hy-NNPIE yields an NLL of $-6.41$, MCMC an NLL of $-7.11$, and Da-NNPIE an NLL of $-7.14$. It is important to note that the primary goal of our methods was not to directly model the distribution of the training data, but rather to quantify the uncertainty in the retardation factor. The NLL computation serves as a proxy to evaluate the effectiveness of the methods in achieving this goal. To provide a baseline for comparison, we also consider a simple Gaussian distribution centered around the FINN BTC prediction mean, with a standard deviation equal to the sample standard deviation computed from the residuals:
 
 \begin{equation*}
-    p(c; t) = \frac{1}{\sqrt{2 \pi \mathcal{s}^2}} \exp(-\frac{1}{2 \mathcal{s}^2} (\hat{c}(x=L, t;\theta_{\mathcal{D}}) - c)^2) .
+    p(c; t) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp(-\frac{1}{2 \sigma^2} (\hat{c}(x=L, t;\theta_{\mathcal{D}_{\text{BTC-2}}}) - c)^2) .
 \end{equation*}
 
 This Gaussian baseline yields an NLL of $-7.50$, which is lower than the NLLs obtained from our methods. This suggests that directly modeling the variations in concentration data via a Gaussian fit outperforms methods that first produce variations in the retardation factor and subsequently map them back to variations in concentrations. This also supports the basic assumption of a Gaussian likelihood used by all sampling methods. However, this simple Gaussian baseline serves primarily as an interpretable benchmark for the NLL values, rather than a direct competitor to our methods, which focus on the more complex task of uncertainty quantification in the retardation factor.
@@ -564,10 +586,10 @@ This Gaussian baseline yields an NLL of $-7.50$, which is lower than the NLLs ob
 
 
 \paragraph{PI Calibration Comparison}
-Inspired by \textcite{finn}, we also evaluated the calibration of our prediction intervals (PIs) using reliability curves. In general, reliability curves plot the observed frequency of the true value falling into a given interval against the predicted confidence level. In our case, the ``true values'' are the concentration values from Core 2 BTC, and the ``given interval'' is the prediction interval (PI) generated by our sampling methods (NNPIE and MCMC), each associated with a specific ``confidence level''. For example, if a PI is constructed with a confidence level of 90\%, but only 70\% of the corresponding data points from Core 2 BTC actually fall within that PI, the reliability curve would have a value of 0.7 at a confidence level of 0.9 (or 90\%).
-To compute it, the prediction range is divided into bins (\emph{e.g.} by confidence levels). For each bin, the proportion of predictions where the true value falls into the corresponding PI is calculated. Ideally, the curve should follow the diagonal line (perfect calibration). A curve above the diagonal indicates underconfidence (the true value falls into the PI more often than predicted), while a curve below the diagonal indicates overconfidence.
+Inspired by \textcite{finn}, we also evaluated the calibration of our prediction intervals (PIs) using reliability curves. In general, reliability curves plot the observed frequency of the true value falling into a given interval against the predicted confidence level. In our case, the ``true values'' are the concentration values from Core 2 BTC, and the ``given interval'' is the prediction interval (PI) generated by our sampling methods (NNPIE and MCMC), each associated with a specific ``confidence level''. For example, if a PI is constructed with a confidence level of 90\%, but only 70\% of the corresponding data points from Core 2 BTC actually fall within that PI, the reliability curve would have a $y$-value of 0.7 at an $x-value$ of 0.9.
+Ideally, the curve should follow the diagonal line (perfect calibration). A curve above the diagonal indicates underconfidence (the true value falls into the PI more often than predicted), while a curve below the diagonal indicates overconfidence.
 
-\Cref{fig:reliability_curves} presents a detailed analysis of the calibration of our PIs. The left side of the figure displays a single 90\% PI for the concentration training data generated by each method (Hy-NNPIE, Da-NNPIE, and MCMC) \footnote{Given the minimal differences between HyDa-NNPIE and Da-NNPIE, we omit a separate analysis of HyDa-NNPIE.}. This visual provides context for understanding the reliability curves shown on the right. These curves, in turn, assess how well the predicted confidence levels align with the observed frequencies of true values falling within the calculated PIs. For reference, we also include a reliability curve for a simple Gaussian distribution fit, similar to our approach in the NLL comparison.
+\Cref{fig:reliability_curves} presents a detailed analysis of the calibration of our PIs. The left side of the figure displays a single 90\% PI for the concentration training data generated by each method (Hy-NNPIE, Da-NNPIE, and MCMC) \footnote{Given the minimal differences between HyDa-NNPIE and Da-NNPIE, we omit a separate analysis of HyDa-NNPIE.}. The left column provides a visual verification for at least one data point of the reliability curves shown on the right. These curves, in turn, assess how well the predicted confidence levels align with the observed frequencies of true values falling within the calculated PIs. For reference, we also include a reliability curve for a simple Gaussian distribution fit, similar to our approach in the NLL comparison.
 
 Several key observations can be made from the reliability curves. First, all the FINN-based methods are generally overconfident, particularly at higher confidence levels (above 0.5). This indicates that their predictions tend to underestimate the true uncertainty, with the true values falling inside the prediction interval less often than the predicted confidence suggests. Hy-NNPIE exhibits the strongest overconfidence across the entire confidence range. Among the FINN-based methods, Da-NNPIE demonstrates the best calibration. Notably, Da-NNPIE's observed probability (approximately 67\%) at a 90\% confidence level is considerably closer to 90\% than the observed probability of MCMC (approximately 53\%) at the 90\% level (prescinded by the crosses on the reliability curves).
 
@@ -584,7 +606,7 @@ While the Gaussian fit appears best calibrated by this metric, a significant por
 \paragraph{Runtime Comparison}
 We measure and compare the runtime of generating a single sample using our method and the baseline. Because NNPIE requires training the neural network from scratch for each sample, the runtime approximately equals the training time. Averaging over 10 trials, the runtime is about 170 seconds.
 
-With a total of 100,000 iterations, this resulted in 10,000 saved samples and an average runtime of about 11.4 seconds per sample, almost 15 times faster than our method, as also seen in \cref{fig:runtime_comparison}. However, accounting for MCMC's higher sample requirement, our method is about 10 times faster when considering the total number of samples used. Furthermore, our method benefits from straightforward parallelization, offering a near-linear speedup with increased core utilization, a significant advantage over MCMC, which is more difficult to parallelize efficiently.
+The BNN with MCMC took an average runtime of about 11.4 seconds per sample, almost 15 times faster than our method, as also seen in \cref{fig:runtime_comparison}. However, accounting for MCMC's higher sample requirement (10,000 samples vs. 70 samples), our method is about 10 times faster when considering the total number of samples used. Furthermore, our method benefits from straightforward parallelization, offering a near-linear speedup with increased core utilization, a significant advantage over MCMC, which is more difficult to parallelize efficiently.
 Finally, the performance of MCMC is further constrained by the dimensionality of the problem, in this case, the number of parameters within the neural network. Higher dimensionality leads to poorer mixing of the Markov chains, necessitating a greater number of samples to achieve convergence, and simultaneously increasing the runtime per sample. Whereas our approach only experiences a higher runtime per sample.
 
 \begin{figure}[h]
@@ -597,7 +619,7 @@ Finally, the performance of MCMC is further constrained by the dimensionality of
 
 
 \section{Summary}
-The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between HyDa-NNPIE and MCMC.
+The analysis of our results reveals several key insights regarding the performance and characteristics of the different uncertainty estimation methods, particularly focusing on the comparison between NNPIE and MCMC.
 
 Firstly, the synthetic data case exhibits significantly lower uncertainty compared to the experimental data scenario. This can be attributed to mainly two factors:
 \begin{enumerate*}
@@ -605,17 +627,13 @@ Firstly, the synthetic data case exhibits significantly lower uncertainty compar
     \item the reduced effectiveness of Da-NNPIE due to the absence of real noise and presence of artificial noise in the synthetic data, which, although introducing some level of uncertainty, does not represent a real distribution, rendering the application of PI3NN, our strongest method to generate datasets, unreasonable since it is designed to learn the underlying real distribution.
 \end{enumerate*}
 
-Given that the hyperparameters of Hy-NNPIE have a negligible impact on output variation relative to Da-NNPIE, and considering Da-NNPIE's ability to efficiently sample the entire space due to its one-dimensional nature, HyDa-NNPIE requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that HyDa-NNPIE can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, HyDa-NNPIE benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes HyDa-NNPIE as a more computationally efficient method for UQ.
+Considering Da-NNPIE's ability to efficiently sample its entire uncertainty space (confidence level $q$) due to its one-dimensional nature, Da-NNPIE requires substantially fewer samples than MCMC. This is a favorable characteristic, as it implies that Da-NNPIE can achieve reliable uncertainty estimates even with a limited number of samples and thus computational effort. Furthermore, NNPIE benefits from trivial parallelizability, unlike MCMC, which requires sequential sampling or more advanced methods. This, coupled with the ability to operate effectively with fewer samples, establishes NNPIE as a more computationally efficient method for UQ.
 
 
 
 
 \chapter{Final Remarks}
-
-\section{Summary}
-This work investigated UQ for the retardation factor in a diffusion-sorption process using the FINN framework. We proposed two novel UQ methods, Hy-NNPIE and Da-NNPIE, based on perturbing hyperparameters and training data, respectively. Empirical analysis demonstrated the near uniqueness of the inverse problem, enabling interpretation of the UQ results. Although computationally more expensive than MCMC, our methods offer a different perspective on uncertainty by directly exploring the effects of various uncertainties within the training data and solver process.
-
-
+\label{sec:final_remarks}
 
 \section{Limitations and Opportunities}
 While this work demonstrates the potential of NNPIE for UQ in contaminant transport modeling, several opportunities exist for further development and broader application.
@@ -630,7 +648,6 @@ Exploring methods to achieve this direct uncertainty estimation represents a pro
 The uniqueness analysis presented in this study is empirical in nature. While it provides valuable insights into the specific problem considered, a formal mathematical proof of uniqueness for the retardation factor inverse problem would further strengthen the foundation for UQ and enhance the generalizability of the results.
 
 Further efficiency gains could potentially be realized through the integration of techniques like ensemble learning, such as dropout. While standard dropout, a technique that is already used for uncertainty estimation in neural networks \cite{gal2016dropout}, is not directly applicable to FINN due to convergence issues, adapting these concepts to it could lead to even more efficient UQ.
-Another promising direction to improve performance would be to investigate the use of smaller retardation factor networks for generating the samples used to construct the prediction interval. Since these samples may not require the same level of accuracy as the mean prediction, employing smaller networks combined with batch processing techniques could significantly improve computational performance.
 
 The NNPIE framework presented here is not limited to the specific diffusion-sorption problem and the retardation factor. Its principles can be extended to other types of PDEs and inverse problems that require UQ. Exploring its application to a wider range of problems represents a valuable direction for future work.
 Moreover, within the FINN framework itself, other uncertain parameters or model components beyond the retardation factor could be investigated using NNPIE.
@@ -640,10 +657,9 @@ Finally, a more rigorous theoretical analysis of the proposed UQ methods, partic
 
 
 \section{Conclusion}
-\label{sec:conclusion}
 This study demonstrates that the proposed NNPIE framework provides a valuable tool for UQ in the context of contaminant transport modeling using FINN. The quality of the generated prediction intervals is comparable to that of the established MCMC-based method. Notably, when considering the predicted concentration distribution, NNPIE demonstrates a slightly improved ability to accurately predict the dataset, as shown by the likelihood analysis. It is important to acknowledge that both methods rely on the same fundamental assumptions regarding the likelihood function, ensuring a fair comparison.
 
-A key advantage of NNPIE lies in its superior computational performance. It requires significantly fewer samples than MCMC to achieve similar levels of uncertainty estimates. This efficiency gain is further enhanced by the inherent parallelizability of our method, allowing for substantial speedups when using multiple cores.
+A key advantage of NNPIE lies in its superior computational performance. The slow mixing we encountered in MCMC for this problem necessitates a vast number of samples for adequate exploration of the NN parameter space. Consequently, NNPIE's efficiency in exploring the uncertainty landscape leads to a faster overall runtime despite the higher per-sample cost. It requires significantly fewer samples than MCMC to achieve similar levels of uncertainty estimates. This efficiency gain is further enhanced by the inherent parallelizability of our method, allowing for substantial speedups when using multiple cores.
 
 Furthermore, NNPIE offers enhanced interpretability by explicitly decomposing uncertainty into aleatoric and epistemic components. This decomposition provides a clearer understanding of the sources of uncertainty, allowing us to distinguish between inherent randomness in the data and limitations in model knowledge.
 
