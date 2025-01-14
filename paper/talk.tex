@@ -61,29 +61,16 @@
 % Because this factor is generally unknown, we want to learn it with FINN.
 \centering
 
-\only<1>{
-{\Large
+\Large{
 \begin{equation*}
 \boxed{
-    \frac{\partial c}{\partial t} = \frac{D}{R(c)} \frac{\partial^2 c}{\partial x^2}
+    \frac{\partial c}{\partial t} = \frac{D}{\only<2->{\textcolor{red}}{R(c)}} \frac{\partial^2 c}{\partial x^2}
 }
 \end{equation*}
 }
-}
 
-\only<2->{
-{\Large
-\begin{equation*}
-\boxed{
-    \frac{\partial c}{\partial t} = \frac{D}{\textcolor{red}{R(c)}} \frac{\partial^2 c}{\partial x^2}
-}
-\end{equation*}
-}
-}
 
-\only<1->{
-\vspace{40pt}
-}
+\vfill
 
 \begin{tabular}{rl} 
  $c$: & Dissolved Concentration \\ 
@@ -103,7 +90,7 @@
 % These are the same data that Timothy, in his original paper (cite finn), used to introduce the FINN method.
 % He also performed an uncertainty quantification at that time, using Bayesian Neural Networks, or BNNs, and a Markov Chain Monte Carlo, or MCMC, method. We will talk more about that in a moment.
 \centering
-\only<2>{\hspace{0.8cm} \textbf{Train} \hspace{2.0cm} \textbf{Test} \hspace{2.2cm} \textbf{Test}}
+\onslide<2>{\hspace{0.8cm} \textbf{Train} \hspace{2.0cm} \textbf{Test} \hspace{2.2cm} \textbf{Test}}
 \includegraphics[width=\textwidth]{figs/core_data.pdf}
 \footnotesize
 Data from\\ \textit{``Entropy-based experimental design for optimal model discrimination in the geosciences''}\\ by \textcite{nowak2016entropy}
@@ -121,7 +108,7 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
 
 \only<1>{\includegraphics[width=0.8\textwidth]{figs/bnn_illustration.png}}
 
-% \only<2>{
+% \onslide<2>{
 % \begin{tikzpicture}
 % \node[opacity=0.3] at (0,0) {\includegraphics[width=0.8\textwidth]{figs/bnn_illustration.png}};
 % \end{tikzpicture}
@@ -133,7 +120,7 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
     \begin{equation*}
         \boxed{p(\theta | \mathcal{D}) \propto p(\mathcal{D} | \theta) p(\theta)}
     \end{equation*}
-    \only<3->{
+    \onslide<3->{
     \begin{equation*}
         \textcolor{red}{p(\hat{R}(c;\theta) | \mathcal{D})}
     \end{equation*}
@@ -146,7 +133,7 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
 \begin{tabular}{rlrl} 
     $\theta$: & Weights and Biases & $p(\mathcal{D} | \theta)$: & Likelihood \\ 
     $\mathcal{D}$: & Training Data & $p(\theta | \mathcal{D})$: & Posterior \\
-    $p(\theta)$: & Prior & \only<3->{$\hat{R}(c;\theta)$:} & \only<3->{Predicted Retardation Factor} \\
+    $p(\theta)$: & Prior & \onslide<3->{$\hat{R}(c;\theta)$:} & \onslide<3->{Predicted Retardation Factor} \\
 \end{tabular}
 
 }
@@ -179,7 +166,7 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
 % We distinguish between the hyperparameters, which are the first three, and the training dataset because they represent different types of uncertainty.
 % If you'd like to know more about why we chose a specific parameter, feel free to ask me at the end.
 % We'll now go through each of these factors one by one (show each parameter as a list item).
-\centering{
+\centering
 \only<1>{
 \includegraphics[width=0.7\textwidth]{figs/finn_arch.png}
 }
@@ -192,9 +179,9 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
     \mathcal{L} = \mathbf{a_{MSE}} \cdot Loss_{MSE} + \mathbf{a_{Phys}} \cdot Loss_{Phys}
 \end{equation*}
 }
-}
 
-\vspace{20pt}
+
+\vfill
 
 \begin{tabular}{rl}
     \textbf{Uncertain Factor} $\mathcal{X}$ & \textbf{Distribution} \\
@@ -226,11 +213,11 @@ Data from\\ \textit{``Entropy-based experimental design for optimal model discri
 % A bit of math tells us how we need to weight the samples to draw from the same distribution as the baseline (show derivation of p(R|D)).
 % The weights require the same likelihood that the baseline also needed, so we use the same one, which corresponds to a Gaussian distribution around the training data.
 \begin{align*}
-p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| &\mathcal{D}) \\
-\small{\text{(Marginalization)}} \quad &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X} | \mathcal{D}) \, d\mathcal{X} \\
-                                         \small{\text{(Bayes)}} \quad &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X}) \underbrace{\frac{p(\mathcal{D} | \mathcal{X}) }{p(\mathcal{D})}}_{= w(\mathcal{X})} \, d\mathcal{X} \\
-                                          &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X} \\
-                                         \small{\text{(Determ. Solver)}} \quad &= \int \delta(\hat{R}(c;\theta_{\mathcal{X}}) - R(c))\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X} .
+\onslide<1->{p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| &\mathcal{D})} \\
+\onslide<2->{\small{\text{(Marginalization)}} \quad &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X} | \mathcal{D}) \, d\mathcal{X}} \\
+                                         \onslide<3->{\small{\text{(Bayes)}} \quad &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X}) \underbrace{\frac{p(\mathcal{D} | \mathcal{X}) }{p(\mathcal{D})}}_{= w(\mathcal{X})} \, d\mathcal{X} \\
+                                          &= \int p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c) | \mathcal{X}, \mathcal{D})\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X}} \\
+                                         \onslide<4->{\small{\text{(Determ. Solver)}} \quad &= \int \delta(\hat{R}(c;\theta_{\mathcal{X}}) - R(c))\; p(\mathcal{X})\; w(\mathcal{X}) \, d\mathcal{X} .}
 \end{align*}
 \end{frame}
 
@@ -355,7 +342,6 @@ p(\hat{R}(c;\theta_{\mathcal{X}}) = R(c)| &\mathcal{D}) \\
         \item NNPIE: 70 samples
         \item MCMC: 10,000 samples
     \end{itemize}
-    \pause
 \end{frame}
 
 
